@@ -1,0 +1,260 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+Copyright 2020 Mads Buvik Sandvei <madssandvei@protonmail.com>
+
+Instructions:
+To edit this file. Copy it to my games/openmw/ (or equivalent for your platform)
+Consult the openxr specification for details of what Paths are available for your controllers:
+    https://www.khronos.org/registry/OpenXR/specs/1.0/html/xrspec.html#semantic-path-interaction-profiles
+
+Note that some controllers require OpenXR extensions. In which case consult the relevant extension section
+of the openxr spec instead of the linked section. 
+You will not make an interaction profile work by removing the extension requirement form this file.
+-->
+<Root>
+    <Actions>
+        <!-- The <Actions> section exists for reference only and is not processed by OpenMW VR-->
+        <!-- Note that some actions, such as menu_*, only take affect in GUI mode and vice versa -->
+        <Action Name="game_menu" LocalName="Gameplay Game Menu"/>
+        <Action Name="meta_menu" LocalName="Gameplay Meta Menu"/>
+        <Action Name="reposition_menu" LocalName="Gameplay Reposition Menu"/>
+        <Action Name="inventory" LocalName="Gameplay Inventory"/>
+        <Action Name="activate" LocalName="Gameplay Activate"/>
+        <Action Name="use" LocalName="Gameplay Use"/>
+        <Action Name="jump" LocalName="Gameplay Jump"/>
+        <Action Name="weapon" LocalName="Gameplay Weapon"/>
+        <Action Name="spell" LocalName="Gameplay Spell"/>
+        <Action Name="cycle_spell_left" LocalName="Gameplay Cycle Spell Left"/>
+        <Action Name="cycle_spell_right" LocalName="Gameplay Cycle Spell Right"/>
+        <Action Name="cycle_weapon_left" LocalName="Gameplay Cycle Weapon Left"/>
+        <Action Name="cycle_weapon_right" LocalName="Gameplay Cycle Weapon Right"/>
+        <Action Name="sneak" LocalName="Gameplay Sneak"/>
+        <Action Name="quick_menu" LocalName="Gameplay Quick Menu"/>
+        <Action Name="look_left_right" LocalName="Gameplay Look Left Right"/>
+        <Action Name="move_forward_backward" LocalName="Gameplay Move Forward Backward"/>
+        <Action Name="move_left_right" LocalName="Gameplay Move Left Right"/>
+        <Action Name="journal_book" LocalName="Gameplay Journal Book"/>
+        <Action Name="quick_save" LocalName="Gameplay Quick Save"/>
+        <Action Name="rest" LocalName="Gameplay Rest"/>
+        <Action Name="activate_touched" LocalName="Gameplay Activate Touch"/>
+        <Action Name="always_run" LocalName="Gameplay Always Run"/>
+        <Action Name="auto_move" LocalName="Gameplay Auto Move"/>
+        <Action Name="toggle_hud" LocalName="Gameplay Toggle HUD"/>
+        <Action Name="toggle_debug" LocalName="Gameplay Toggle the debug hud"/>
+        <Action Name="menu_up_down" LocalName="Gameplay Menu Up Down"/>
+        <Action Name="menu_left_right" LocalName="Gameplay Menu Left Right"/>
+        <Action Name="menu_select" LocalName="Gameplay Menu Select"/>
+        <Action Name="menu_back" LocalName="Gameplay Menu Back"/>
+    </Actions>
+    <Profile LocalName="Generic" Path="/interaction_profiles/khr/simple_controller">
+        <ActionSet Name="Gameplay">
+            <Binding ActionName="use" Path="/user/hand/left/input/select/click"/>
+            <Binding ActionName="meta_menu" Path="/user/hand/left/input/menu/click"/>
+            <Binding ActionName="reposition_menu" Path="/user/hand/left/input/menu/click"/>
+            <Binding ActionName="activate_touched" Path="/user/hand/right/input/select/click"/>
+            <Binding ActionName="auto_move" Path="/user/hand/right/input/menu/click"/>
+        </ActionSet>
+        <ActionSet Name="GUI">
+            <Binding ActionName="use" Path="/user/hand/left/input/select/click"/>
+            <Binding ActionName="game_menu" Path="/user/hand/left/input/menu/click"/>
+            <Binding ActionName="reposition_menu" Path="/user/hand/left/input/menu/click"/>
+            <Binding ActionName="menu_select" Path="/user/hand/right/input/select/click"/>
+            <Binding ActionName="menu_back" Path="/user/hand/right/input/menu/click"/>
+        </ActionSet>
+    </Profile>
+    <Profile LocalName="Oculus Touch Controllers" Path="/interaction_profiles/oculus/touch_controller">
+        <ActionSet Name="Gameplay">
+            <Binding ActionName="reposition_menu" Path="/user/hand/left/input/menu/click"/>
+            <Binding ActionName="meta_menu" Path="/user/hand/left/input/menu/click"/>
+            <Binding ActionName="sneak" Path="/user/hand/left/input/squeeze/value"/>
+            <Binding ActionName="move_left_right" Path="/user/hand/left/input/thumbstick/x"/>
+            <Binding ActionName="move_forward_backward" Path="/user/hand/left/input/thumbstick/y"/>
+            <Binding ActionName="always_run" Path="/user/hand/left/input/thumbstick/click"/>
+            <Binding ActionName="jump" Path="/user/hand/left/input/trigger/value"/>
+            <Binding ActionName="spell" Path="/user/hand/left/input/x/click"/>
+            <Binding ActionName="rest" Path="/user/hand/left/input/y/click"/>
+            <Binding ActionName="weapon" Path="/user/hand/right/input/a/click"/>
+            <Binding ActionName="inventory" Path="/user/hand/right/input/b/click"/>
+            <Binding ActionName="activate_touched" Path="/user/hand/right/input/squeeze/value"/>
+            <Binding ActionName="activate" Path="/user/hand/right/input/squeeze/value"/>
+            <Binding ActionName="look_left_right" Path="/user/hand/right/input/thumbstick/x"/>
+            <Binding ActionName="auto_move" Path="/user/hand/right/input/thumbstick/click"/>
+            <Binding ActionName="use" Path="/user/hand/right/input/trigger/value"/>
+        </ActionSet>
+        <ActionSet Name="GUI">
+            <Binding ActionName="menu_up_down" Path="/user/hand/right/input/thumbstick/y"/>
+            <Binding ActionName="menu_left_right" Path="/user/hand/right/input/thumbstick/x"/>
+            <Binding ActionName="menu_select" Path="/user/hand/right/input/a/click"/>
+            <Binding ActionName="menu_back" Path="/user/hand/right/input/b/click"/>
+            <Binding ActionName="use" Path="/user/hand/right/input/trigger/value"/>
+            <Binding ActionName="game_menu" Path="/user/hand/left/input/menu/click"/>
+            <Binding ActionName="reposition_menu" Path="/user/hand/left/input/menu/click"/>
+        </ActionSet>
+    </Profile>
+    <Profile LocalName="Microsoft Motion Controllers" Path="/interaction_profiles/microsoft/motion_controller">
+        <ActionSet Name="Gameplay">
+            <Binding ActionName="reposition_menu" Path="/user/hand/left/input/menu/click"/>
+            <Binding ActionName="meta_menu" Path="/user/hand/right/input/squeeze/click"/>
+            <Binding ActionName="jump" Path="/user/hand/left/input/trigger/value"/>
+            <Binding ActionName="move_forward_backward" Path="/user/hand/left/input/trackpad/y"/>
+            <Binding ActionName="move_left_right" Path="/user/hand/left/input/trackpad/x"/>
+            <Binding ActionName="rest" Path="/user/hand/left/input/thumbstick/click"/>
+            <Binding ActionName="spell" Path="/user/hand/left/input/trackpad/click"/>
+            <Binding ActionName="sneak" Path="/user/hand/left/input/squeeze/click"/>
+            <Binding ActionName="inventory" Path="/user/hand/right/input/thumbstick/click"/>
+            <Binding ActionName="look_left_right" Path="/user/hand/right/input/trackpad/x"/>
+            <Binding ActionName="weapon" Path="/user/hand/right/input/trackpad/click"/>
+            <Binding ActionName="use" Path="/user/hand/right/input/trigger/value"/>
+            <Binding ActionName="activate_touched" Path="/user/hand/right/input/squeeze/click"/>
+            <Binding ActionName="activate" Path="/user/hand/right/input/squeeze/click"/>
+        </ActionSet>
+        <ActionSet Name="GUI">
+            <Binding ActionName="menu_back" Path="/user/hand/left/input/trackpad/click"/>
+            <Binding ActionName="game_menu" Path="/user/hand/left/input/menu/click"/>
+            <Binding ActionName="reposition_menu" Path="/user/hand/left/input/menu/click"/>
+            <Binding ActionName="menu_up_down" Path="/user/hand/right/input/trackpad/y"/>
+            <Binding ActionName="menu_left_right" Path="/user/hand/right/input/trackpad/x"/>
+            <Binding ActionName="menu_select" Path="/user/hand/right/input/trackpad/click"/>
+            <Binding ActionName="use" Path="/user/hand/right/input/trigger/value"/>
+        </ActionSet>
+    </Profile>
+    <Profile LocalName="Index Knuckles" Path="/interaction_profiles/valve/index_controller">
+        <ActionSet Name="Gameplay">
+            <Binding ActionName="spell" Path="/user/hand/left/input/a/click"/>
+            <Binding ActionName="rest" Path="/user/hand/left/input/b/click"/>
+            <Binding ActionName="move_forward_backward" Path="/user/hand/left/input/thumbstick/y"/>
+            <Binding ActionName="move_left_right" Path="/user/hand/left/input/thumbstick/x"/>
+            <Binding ActionName="reposition_menu" Path="/user/hand/left/input/trackpad/force"/>
+            <Binding ActionName="meta_menu" Path="/user/hand/left/input/trackpad/force"/>
+            <Binding ActionName="jump" Path="/user/hand/left/input/trigger/value"/>
+            <Binding ActionName="sneak" Path="/user/hand/left/input/squeeze/force"/>
+            <Binding ActionName="weapon" Path="/user/hand/right/input/a/click"/>
+            <Binding ActionName="inventory" Path="/user/hand/right/input/b/click"/>
+            <Binding ActionName="look_left_right" Path="/user/hand/right/input/thumbstick/x"/>
+            <Binding ActionName="use" Path="/user/hand/right/input/trigger/value"/>
+            <Binding ActionName="activate_touched" Path="/user/hand/right/input/squeeze/force"/>
+            <Binding ActionName="activate" Path="/user/hand/right/input/squeeze/force"/>
+        </ActionSet>
+        <ActionSet Name="GUI">
+            <Binding ActionName="reposition_menu" Path="/user/hand/left/input/thumbstick/click"/>
+            <Binding ActionName="game_menu" Path="/user/hand/left/input/trackpad/force"/>
+            <Binding ActionName="menu_select" Path="/user/hand/right/input/a/click"/>
+            <Binding ActionName="menu_back" Path="/user/hand/right/input/b/click"/>
+            <Binding ActionName="use" Path="/user/hand/right/input/trigger/value"/>
+            <Binding ActionName="menu_up_down" Path="/user/hand/right/input/thumbstick/y"/>
+            <Binding ActionName="menu_left_right" Path="/user/hand/right/input/thumbstick/x"/>
+        </ActionSet>
+    </Profile>
+    <Profile LocalName="Vive Wands" Path="/interaction_profiles/htc/vive_controller">
+        <ActionSet Name="Gameplay">
+            <Binding ActionName="reposition_menu" Path="/user/hand/left/input/menu/click"/>
+            <Binding ActionName="meta_menu" Path="/user/hand/left/input/menu/click"/>
+            <Binding ActionName="meta_menu" Path="/user/hand/right/input/squeeze/click"/>
+            <Binding ActionName="move_forward_backward" Path="/user/hand/left/input/trackpad/y"/>
+            <Binding ActionName="move_left_right" Path="/user/hand/left/input/trackpad/x"/>
+            <Binding ActionName="spell" Path="/user/hand/left/input/trackpad/click"/>
+            <Binding ActionName="jump" Path="/user/hand/left/input/trigger/value"/>
+            <Binding ActionName="sneak" Path="/user/hand/left/input/squeeze/click"/>
+            <Binding ActionName="look_left_right" Path="/user/hand/right/input/trackpad/x"/>
+            <Binding ActionName="weapon" Path="/user/hand/right/input/trackpad/click"/>
+            <Binding ActionName="use" Path="/user/hand/right/input/trigger/value"/>
+            <Binding ActionName="activate_touched" Path="/user/hand/right/input/squeeze/click"/>
+            <Binding ActionName="activate" Path="/user/hand/right/input/squeeze/click"/>
+        </ActionSet>
+        <ActionSet Name="GUI">
+            <Binding ActionName="menu_up_down" Path="/user/hand/right/input/trackpad/y"/>
+            <Binding ActionName="menu_left_right" Path="/user/hand/right/input/trackpad/x"/>
+            <Binding ActionName="menu_select" Path="/user/hand/right/input/trackpad/click"/>
+            <Binding ActionName="menu_back" Path="/user/hand/left/input/trackpad/click"/>
+            <Binding ActionName="game_menu" Path="/user/hand/left/input/menu/click"/>
+            <Binding ActionName="use" Path="/user/hand/right/input/trigger/value"/>
+            <Binding ActionName="reposition_menu" Path="/user/hand/left/input/menu/click"/>
+        </ActionSet>
+    </Profile>
+    <Profile LocalName="Hp Mixed Reality Controllers" Path="/interaction_profiles/hp/mixed_reality_controller">
+        <Extension Name="XR_EXT_hp_mixed_reality_controller"/>
+        <ActionSet Name="Gameplay">
+            <Binding ActionName="reposition_menu" Path="/user/hand/left/input/menu/click"/>
+            <Binding ActionName="meta_menu" Path="/user/hand/left/input/menu/click"/>
+            <Binding ActionName="sneak" Path="/user/hand/left/input/squeeze/value"/>
+            <Binding ActionName="move_forward_backward" Path="/user/hand/left/input/thumbstick/y"/>
+            <Binding ActionName="move_left_right" Path="/user/hand/left/input/thumbstick/x"/>
+            <Binding ActionName="always_run" Path="/user/hand/left/input/thumbstick/click"/>
+            <Binding ActionName="jump" Path="/user/hand/left/input/trigger/value"/>
+            <Binding ActionName="spell" Path="/user/hand/left/input/x/click"/>
+            <Binding ActionName="rest" Path="/user/hand/left/input/y/click"/>
+            <Binding ActionName="weapon" Path="/user/hand/right/input/a/click"/>
+            <Binding ActionName="inventory" Path="/user/hand/right/input/b/click"/>
+            <Binding ActionName="look_left_right" Path="/user/hand/right/input/thumbstick/x"/>
+            <Binding ActionName="auto_move" Path="/user/hand/right/input/thumbstick/click"/>
+            <Binding ActionName="use" Path="/user/hand/right/input/trigger/value"/>
+            <Binding ActionName="activate_touched" Path="/user/hand/right/input/squeeze/value"/>
+            <Binding ActionName="activate" Path="/user/hand/right/input/squeeze/value"/>
+        </ActionSet>
+        <ActionSet Name="GUI">
+            <Binding ActionName="reposition_menu" Path="/user/hand/left/input/menu/click"/>
+            <Binding ActionName="game_menu" Path="/user/hand/left/input/menu/click"/>
+            <Binding ActionName="menu_up_down" Path="/user/hand/right/input/thumbstick/y"/>
+            <Binding ActionName="menu_left_right" Path="/user/hand/right/input/thumbstick/x"/>
+            <Binding ActionName="menu_select" Path="/user/hand/right/input/a/click"/>
+            <Binding ActionName="menu_back" Path="/user/hand/right/input/b/click"/>
+            <Binding ActionName="use" Path="/user/hand/right/input/trigger/value"/>
+        </ActionSet>
+    </Profile>
+    <Profile LocalName="Huawei Controllers" Path="/interaction_profiles/huawei/controller">
+        <Extension Name="XR_HUAWEI_controller_interaction"/>
+        <ActionSet Name="Gameplay">
+            <Binding ActionName="reposition_menu" Path="/user/hand/left/input/home/click"/>
+            <Binding ActionName="meta_menu" Path="/user/hand/left/input/home/click"/>
+            <Binding ActionName="jump" Path="/user/hand/left/input/trigger/click"/>
+            <Binding ActionName="move_forward_backward" Path="/user/hand/left/input/trackpad/y"/>
+            <Binding ActionName="move_left_right" Path="/user/hand/left/input/trackpad/x"/>
+            <Binding ActionName="spell" Path="/user/hand/left/input/trackpad/click"/>
+            <Binding ActionName="sneak" Path="/user/hand/left/input/back/click"/>
+            <Binding ActionName="look_left_right" Path="/user/hand/right/input/trackpad/x"/>
+            <Binding ActionName="weapon" Path="/user/hand/right/input/trackpad/click"/>
+            <Binding ActionName="use" Path="/user/hand/right/input/trigger/click"/>
+            <Binding ActionName="activate_touched" Path="/user/hand/right/input/squeeze/click"/>
+            <Binding ActionName="activate" Path="/user/hand/right/input/squeeze/click"/>
+        </ActionSet>
+        <ActionSet Name="GUI">
+            <Binding ActionName="menu_back" Path="/user/hand/left/input/trackpad/click"/>
+            <Binding ActionName="game_menu" Path="/user/hand/left/input/home/click"/>
+            <Binding ActionName="reposition_menu" Path="/user/hand/left/input/home/click"/>
+            <Binding ActionName="menu_up_down" Path="/user/hand/right/input/thumbstick/y"/>
+            <Binding ActionName="menu_left_right" Path="/user/hand/right/input/thumbstick/x"/>
+            <Binding ActionName="menu_select" Path="/user/hand/right/input/trackpad/click"/>
+            <Binding ActionName="use" Path="/user/hand/right/input/trigger/click"/>
+        </ActionSet>
+    </Profile>
+    <Profile LocalName="Vive Cosmos Controllers" Path="/interaction_profiles/htc/vive_cosmos_controller">
+        <Extension Name="XR_HTC_vive_cosmos_controller_interaction"/>
+        <ActionSet Name="Gameplay">
+            <Binding ActionName="reposition_menu" Path="/user/hand/left/input/menu/click"/>
+            <Binding ActionName="meta_menu" Path="/user/hand/left/input/menu/click"/>
+            <Binding ActionName="sneak" Path="/user/hand/left/input/squeeze/click"/>
+            <Binding ActionName="move_forward_backward" Path="/user/hand/left/input/thumbstick/y"/>
+            <Binding ActionName="move_left_right" Path="/user/hand/left/input/thumbstick/x"/>
+            <Binding ActionName="always_run" Path="/user/hand/left/input/thumbstick/click"/>
+            <Binding ActionName="jump" Path="/user/hand/left/input/trigger/click"/>
+            <Binding ActionName="spell" Path="/user/hand/left/input/x/click"/>
+            <Binding ActionName="rest" Path="/user/hand/left/input/y/click"/>
+            <Binding ActionName="weapon" Path="/user/hand/right/input/a/click"/>
+            <Binding ActionName="inventory" Path="/user/hand/right/input/b/click"/>
+            <Binding ActionName="look_left_right" Path="/user/hand/right/input/thumbstick/x"/>
+            <Binding ActionName="auto_move" Path="/user/hand/right/input/thumbstick/click"/>
+            <Binding ActionName="use" Path="/user/hand/right/input/trigger/click"/>
+            <Binding ActionName="activate_touched" Path="/user/hand/right/input/squeeze/click"/>
+            <Binding ActionName="activate" Path="/user/hand/right/input/squeeze/click"/>
+        </ActionSet>
+        <ActionSet Name="GUI">
+            <Binding ActionName="reposition_menu" Path="/user/hand/left/input/menu/click"/>
+            <Binding ActionName="game_menu" Path="/user/hand/left/input/menu/click"/>
+            <Binding ActionName="menu_up_down" Path="/user/hand/right/input/thumbstick/y"/>
+            <Binding ActionName="menu_left_right" Path="/user/hand/right/input/thumbstick/x"/>
+            <Binding ActionName="menu_select" Path="/user/hand/right/input/a/click"/>
+            <Binding ActionName="menu_back" Path="/user/hand/right/input/b/click"/>
+            <Binding ActionName="use" Path="/user/hand/right/input/trigger/click"/>
+        </ActionSet>
+    </Profile>
+</Root>

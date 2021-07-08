@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<MyGUI type="Layout">
+    <!-- TODO: Multiple language support -->
+    <Widget type="VBox" layer="MainMenu" name="_Main" align="Center">
+        <Property key="AutoResize" value="true"/>
+        <Property key="Padding" value="50"/>
+        <Property key="Spacing" value="12"/>
+
+        <Widget type="AutoSizedButton" skin="MW_Button" name="return" align="HCenter">
+            <Property key="Caption" value="Return"/>
+            <Property key="FontHeight" value="32"/>
+        </Widget>
+
+        <Widget type="AutoSizedButton" skin="MW_Button" name="recenter" align="HCenter">
+            <Property key="Caption" value="Recenter"/>
+            <Property key="FontHeight" value="32"/>
+        </Widget>
+
+        <Widget type="Spacer"/>
+        <Widget type="Widget" skin="IB_T" align="HCenter" position="0 0 125 4">
+            <Widget type="Widget"/>
+        </Widget>
+        <Widget type="Spacer"/>
+
+        <Widget type="AutoSizedButton" skin="MW_Button" name="quicksave" align="HCenter">
+            <Property key="Caption" value="Quick Save"/>
+            <Property key="FontHeight" value="32"/>
+        </Widget>
+        <Widget type="AutoSizedButton" skin="MW_Button" name="quickload" align="HCenter">
+            <Property key="Caption" value="Quick Load"/>
+            <Property key="FontHeight" value="32"/>
+        </Widget>
+
+        <Widget type="Spacer"/>
+        <Widget type="Widget" skin="IB_T" align="HCenter" position="0 0 125 4">
+            <Widget type="Widget"/>
+        </Widget>
+        <Widget type="Spacer"/>
+
+        <Widget type="AutoSizedButton" skin="MW_Button" name="inventory" align="HCenter">
+            <Property key="Caption" value="Inventory"/>
+            <Property key="FontHeight" value="32"/>
+        </Widget>
+        <Widget type="AutoSizedButton" skin="MW_Button" name="journal" align="HCenter">
+            <Property key="Caption" value="Journal"/>
+            <Property key="FontHeight" value="32"/>
+        </Widget>
+        <Widget type="AutoSizedButton" skin="MW_Button" name="rest" align="HCenter">
+            <Property key="Caption" value="Rest"/>
+            <Property key="FontHeight" value="32"/>
+        </Widget>
+        <Widget type="AutoSizedButton" skin="MW_Button" name="quickmenu" align="HCenter">
+            <Property key="Caption" value="Quick Menu"/>
+            <Property key="FontHeight" value="32"/>
+        </Widget>
+
+        <Widget type="Spacer"/>
+        <Widget type="Widget" skin="IB_T" align="HCenter" position="0 0 125 4">
+            <Widget type="Widget"/>
+        </Widget>
+        <Widget type="Spacer"/>
+
+        <Widget type="AutoSizedButton" skin="MW_Button" name="console" align="HCenter">
+            <Property key="Caption" value="Console"/>
+            <Property key="FontHeight" value="32"/>
+        </Widget>
+
+        <Widget type="AutoSizedButton" skin="MW_Button" name="gamemenu" align="HCenter">
+            <Property key="Caption" value="Game Menu"/>
+            <Property key="FontHeight" value="32"/>
+        </Widget>
+
+        <!-- without this the last button wouldn't resize correctly -->
+        <Widget type="Widget"/>
+    </Widget>
+</MyGUI>

@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<MyGUI type="Layer" version="1.0">
+    <Layer name="Scene" overlapped="false" pick="false"/>
+    <Layer name="Overlay" overlapped="false" pick="false"/>
+    <Layer name="AdditiveOverlay" type="AdditiveLayer" pick="false"/>
+    <Layer name="StatusHUD" overlapped="false" pick="true"/>
+    <Layer name="Menu" overlapped="false" pick="true"/>
+    <Layer name="InventoryCompanionWindow" overlapped="true" pick="true"/>
+    <Layer name="InventoryWindow" overlapped="true" pick="true"/>
+    <Layer name="SpellWindow" overlapped="true" pick="true"/>
+    <Layer name="MapWindow" overlapped="true" pick="true"/>
+    <Layer name="StatsWindow" overlapped="true" pick="true"/>
+    <Layer name="DialogueWindow" overlapped="true" pick="true"/>
+    <Layer name="ServiceWindow" overlapped="true" pick="true"/>
+    <Layer name="MainMenu" overlapped="true" pick="true"/>
+    <Layer name="JournalBooks" type="ScalingLayer" pick="true">
+      <Property key="Size" value="600 520"/>
+    </Layer>
+    <Layer name="Windows" overlapped="true" pick="true"/>
+    <Layer name="ListBox" overlapped="true" pick="true"/>
+    <Layer name="Debug" overlapped="true" pick="true"/>
+    <Layer name="Notification" overlapped="false" pick="false"/>
+    <Layer name="Tooltip" overlapped="true" pick="true"/>
+    <Layer name="Popup" overlapped="true" pick="true"/>
+    <Layer name="DragAndDrop" overlapped="false" pick="false"/>
+    <Layer name="LoadingScreen" overlapped="false" pick="true"/>
+    <Layer name="MessageBox" overlapped="false" pick="true"/>
+    <Layer name="InputBlocker" overlapped="false" pick="true"/>
+    <Layer name="VideoPlayer" overlapped="false" pick="true"/>
+    <Layer name="VirtualKeyboard" overlapped="false" pick="true"/>
+    <Layer name="Pointer" overlapped="false" pick="false"/>
+</MyGUI>

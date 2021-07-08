@@ -1,0 +1,26 @@
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:context=".MainActivity">
+    <group android:id="@+id/main_menu_group">
+
+        <item
+            android:id="@+id/action_reset_config"
+            android:title="@string/action_reset_config"
+            app:showAsAction="never"
+            />
+
+        <item
+            android:id="@+id/action_bugsnag_consent"
+            android:title="@string/action_bugsnag_consent"
+            app:showAsAction="never"
+            />
+
+        <item
+            android:id="@+id/action_about"
+            android:title="@string/action_about"
+            app:showAsAction="never"
+            />
+
+    </group>
+</menu>
