@@ -40,8 +40,11 @@ namespace SceneUtil
         /// Retrieve a bone by name.
         Bone* getBone(const std::string& name);
 
-        /// Request an update of bone matrices. May be a no-op if already updated in this frame.
-        void updateBoneMatrices(unsigned int traversalNumber);
+//## VR_PATCH BEGIN
+        /// Request an update of bone matrices. May be a no-op if already updated in this frame. Returns true if update
+        /// was performed.
+        bool updateBoneMatrices(unsigned int traversalNumber);
+//## VR_PATCH END
 
         enum ActiveType
         {
@@ -60,6 +63,12 @@ namespace SceneUtil
 
         void markDirty();
 
+//## VR_PATCH BEGIN
+        void markBoneMatriceDirty();
+        void setIsTracked(bool tracked) { mTracked = tracked; }
+        bool isTracked() const { return mTracked; }
+
+//## VR_PATCH END
         void childInserted(unsigned int) override;
         void childRemoved(unsigned int, unsigned int) override;
 
@@ -73,6 +82,9 @@ namespace SceneUtil
         bool mBoneCacheInit;
 
         bool mNeedToUpdateBoneMatrices;
+//## VR_PATCH BEGIN
+        bool mTracked;
+//## VR_PATCH END
 
         ActiveType mActive;
 

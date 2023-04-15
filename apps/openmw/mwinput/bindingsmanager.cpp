@@ -55,6 +55,14 @@ namespace MWInput
         }
     };
 
+//## VR_PATCH BEGIN
+// The VR input manager needs to forward XR inputs to ICS.
+    ICS::InputControlSystem& BindingsManager::ics()
+    {
+        return *mInputBinder;
+    }
+
+//## VR_PATCH END
     class BindingsListener : public ICS::ChannelListener, public ICS::DetectingBindingListener
     {
     public:

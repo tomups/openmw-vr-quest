@@ -59,14 +59,15 @@ namespace MWRender
         }
         else
         {
-            renderStage->setMultisampleResolveFramebufferObject(
-                mPostProcessor->getFbo(PostProcessor::FBO_Primary, frameId));
-            renderStage->setFrameBufferObject(mPostProcessor->getFbo(PostProcessor::FBO_Multisample, frameId));
-
-            // The MultiView patch has a bug where it does not update resolve layers if the resolve framebuffer is
-            // changed. So we do blit manually in this case
-            if (Stereo::getMultiview() && !renderStage->getDrawCallback())
-                Stereo::setMultiviewMSAAResolveCallback(renderStage);
+//## VR_PATCH BEGIN
+// VR branch bases itself on my build of osg that doesn't have this bug
+            if (mPostProcessor->getFbo(PostProcessor::FBO_Primary, frameId)
+                != renderStage->getMultisampleResolveFramebufferObject())
+                renderStage->setMultisampleResolveFramebufferObject(
+                    mPostProcessor->getFbo(PostProcessor::FBO_Primary, frameId));
+            if (mPostProcessor->getFbo(PostProcessor::FBO_Multisample, frameId) != renderStage->getFrameBufferObject())
+                renderStage->setFrameBufferObject(mPostProcessor->getFbo(PostProcessor::FBO_Multisample, frameId));
+//## VR_PATCH END
         }
 
         if (mViewportStateset)

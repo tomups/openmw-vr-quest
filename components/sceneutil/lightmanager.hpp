@@ -374,6 +374,9 @@ namespace SceneUtil
         LightManager* mLightManager;
         size_t mLastFrameNumber;
         LightManager::LightList mLightList;
+//## VR_PATCH BEGIN
+        LightManager::LightList mLightListCropped;
+//## VR_PATCH END
         std::set<SceneUtil::LightSource*> mIgnoredLightSources;
     };
 

@@ -598,7 +598,9 @@ void Launcher::MainDialog::play()
 
     // Launch the game detached
 
-    if (mGameInvoker->startProcess(QLatin1String("openmw"), true))
+//## VR_PATCH BEGIN
+    if (mGameInvoker->startProcess(QLatin1String("openmw_vr"), true))
+//## VR_PATCH END
         return qApp->quit();
 }
 

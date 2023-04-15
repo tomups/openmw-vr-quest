@@ -36,6 +36,9 @@ namespace SceneUtil
     Skeleton::Skeleton()
         : mBoneCacheInit(false)
         , mNeedToUpdateBoneMatrices(true)
+//## VR_PATCH BEGIN
+        , mTracked(false)
+//## VR_PATCH END
         , mActive(Active)
         , mLastFrameNumber(0)
         , mLastCullFrameNumber(0)
@@ -46,6 +49,9 @@ namespace SceneUtil
         : osg::Group(copy, copyop)
         , mBoneCacheInit(false)
         , mNeedToUpdateBoneMatrices(true)
+//## VR_PATCH BEGIN
+        , mTracked(false)
+//## VR_PATCH END
         , mActive(copy.mActive)
         , mLastFrameNumber(0)
         , mLastCullFrameNumber(0)
@@ -92,7 +98,9 @@ namespace SceneUtil
         return bone;
     }
 
-    void Skeleton::updateBoneMatrices(unsigned int traversalNumber)
+//## VR_PATCH BEGIN
+    bool Skeleton::updateBoneMatrices(unsigned int traversalNumber)
+//## VR_PATCH END
     {
         if (traversalNumber != mLastFrameNumber)
             mNeedToUpdateBoneMatrices = true;
@@ -108,7 +116,11 @@ namespace SceneUtil
             }
 
             mNeedToUpdateBoneMatrices = false;
+//## VR_PATCH BEGIN
+            return true;
         }
+        return false;
+//## VR_PATCH END
     }
 
     void Skeleton::setActive(ActiveType active)
@@ -128,6 +140,13 @@ namespace SceneUtil
         mBoneCacheInit = false;
     }
 
+//## VR_PATCH BEGIN
+    void Skeleton::markBoneMatriceDirty()
+    {
+        mNeedToUpdateBoneMatrices = true;
+    }
+
+//## VR_PATCH END
     void Skeleton::traverse(osg::NodeVisitor& nv)
     {
         if (nv.getVisitorType() == osg::NodeVisitor::UPDATE_VISITOR)

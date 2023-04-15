@@ -28,11 +28,17 @@
 #include "spellicons.hpp"
 #include "spellview.hpp"
 
+//## VR_PATCH BEGIN
+#include <components/vr/vr.hpp>
+//## VR_PATCH END
+
 namespace MWGui
 {
 
     SpellWindow::SpellWindow(DragAndDrop* drag)
-        : WindowPinnableBase("openmw_spell_window.layout")
+//## VR_PATCH BEGIN
+        : WindowPinnableBase(VR::getVR() ? "openmw_spell_window_vr.layout" : "openmw_spell_window.layout")
+//## VR_PATCH END
         , NoDrop(drag, mMainWidget)
         , mSpellView(nullptr)
         , mUpdateTimer(0.0f)

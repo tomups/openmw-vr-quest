@@ -51,7 +51,9 @@ namespace Stereo
 
     osg::Matrix View::viewMatrix(bool useGLConventions)
     {
-        auto position = pose.position;
+//## VR_PATCH BEGIN
+        auto position = pose.position.asMWUnits();
+//## VR_PATCH END
         auto orientation = pose.orientation;
 
         if (useGLConventions)
@@ -144,7 +146,10 @@ namespace Stereo
 
     std::ostream& operator<<(std::ostream& os, const Pose& pose)
     {
-        os << "position=" << pose.position << ", orientation=" << pose.orientation;
+//## VR_PATCH BEGIN
+        os << "position={ Meters=" << pose.position.asMeters() << ", MWUnits=" << pose.position.asMWUnits()
+           << " }, orientation=" << pose.orientation;
+//## VR_PATCH END
         return os;
     }
 
@@ -160,4 +165,42 @@ namespace Stereo
         os << "pose=< " << view.pose << " >, fov=< " << view.fov << " >";
         return os;
     }
+//## VR_PATCH BEGIN
+    // OSG doesn't provide API to extract euler angles from a quat, but i need it.
+    // Credits goes to Dennis Bunfield, i just copied his formula https://narkive.com/v0re6547.4
+    void getEulerAngles(const osg::Quat& quat, float& yaw, float& pitch, float& roll)
+    {
+        // Now do the computation
+        osg::Matrixd m2(osg::Matrixd::rotate(quat));
+        double* mat = (double*)m2.ptr();
+        double angle_x = 0.0;
+        double angle_y = 0.0;
+        double angle_z = 0.0;
+        double D, C, tr_x, tr_y;
+        angle_y = D = asin(mat[2]); /* Calculate Y-axis angle */
+        C = cos(angle_y);
+        if (fabs(C) > 0.005) /* Test for Gimball lock? */
+        {
+            tr_x = mat[10] / C; /* No, so get X-axis angle */
+            tr_y = -mat[6] / C;
+            angle_x = atan2(tr_y, tr_x);
+            tr_x = mat[0] / C; /* Get Z-axis angle */
+            tr_y = -mat[1] / C;
+            angle_z = atan2(tr_y, tr_x);
+        }
+        else /* Gimball lock has occurred */
+        {
+            angle_x = 0; /* Set X-axis angle to zero
+                          */
+            tr_x = mat[5]; /* And calculate Z-axis angle
+                            */
+            tr_y = mat[4];
+            angle_z = atan2(tr_y, tr_x);
+        }
+
+        yaw = angle_z;
+        pitch = angle_x;
+        roll = angle_y;
+    }
+//## VR_PATCH END
 }

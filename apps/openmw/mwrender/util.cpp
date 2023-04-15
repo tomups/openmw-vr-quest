@@ -1,6 +1,7 @@
 #include "util.hpp"
 
 #include <osg/Node>
+#include <osg/RenderInfo>
 #include <osg/ValueObject>
 
 #include <components/misc/resourcehelpers.hpp>
@@ -69,6 +70,21 @@ namespace MWRender
         node.setStateSet(stateset);
     }
 
+//## VR_PATCH BEGIN
+    MipmapCallback::~MipmapCallback() {}
+
+    void MipmapCallback::operator()(osg::RenderInfo& renderInfo) const
+    {
+        auto* gl = renderInfo.getState()->get<osg::GLExtensions>();
+        auto* tex = mTexture->getTextureObject(renderInfo.getContextID());
+        if (tex)
+        {
+            tex->bind();
+            gl->glGenerateMipmap(tex->target());
+        }
+    }
+    
+//## VR_PATCH END
     bool shouldAddMSAAIntermediateTarget()
     {
         return Settings::shaders().mAntialiasAlphaTest && Settings::video().mAntialiasing > 1;

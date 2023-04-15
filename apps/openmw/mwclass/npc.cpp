@@ -23,6 +23,7 @@
 
 #include "../mwbase/dialoguemanager.hpp"
 #include "../mwbase/environment.hpp"
+#include "../mwbase/inputmanager.hpp"
 #include "../mwbase/luamanager.hpp"
 #include "../mwbase/mechanicsmanager.hpp"
 #include "../mwbase/soundmanager.hpp"
@@ -621,7 +622,7 @@ namespace MWClass
         if (!success)
         {
             othercls.onHit(
-                victim, damage, false, weapon, ptr, osg::Vec3f(), false, MWMechanics::DamageSourceType::Melee);
+                victim, damage, false, weapon, ptr, osg::Vec3f(), false, -1, MWMechanics::DamageSourceType::Melee);
             MWMechanics::reduceWeaponCondition(damage, false, weapon, ptr);
             MWMechanics::resistNormalWeapon(victim, ptr, weapon, damage);
             return;
@@ -694,16 +695,23 @@ namespace MWClass
 
         MWMechanics::diseaseContact(victim, ptr);
 
-        othercls.onHit(victim, damage, healthdmg, weapon, ptr, hitPosition, true, MWMechanics::DamageSourceType::Melee);
+        othercls.onHit(victim, damage, healthdmg, weapon, ptr, hitPosition, true, attackStrength, MWMechanics::DamageSourceType::Melee);
     }
 
+//## VR_PATCH BEGIN
+// Add hitStrength to signature
     void Npc::onHit(const MWWorld::Ptr& ptr, float damage, bool ishealth, const MWWorld::Ptr& object,
-        const MWWorld::Ptr& attacker, const osg::Vec3f& hitPosition, bool successful,
+        const MWWorld::Ptr& attacker, const osg::Vec3f& hitPosition, bool successful, float hitStrength,
         const MWMechanics::DamageSourceType sourceType) const
+//## VR_PATCH END
     {
         MWBase::SoundManager* sndMgr = MWBase::Environment::get().getSoundManager();
         MWMechanics::CreatureStats& stats = getCreatureStats(ptr);
         bool wasDead = stats.isDead();
+//## VR_PATCH BEGIN
+// Set aside raw damage before adjustments, to use for haptics
+        float rawDamage = damage;
+//## VR_PATCH END
 
         bool setOnPcHitMe = true;
 
@@ -899,6 +907,25 @@ namespace MWClass
 
             MWBase::Environment::get().getMechanicsManager()->actorKilled(ptr, attacker);
         }
+//## VR_PATCH BEGIN
+
+        // Apply haptics
+        if (successful)
+        {
+            auto inputManager = MWBase::Environment::get().getInputManager();
+            if (ptr == MWMechanics::getPlayer())
+            {
+                float maxHealth = getCreatureStats(ptr).getHealth().getModified();
+                float hapticIntensity = std::max(0.25f, std::min(1.f, rawDamage / (maxHealth / 4.f)));
+                inputManager->applyHapticsLeftHand(hapticIntensity);
+            }
+            else if (attacker == MWMechanics::getPlayer() && hitStrength > 0.f)
+            {
+                float hapticIntensity = std::max(0.25f, std::min(1.f, hitStrength));
+                inputManager->applyHapticsRightHand(hapticIntensity);
+            }
+        }
+//## VR_PATCH END
     }
 
     std::unique_ptr<MWWorld::Action> Npc::activate(const MWWorld::Ptr& ptr, const MWWorld::Ptr& actor) const

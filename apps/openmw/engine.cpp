@@ -22,6 +22,20 @@
 #include <components/sdlutil/imagetosurface.hpp>
 #include <components/sdlutil/sdlgraphicswindow.hpp>
 
+// ## VR_PATCH BEGIN
+#include "mwrender/camera.hpp"
+#include "mwvr/vrgui.hpp"
+#include "mwvr/vrinputmanager.hpp"
+#include <components/misc/callbackmanager.hpp>
+#include <components/shader/shadermanager.hpp>
+#include <components/vr/session.hpp>
+#include <components/vr/trackingmanager.hpp>
+#include <components/vr/viewer.hpp>
+#include <components/vr/vr.hpp>
+#include <components/xr/instance.hpp>
+#include <components/xr/session.hpp>
+// ## VR_PATCH END
+
 #include <components/resource/resourcesystem.hpp>
 #include <components/resource/scenemanager.hpp>
 #include <components/resource/stats.hpp>
@@ -174,6 +188,22 @@ namespace
         for (osg::Camera* camera : cameras)
             camera->getStats()->report(stream, frameNumber);
     }
+    // ## VR_PATCH BEGIN
+
+    class InitializeVrOperation : public osg::GraphicsOperation
+    {
+    public:
+        InitializeVrOperation(OMW::Engine* engine)
+            : GraphicsOperation("InitializeVrOperation", false)
+            , mEngine(engine)
+        {
+        }
+
+        void operator()(osg::GraphicsContext* graphicsContext) override { mEngine->configureVR(graphicsContext); }
+
+        OMW::Engine* mEngine;
+    };
+    // ## VR_PATCH END
 }
 
 void OMW::Engine::executeLocalScripts()
@@ -378,6 +408,11 @@ OMW::Engine::Engine(Files::ConfigurationManager& configurationManager)
     , mNewGame(false)
     , mCfgMgr(configurationManager)
     , mGlMaxTextureImageUnits(0)
+    // ## VR_PATCH BEGIN
+    , mVrTrackingManager(nullptr)
+    , mVrGUIManager(nullptr)
+    , mXrInstance(nullptr)
+// ## VR_PATCH END
 {
 #if SDL_VERSION_ATLEAST(2, 24, 0)
     SDL_SetHint(SDL_HINT_MAC_OPENGL_ASYNC_DISPATCH, "1");
@@ -400,6 +435,15 @@ OMW::Engine::~Engine()
 {
     if (mScreenCaptureOperation != nullptr)
         mScreenCaptureOperation->stop();
+
+           // ## VR_PATCH BEGIN
+    mVrViewer = nullptr;
+    mCallbackManager = nullptr;
+    mVrGUIManager = nullptr;
+    mXrSession = nullptr;
+    mXrInstance = nullptr;
+    mVrTrackingManager = nullptr;
+    // ## VR_PATCH END
 
     mMechanicsManager = nullptr;
     mDialogueManager = nullptr;
@@ -490,6 +534,12 @@ void OMW::Engine::createWindow()
     const bool windowBorder = Settings::video().mWindowBorder;
     const SDLUtil::VSyncMode vsync = Settings::video().mVsyncMode;
     unsigned antialiasing = static_cast<unsigned>(Settings::video().mAntialiasing);
+
+           // ## VR_PATCH BEGIN
+    if (VR::getVR())
+        // MSAA needs to happen in offscreen buffers.
+        antialiasing = 0;
+    // ## VR_PATCH END
 
     int pos_x = SDL_WINDOWPOS_CENTERED_DISPLAY(screen), pos_y = SDL_WINDOWPOS_CENTERED_DISPLAY(screen);
 
@@ -619,6 +669,11 @@ void OMW::Engine::createWindow()
     if (Debug::shouldDebugOpenGL())
         realizeOperations->add(new Debug::EnableGLDebugOperation());
 
+           // ## VR_PATCH BEGIN
+    if (VR::getVR())
+        realizeOperations->add(new InitializeVrOperation(this));
+    // ## VR_PATCH END
+
     realizeOperations->add(mSelectDepthFormatOperation);
     realizeOperations->add(mSelectColorFormatOperation);
 
@@ -649,7 +704,7 @@ void OMW::Engine::createWindow()
             settings.mCustomView = Stereo::CustomView{
                 .mLeft = Stereo::View{
                     .pose = Stereo::Pose{
-                        .position = leftEyeOffset,
+                        .position = Stereo::Position::fromMeters(leftEyeOffset),
                         .orientation = leftEyeOrientation,
                     },
                     .fov = Stereo::FieldOfView{
@@ -661,7 +716,7 @@ void OMW::Engine::createWindow()
                 },
                 .mRight = Stereo::View{
                     .pose = Stereo::Pose{
-                        .position = rightEyeOffset,
+                        .position = Stereo::Position::fromMeters(rightEyeOffset),
                         .orientation = rightEyeOrientation,
                     },
                     .fov = Stereo::FieldOfView{
@@ -719,13 +774,17 @@ void OMW::Engine::prepareEngine()
     mEnvironment.setStateManager(*mStateManager);
 
     const bool stereoEnabled = Settings::stereo().mStereoEnabled || osg::DisplaySettings::instance().get()->getStereo();
-    mStereoManager = std::make_unique<Stereo::Manager>(
-        mViewer, stereoEnabled, Settings::camera().mNearClip, Settings::camera().mViewingDistance);
+    mStereoManager = std::make_unique<Stereo::Manager>(mViewer, stereoEnabled, Settings::camera().mNearClip,
+        Settings::camera().mViewingDistance, static_cast<unsigned>(Settings::video().mAntialiasing));
 
     osg::ref_ptr<osg::Group> rootNode(new osg::Group);
     mViewer->setSceneData(rootNode);
 
     createWindow();
+
+           // ## VR_PATCH BEGIN
+    mCallbackManager = std::make_unique<Misc::CallbackManager>(mViewer);
+    // ## VR_PATCH END
 
     mVFS = std::make_unique<VFS::Manager>();
 
@@ -815,15 +874,69 @@ void OMW::Engine::prepareEngine()
         Version::getOpenmwVersionDescription(), shadersSupported, mCfgMgr);
     mEnvironment.setWindowManager(*mWindowManager);
 
-    mInputManager = std::make_unique<MWInput::InputManager>(mWindow, mViewer, mScreenCaptureHandler, keybinderUser,
-        keybinderUserExists, userGameControllerdb, gameControllerdb, mGrab);
+           // ## VR_PATCH BEGIN
+    if (VR::getVR())
+    {
+        mVrGUIManager = std::make_unique<MWVR::VRGUIManager>(mResourceSystem.get(), mViewer->getSceneData()->asGroup());
+
+        const std::string xrinputuserdefault = mCfgMgr.getUserConfigPath().string() + "/xrcontrollersuggestions.xml";
+        const std::string xrinputlocaldefault = mCfgMgr.getLocalPath().string() + "/xrcontrollersuggestions.xml";
+        const std::string xrinputglobaldefault = mCfgMgr.getGlobalPath().string() + "/xrcontrollersuggestions.xml";
+
+        std::string xrControllerSuggestions;
+        if (std::filesystem::exists(xrinputuserdefault))
+            xrControllerSuggestions = xrinputuserdefault;
+        else if (std::filesystem::exists(xrinputlocaldefault))
+            xrControllerSuggestions = xrinputlocaldefault;
+        else if (std::filesystem::exists(xrinputglobaldefault))
+            xrControllerSuggestions = xrinputglobaldefault;
+        else
+            xrControllerSuggestions = ""; // if it doesn't exist, pass in an empty string
+
+        std::string defaultXrControllerSuggestions;
+        if (std::filesystem::exists(xrinputlocaldefault))
+            defaultXrControllerSuggestions = xrinputlocaldefault;
+        else if (std::filesystem::exists(xrinputglobaldefault))
+            defaultXrControllerSuggestions = xrinputglobaldefault;
+        else
+            defaultXrControllerSuggestions = ""; // if it doesn't exist, pass in an empty string
+
+        Log(Debug::Verbose) << "xrinputuserdefault: " << xrinputuserdefault;
+        Log(Debug::Verbose) << "xrinputlocaldefault: " << xrinputlocaldefault;
+        Log(Debug::Verbose) << "xrinputglobaldefault: " << xrinputglobaldefault;
+
+        mInputManager = std::make_unique<MWVR::VRInputManager>(mWindow, mViewer, mScreenCaptureHandler, keybinderUser,
+            keybinderUserExists, userGameControllerdb, gameControllerdb, mGrab, xrControllerSuggestions,
+            defaultXrControllerSuggestions);
+    }
+    else
+    {
+        mInputManager = std::make_unique<MWInput::InputManager>(mWindow, mViewer, mScreenCaptureHandler, keybinderUser,
+            keybinderUserExists, userGameControllerdb, gameControllerdb, mGrab);
+    }
+    // ## VR_PATCH END
     mEnvironment.setInputManager(*mInputManager);
 
     // Create sound system
     mSoundManager = std::make_unique<MWSound::SoundManager>(mVFS.get(), mUseSound);
     mEnvironment.setSoundManager(*mSoundManager);
 
-    // Create the world
+    // ## VR_PATCH BEGIN
+    if(VR::getVR())
+    {
+        mVrViewer = std::make_unique<VR::Viewer>(mXrSession, mViewer);
+        mVrViewer->configureCallbacks();
+        auto cullMask = ~(MWRender::VisMask::Mask_UpdateVisitor | MWRender::VisMask::Mask_SimpleWater);
+        cullMask &= ~MWRender::VisMask::Mask_GUI;
+        cullMask |= MWRender::VisMask::Mask_3DGUI;
+        mViewer->getCamera()->setCullMask(cullMask);
+        mViewer->getCamera()->setCullMaskLeft(cullMask);
+        mViewer->getCamera()->setCullMaskRight(cullMask);
+    }
+
+    auto camera = std::make_unique<MWRender::Camera>(mViewer->getCamera());
+    // ## VR_PATCH END
+    //  Create the world
     mWorld = std::make_unique<MWWorld::World>(
         mResourceSystem.get(), mActivationDistanceOverride, mCellName, mCfgMgr.getUserDataPath());
     mEnvironment.setWorld(*mWorld);
@@ -851,7 +964,7 @@ void OMW::Engine::prepareEngine()
     }
     listener->loadingOff();
 
-    mWorld->init(mMaxRecastLogLevel, mViewer, std::move(rootNode), mWorkQueue.get(), *mUnrefQueue);
+    mWorld->init(mMaxRecastLogLevel, mViewer, std::move(rootNode), mWorkQueue.get(), *mUnrefQueue, std::move(camera));
     mEnvironment.setWorldScene(mWorld->getWorldScene());
     mWorld->setupPlayer();
     mWorld->setRandomSeed(mRandomSeed);
@@ -989,7 +1102,18 @@ void OMW::Engine::go()
     if (stats.is_open())
         Resource::collectStatistics(*mViewer);
 
-    // Start the game
+           // ## VR_PATCH BEGIN
+    if (VR::getVR())
+    {
+        // Mask_GUI gets re-enabled at some point.
+        mViewer->getCamera()->setCullMask(mViewer->getCamera()->getCullMask() & ~(MWRender::VisMask::Mask_GUI));
+
+               // Run through height calibration if the user has not already done so
+        static_cast<MWVR::VRInputManager*>(mInputManager.get())->calibrate();
+    }
+
+           // ## VR_PATCH END
+    //  Start the game
     if (!mSaveGameFile.empty())
     {
         mStateManager->loadGame(mSaveGameFile);
@@ -1127,3 +1251,15 @@ void OMW::Engine::setRandomSeed(unsigned int seed)
 {
     mRandomSeed = seed;
 }
+
+// ## VR_PATCH BEGIN
+void OMW::Engine::configureVR(osg::GraphicsContext* gc)
+{
+    mVrTrackingManager = std::make_unique<VR::TrackingManager>();
+    mXrInstance = std::make_unique<XR::Instance>(gc);
+    mXrSession = mXrInstance->createSession();
+    if (mXrSession->appShouldShareDepthInfo())
+        mSelectDepthFormatOperation->setSupportedFormats(mXrInstance->platform().supportedDepthFormats());
+    mSelectColorFormatOperation->setSupportedFormats({ mXrInstance->platform().supportedColorFormats() });
+}
+// ## VR_PATCH END

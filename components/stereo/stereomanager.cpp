@@ -24,6 +24,9 @@
 #include <components/sceneutil/statesetupdater.hpp>
 
 #include <components/settings/values.hpp>
+//## VR_PATCH BEGIN
+#include <components/vr/vr.hpp>
+//## VR_PATCH END
 
 namespace Stereo
 {
@@ -114,7 +117,7 @@ namespace Stereo
         return *sInstance;
     }
 
-    Manager::Manager(osgViewer::Viewer* viewer, bool enableStereo, double near, double far)
+    Manager::Manager(osgViewer::Viewer* viewer, bool enableStereo, double near, double far, int samples)
         : mViewer(viewer)
         , mMainCamera(mViewer->getCamera())
         , mUpdateCallback(new StereoUpdateCallback(this))
@@ -123,6 +126,7 @@ namespace Stereo
         , mEyeResolutionOverride(0, 0)
         , mNear(near)
         , mFar(far)
+        , mSamples(samples)
         , mFrustumManager(nullptr)
         , mUpdateViewCallback(nullptr)
     {
@@ -147,7 +151,9 @@ namespace Stereo
         else
             setupBruteForceTechnique();
 
-        updateStereoFramebuffer();
+//## VR_PATCH BEGIN
+        updateMultiviewFramebuffer();
+//## VR_PATCH END
     }
 
     void shaderStereoDefines(Shader::ShaderManager::DefineMap& defines)
@@ -169,13 +175,15 @@ namespace Stereo
         mEyeResolutionOverride = eyeResolution;
         mEyeResolutionOverriden = true;
 
-        // if (mMultiviewFramebuffer)
-        //     updateStereoFramebuffer();
+//## VR_PATCH BEGIN
+        if (mMultiviewFramebuffer)
+            updateMultiviewFramebuffer();
     }
 
     void Manager::screenResolutionChanged()
     {
-        updateStereoFramebuffer();
+        updateMultiviewFramebuffer();
+//## VR_PATCH END
     }
 
     osg::Vec2i Manager::eyeResolution()
@@ -272,21 +280,31 @@ namespace Stereo
         mMainCamera->addCullCallback(new MultiviewStereoStatesetUpdateCallback(this));
     }
 
-    void Manager::updateStereoFramebuffer()
+//## VR_PATCH BEGIN
+    void Manager::updateMultiviewFramebuffer()
     {
-        // VR-TODO: in VR, still need to have this framebuffer attached before the postprocessor is created
-        // auto samples = /*do not use Settings here*/;
-        // auto eyeRes = eyeResolution();
 
-        // if (mMultiviewFramebuffer)
-        //     mMultiviewFramebuffer->detachFrom(mMainCamera);
-        // mMultiviewFramebuffer = std::make_shared<MultiviewFramebuffer>(static_cast<int>(eyeRes.x()),
-        // static_cast<int>(eyeRes.y()), samples);
-        // mMultiviewFramebuffer->attachColorComponent(SceneUtil::Color::colorSourceFormat(),
-        // SceneUtil::Color::colorSourceType(), SceneUtil::Color::colorInternalFormat());
-        // mMultiviewFramebuffer->attachDepthComponent(SceneUtil::AutoDepth::depthSourceFormat(),
-        // SceneUtil::AutoDepth::depthSourceType(), SceneUtil::AutoDepth::depthInternalFormat());
-        // mMultiviewFramebuffer->attachTo(mMainCamera);
+        auto eyeRes = eyeResolution();
+
+        if (mMultiviewFramebuffer && mMultiviewFramebufferIsAttached)
+        {
+            mMultiviewFramebuffer->detachFrom(mMainCamera);
+            mMultiviewFramebufferIsAttached = false;
+        }
+
+        mMultiviewFramebuffer = std::make_shared<MultiviewFramebuffer>(
+            static_cast<int>(eyeRes.x()), static_cast<int>(eyeRes.y()), mSamples);
+        mMultiviewFramebuffer->attachColorComponent(SceneUtil::Color::colorSourceFormat(),
+            SceneUtil::Color::colorSourceType(), SceneUtil::Color::colorInternalFormat());
+        mMultiviewFramebuffer->attachDepthComponent(SceneUtil::AutoDepth::depthSourceFormat(),
+            SceneUtil::AutoDepth::depthSourceType(), SceneUtil::AutoDepth::depthInternalFormat());
+
+        if (mShouldAttachMultiviewFramebufferToMainCamera)
+        {
+            mMultiviewFramebuffer->attachTo(mMainCamera);
+            mMultiviewFramebufferIsAttached = true;
+        }
+//## VR_PATCH END
     }
 
     void Manager::update()
@@ -349,12 +367,9 @@ namespace Stereo
         mUpdateViewCallback = std::move(cb);
     }
 
-    void Manager::setCullCallback(osg::ref_ptr<osg::NodeCallback> cb)
-    {
-        mMainCamera->setCullCallback(cb);
-    }
-
+//## VR_PATCH BEGIN
     osg::Matrixd Manager::computeEyeProjection(int view, bool reverseZ) const
+//## VR_PATCH END
     {
         return reverseZ ? mProjectionMatrixReverseZ[view] : mProjectionMatrix[view];
     }
@@ -375,12 +390,30 @@ namespace Stereo
         return Eye::Center;
     }
 
+//## VR_PATCH BEGIN
+    void Manager::setShouldAttachMultiviewFramebufferToMainCamera(bool attach)
+    {
+        mShouldAttachMultiviewFramebufferToMainCamera = attach;
+        updateMultiviewFramebuffer();
+    }
+
+    void Manager::setSamples(int samples)
+    {
+        if(samples != mSamples)
+        {
+            mSamples = samples;
+            updateMultiviewFramebuffer();
+        }
+    }
+
     bool getStereo()
     {
+        // MERGETODO: Make sure VR::getVR() is used to determine sStereoEnabled
+//## VR_PATCH END
         return sStereoEnabled;
     }
 
-    Manager::CustomViewCallback::CustomViewCallback(View& left, View& right)
+    Manager::CustomViewCallback::CustomViewCallback(const View& left, const View& right)
         : mLeft(left)
         , mRight(right)
     {

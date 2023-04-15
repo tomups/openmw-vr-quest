@@ -20,7 +20,6 @@
 #include "character.hpp"
 
 #include <array>
-#include <unordered_set>
 
 #include <components/esm/records.hpp>
 #include <components/misc/mathutil.hpp>
@@ -56,6 +55,12 @@
 #include "security.hpp"
 #include "spellcasting.hpp"
 #include "weapontype.hpp"
+
+//## VR_PATCH BEGIN
+#include <components/vr/vr.hpp>
+#include "../mwvr/vrutil.hpp"
+#include "../mwrender/npcanimation.hpp"
+//## VR_PATCH END
 
 namespace
 {
@@ -1097,6 +1102,10 @@ namespace MWMechanics
                     attackType = ESM::Weapon::AT_Thrust;
             }
             else if (action == "chop hit")
+//## VR_PATCH BEGIN
+                // MERGETODO: old else was: charClass.hit(mPtr, mAttackStrength, -1); vr had added the -1. Make sure this is still equivalent
+                // Read up on what .48 VR was doing here.
+//## VR_PATCH END
                 attackType = ESM::Weapon::AT_Chop;
             else if (action == "slash hit")
                 attackType = ESM::Weapon::AT_Slash;
@@ -1665,6 +1674,12 @@ namespace MWMechanics
                 {
                     std::string startKey = "start";
                     std::string stopKey = "stop";
+//## VR_PATCH BEGIN
+// MERGETODO: upstream removed or moved the target part of this.
+// Read what .48 VR changed here and reproduce it i guess?
+                    if(VR::getVR())
+                        MWWorld::Ptr target = MWVR::Util::getWeaponTarget().first;
+//## VR_PATCH END
 
                     MWBase::LuaManager::ActorControls* actorControls
                         = MWBase::Environment::get().getLuaManager()->getActorControls(mPtr);
@@ -2512,6 +2527,19 @@ namespace MWMechanics
         mSkipAnim = false;
 
         mAnimation->enableHeadAnimation(cls.isActor() && !cls.getCreatureStats(mPtr).isDead());
+//## VR_PATCH BEGIN
+// Switch to VRNormal, making the character visible, if disabled for any reason such as paralysis, or daeth.
+// VR-TODO: This code should probably be elsewhere.
+        if (VR::getVR() && isPlayer)
+        {
+            auto disabled = MWBase::Environment::get().getWorld()->getPlayer().isDisabled();
+            auto animation = static_cast<MWRender::NpcAnimation*>(mAnimation);
+            if (disabled)
+                animation->setViewMode(MWRender::NpcAnimation::VM_VRNormal);
+            else
+                animation->setViewMode(MWRender::NpcAnimation::VM_VRFirstPerson);
+        }
+//## VR_PATCH END
     }
 
     void CharacterController::persistAnimationState() const

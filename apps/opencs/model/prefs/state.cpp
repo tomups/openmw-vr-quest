@@ -244,6 +244,11 @@ void CSMPrefs::State::declare()
             "Selection can be chosen between select only, add to selection, remove from selection and invert "
             "selection.");
 
+//## VR_PATCH BEGIN
+    setDefaultHidden("stereo enabled", "Stereo", "false");
+    setDefaultHidden("multiview", "Stereo", "false");
+
+//## VR_PATCH END
     declareCategory("Key Bindings");
 
     declareSubcategory("Document");
@@ -550,6 +555,18 @@ void CSMPrefs::State::declareSubcategory(const QString& label)
         new CSMPrefs::Subcategory(&mCurrentCategory->second, &mMutex, label, *mIndex));
 }
 
+//## VR_PATCH BEGIN
+void CSMPrefs::State::setDefaultHidden(const std::string& key, const std::string& category, const std::string& default_)
+{
+    Settings::CategorySetting fullKey(category, key);
+
+    Settings::CategorySettingValueMap::iterator iter = Settings::Manager::mDefaultSettings.find(fullKey);
+
+    if (iter == Settings::Manager::mDefaultSettings.end())
+        Settings::Manager::mDefaultSettings.insert(std::make_pair(fullKey, default_));
+}
+
+//## VR_PATCH END
 CSMPrefs::State::State(const Files::ConfigurationManager& configurationManager)
     : mConfigFile("openmw-cs.cfg")
     , mDefaultConfigFile("defaults-cs.bin")

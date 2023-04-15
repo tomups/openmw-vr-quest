@@ -157,15 +157,22 @@ namespace SceneUtil
         }
         else
         {
+//## VR_PATCH BEGIN
+            bool foundRequestedFormat = false;
             for (auto requestedFormat : requestedFormats)
             {
                 if (std::find(mSupportedFormats.cbegin(), mSupportedFormats.cend(), requestedFormat)
                     != mSupportedFormats.cend())
                 {
                     SceneUtil::AutoDepth::setDepthFormat(requestedFormat);
+                    foundRequestedFormat = true;
                     break;
                 }
             }
+
+            if (!foundRequestedFormat)
+                SceneUtil::AutoDepth::setDepthFormat(mSupportedFormats[0]);
+//## VR_PATCH END
         }
     }
 

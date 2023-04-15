@@ -63,7 +63,7 @@ add_openmw_dir (mwlua
     context menuscripts globalscripts localscripts playerscripts luabindings objectbindings cellbindings coremwscriptbindings
     mwscriptbindings camerabindings vfsbindings uibindings soundbindings inputbindings nearbybindings dialoguebindings
     postprocessingbindings stats recordstore debugbindings corebindings worldbindings worker landbindings magicbindings factionbindings
-    classbindings itemdata inputprocessor animationbindings birthsignbindings racebindings markupbindings
+    classbindings itemdata inputprocessor animationbindings birthsignbindings racebindings markupbindings vrbindings
     types/types types/door types/item types/actor types/container types/lockable types/weapon types/npc
     types/creature types/player types/activator types/book types/lockpick types/probe types/apparatus
     types/potion types/ingredient types/misc types/repair types/armor types/light types/static
@@ -116,6 +116,13 @@ add_openmw_dir (mwbase
     inputmanager windowmanager statemanager luamanager
     )
 
+add_openmw_dir (mwvr
+     openxrinput
+     radialmenu realisticcombat
+     vranimation vrgui vrinputmanager vrinput vrlistbox vrmetamenu vrpingpongcallback vrpointer vrtracking vrtypes vrutil vrvirtualkeyboard
+    )
+
+
 # Main executable
 
 add_library(openmw-lib STATIC
@@ -144,6 +151,21 @@ if(BUILD_OPENMW)
     if (CMAKE_CXX_COMPILER_ID STREQUAL Clang)
         set_target_properties(openmw PROPERTIES ENABLE_EXPORTS ON)
     endif()
+endif()
+
+if(BUILD_OPENMW_VR)
+    openmw_add_executable(openmw_vr
+        ${APPLE_BUNDLE_RESOURCES}
+        ${OPENMW_RESOURCES}
+        main.cpp
+    )
+    target_link_libraries(openmw_vr openmw-lib)
+    target_compile_definitions(openmw_vr PRIVATE OPENMW_VR=1)
+    #if (WIN32)
+    #    target_compile_options(openmw_vr PUBLIC XR_USE_GRAPHICS_API_OPENGL XR_USE_GRAPHICS_API_D3D11 XR_USE_PLATFORM_WIN32)
+    #elseif(UNIX)
+    #    target_compile_options(openmw_vr PUBLIC XR_USE_GRAPHICS_API_OPENGL XR_USE_PLATFORM_XLIB)
+    #endif()
 endif()
 
 # Sound stuff - here so CMake doesn't stupidly recompile EVERYTHING
@@ -220,43 +242,83 @@ if (UNIX AND NOT APPLE)
     target_link_libraries(openmw-lib ${CMAKE_THREAD_LIBS_INIT})
 endif()
 
-if(APPLE AND BUILD_OPENMW)
+if(APPLE AND (BUILD_OPENMW OR BUILD_OPENMW_VR))
     set(BUNDLE_RESOURCES_DIR "${APP_BUNDLE_DIR}/Contents/Resources")
 
     set(OPENMW_RESOURCES_ROOT ${BUNDLE_RESOURCES_DIR})
 
     add_subdirectory(../../files/ ${CMAKE_CURRENT_BINARY_DIR}/files)
 
+    configure_file("${OpenMW_BINARY_DIR}/overrides.bin" ${BUNDLE_RESOURCES_DIR} COPYONLY)
     configure_file("${OpenMW_BINARY_DIR}/defaults.bin" ${BUNDLE_RESOURCES_DIR} COPYONLY)
     configure_file("${OpenMW_BINARY_DIR}/openmw.cfg" ${BUNDLE_RESOURCES_DIR} COPYONLY)
     configure_file("${OpenMW_BINARY_DIR}/gamecontrollerdb.txt" ${BUNDLE_RESOURCES_DIR} COPYONLY)
 
-    add_custom_command(TARGET openmw
-        POST_BUILD
-        COMMAND cp "${OpenMW_BINARY_DIR}/resources/version" "${BUNDLE_RESOURCES_DIR}/resources")
-
     find_library(COCOA_FRAMEWORK Cocoa)
     find_library(IOKIT_FRAMEWORK IOKit)
-    target_link_libraries(openmw ${COCOA_FRAMEWORK} ${IOKIT_FRAMEWORK})
+
+    ### VR_PATCH.
+    #Use a commond list of link targets for openmw and openmw_vr
+    set(OPENMW_LINK_TARGETS ${COCOA_FRAMEWORK} ${IOKIT_FRAMEWORK})
 
     if (FFmpeg_FOUND)
-        target_link_options(openmw PRIVATE "LINKER:SHELL:-framework CoreVideo"
+        set(OPENMW_LINK_OPTIONS PRIVATE "LINKER:SHELL:-framework CoreVideo"
                                            "LINKER:SHELL:-framework CoreMedia"
                                            "LINKER:SHELL:-framework VideoToolbox"
                                            "LINKER:SHELL:-framework AudioToolbox"
                                            "LINKER:SHELL:-framework VideoDecodeAcceleration")
     endif()
+    ### /VR_PATCH
 endif()
 
 if (BUILD_WITH_CODE_COVERAGE)
     target_compile_options(openmw-lib PRIVATE --coverage)
     target_link_libraries(openmw-lib gcov)
     if (NOT ANDROID AND BUILD_OPENMW)
-        target_compile_options(openmw PRIVATE --coverage)
-        target_link_libraries(openmw gcov)
+        ### VR_PATCH.
+        #Use a commond list of link targets for openmw and openmw_vr
+        set(OPENMW_COMPILE_OPTIONS PRIVATE --coverage)
+        list(APPEND OPENMW_LINK_TARGETS gcov)
+        ### /VR_PATCH
     endif()
 endif()
 
+### VR_PATCH
+# apply options to both VR and non-VR
+if(BUILD_OPENMW)
+    target_link_libraries(openmw ${OPENMW_LINK_TARGETS})
+    if(OPENMW_LINK_OPTIONS)
+        target_link_options(openmw ${OPENMW_LINK_OPTIONS})
+    endif()
+    if(OPENMW_COMPILE_OPTIONS)
+        target_compile_options(openmw ${OPENMW_COMPILE_OPTIONS})
+    endif()
+    if(APPLE)
+        add_custom_command(TARGET openmw
+            POST_BUILD
+            COMMAND cp "${OpenMW_BINARY_DIR}/resources/version" "${BUNDLE_RESOURCES_DIR}/resources")
+    endif(APPLE)
+endif()
+if(BUILD_OPENMW_VR)
+    target_link_libraries(openmw_vr ${OPENMW_LINK_TARGETS})
+    if(OPENMW_LINK_OPTIONS)
+        target_link_options(openmw_vr ${OPENMW_LINK_OPTIONS})
+    endif()
+    if(OPENMW_COMPILE_OPTIONS)
+        target_compile_options(openmw_vr ${OPENMW_COMPILE_OPTIONS})
+    endif()
+    if(APPLE)
+        add_custom_command(TARGET openmw_vr
+            POST_BUILD
+            COMMAND cp "${OpenMW_BINARY_DIR}/resources/version" "${BUNDLE_RESOURCES_DIR}/resources")
+    endif(APPLE)
+endif()
+### /VR_PATCH
+
 if (WIN32 AND BUILD_OPENMW)
     INSTALL(TARGETS openmw RUNTIME DESTINATION ".")
+endif()
+
+if (WIN32 AND BUILD_OPENMW_VR)
+    INSTALL(TARGETS openmw_vr RUNTIME DESTINATION ".")
 endif()

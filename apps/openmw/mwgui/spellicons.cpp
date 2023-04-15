@@ -21,6 +21,10 @@
 
 #include "tooltips.hpp"
 
+//## VR_PATCH BEGIN
+#include <components/vr/vr.hpp>
+//## VR_PATCH END
+
 namespace MWGui
 {
     void SpellIcons::updateWidgets(MyGUI::Widget* parent, bool adjustSize)
@@ -48,6 +52,10 @@ namespace MWGui
 
         int w = 2;
         const auto& store = MWBase::Environment::get().getESMStore();
+//## VR_PATCH BEGIN
+        std::vector<MyGUI::ImageBox*> images;
+
+//## VR_PATCH END
         for (const auto& [effectId, effectInfos] : effects)
         {
             const ESM::MagicEffect* effect = store->get<ESM::MagicEffect>().find(effectId);
@@ -177,6 +185,10 @@ namespace MWGui
                 // Fade out
                 if (totalDuration >= fadeTime && fadeTime > 0.f)
                     image->setAlpha(std::min(remainingDuration / fadeTime, 1.f));
+//## VR_PATCH BEGIN
+
+                images.push_back(image);
+//## VR_PATCH END
             }
             else if (mWidgetMap.find(effectId) != mWidgetMap.end())
             {
@@ -186,6 +198,21 @@ namespace MWGui
             }
         }
 
+//## VR_PATCH BEGIN
+        if (VR::getVR())
+        {
+            // In VR mode, the effect box grows to the right.
+            // They are therefore added in the reverse order to retain positional stability.
+            // TODO: What if users configure the hud to be on the right hand side?
+            int reverse_w = w;
+            for (auto* image : images)
+            {
+                reverse_w -= 16;
+                image->setPosition(reverse_w, 2);
+            }
+        }
+
+//## VR_PATCH END
         if (adjustSize)
         {
             int s = w + 2;
@@ -193,7 +220,11 @@ namespace MWGui
                 s = 0;
             int diff = parent->getWidth() - s;
             parent->setSize(s, parent->getHeight());
+//## VR_PATCH BEGIN
+            // in VR mode, the effect box grows to the right and does not need repositioning
+            if(!VR::getVR())
             parent->setPosition(parent->getLeft() + diff, parent->getTop());
+//## VR_PATCH END
         }
 
         // hide inactive effects

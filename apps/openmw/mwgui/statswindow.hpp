@@ -60,7 +60,7 @@ namespace MWGui
         void setExpelled(const std::set<ESM::RefId>& expelled);
         void setBirthSign(const ESM::RefId& signId);
 
-        void onWindowResize(MyGUI::Window* window);
+        void onWindowResize(MyGUI::Window* window) override;
         void onMouseWheel(MyGUI::Widget* _sender, int _rel);
 
         MyGUI::Widget* mLeftPane;

@@ -41,6 +41,10 @@
 #include "tradeitemmodel.hpp"
 #include "tradewindow.hpp"
 
+//## VR_PATCH BEGIN
+#include <components/vr/vr.hpp>
+//## VR_PATCH END
+
 namespace
 {
 
@@ -76,7 +80,9 @@ namespace MWGui
 
     InventoryWindow::InventoryWindow(
         DragAndDrop* dragAndDrop, osg::Group* parent, Resource::ResourceSystem* resourceSystem)
-        : WindowPinnableBase("openmw_inventory_window.layout")
+//## VR_PATCH BEGIN
+        : WindowPinnableBase(VR::getVR() ? "openmw_inventory_window_vr.layout" : "openmw_inventory_window.layout")
+//## VR_PATCH END
         , mDragAndDrop(dragAndDrop)
         , mSelectedItem(-1)
         , mSortModel(nullptr)

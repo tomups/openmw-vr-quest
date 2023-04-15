@@ -4,6 +4,8 @@
 
 #include <components/resource/resourcesystem.hpp>
 #include <components/resource/scenemanager.hpp>
+#include <components/settings/values.hpp>
+#include <components/settings/categories/vr.hpp>
 
 #include "../mwbase/environment.hpp"
 #include "../mwbase/soundmanager.hpp"
@@ -13,11 +15,17 @@
 #include "../mwworld/esmstore.hpp"
 #include "../mwworld/inventorystore.hpp"
 
+#include "../mwmechanics/actorutil.hpp"
 #include "../mwmechanics/combat.hpp"
 #include "../mwmechanics/weapontype.hpp"
 
 #include "animation.hpp"
 #include "rotatecontroller.hpp"
+
+//## VR_PATCH BEGIN
+#include <components/vr/vr.hpp>
+
+//## VR_PATCH END
 
 namespace MWRender
 {
@@ -113,6 +121,16 @@ namespace MWRender
         osg::Quat orient = osg::Quat(actor.getRefData().getPosition().rot[0], osg::Vec3f(-1, 0, 0))
             * osg::Quat(actor.getRefData().getPosition().rot[2], osg::Vec3f(0, 0, -1));
 
+//## VR_PATCH BEGIN
+        if (VR::getVR() && !VR::getKBMouseModeActive() && actor == MWMechanics::getPlayer())
+        {
+            // In VR weapon aim is taken from the real orientation of the weapon.
+            Stereo::Pose weaponPose;
+            MWBase::Environment::get().getWorld()->getWeaponPose(weaponPose);
+            orient = weaponPose.orientation;
+        }
+
+//## VR_PATCH END
         const MWWorld::Store<ESM::GameSetting>& gmst
             = MWBase::Environment::get().getESMStore()->get<ESM::GameSetting>();
 
@@ -164,6 +182,23 @@ namespace MWRender
 
             MWWorld::Ptr weaponPtr = *weapon;
             MWWorld::Ptr ammoPtr = *ammo;
+//## VR_PATCH BEGIN
+            if (VR::getVR() && VR::getRightControllerActive() && (actor == MWMechanics::getPlayer()))
+            {
+                //if (Settings::Manager::getBool("skywind blaster workaround", "VR Debug"))
+                if (Settings::vrDebug().mSkywindBlasterWorkaround)
+                {
+                    // Skywind has a blaster asset that doesn't properly orient projectiles before launching them
+                    auto id = ammo->getCellRef().getRefId().getRefIdString();
+                    if (id.find("sw_blastbolt") == std::string::npos)
+                        orient = osg::computeLocalToWorld(nodepaths[0]).getRotate();
+                }
+                else
+                {
+                    orient = osg::computeLocalToWorld(nodepaths[0]).getRotate();
+                }
+            }
+//## VR_PATCH END
             MWBase::Environment::get().getWorld()->launchProjectile(
                 actor, ammoPtr, launchPos, orient, weaponPtr, speed, attackStrength);
 

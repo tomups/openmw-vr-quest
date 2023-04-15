@@ -88,6 +88,11 @@ namespace MWBase
         virtual void executeAction(int action) = 0;
 
         virtual bool controlsDisabled() = 0;
+
+//## VR_PATCH BEGIN
+        virtual void applyHapticsLeftHand(float intensity) = 0;
+        virtual void applyHapticsRightHand(float intensity) = 0;
+//## VR_PATCH END
     };
 }
 

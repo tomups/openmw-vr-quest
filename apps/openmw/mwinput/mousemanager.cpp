@@ -21,6 +21,11 @@
 #include "actions.hpp"
 #include "bindingsmanager.hpp"
 
+//## VR_PATCH BEGIN
+#include <components/vr/vr.hpp>
+#include "../mwvr/vrinputmanager.hpp"
+//## VR_PATCH END
+
 namespace MWInput
 {
     MouseManager::MouseManager(
@@ -34,6 +39,9 @@ namespace MWInput
         , mGuiCursorEnabled(true)
         , mMouseMoveX(0)
         , mMouseMoveY(0)
+//## VR_PATCH BEGIN
+        , mPreviousXAxis(0.f)
+//## VR_PATCH END
     {
         int w, h;
         SDL_GetWindowSize(window, &w, &h);
@@ -43,8 +51,27 @@ namespace MWInput
         mGuiCursorY = h / (2.f * uiScale);
     }
 
+//## VR_PATCH BEGIN
+    void MouseManager::mouseMovedVR(const SDLUtil::MouseMotionEvent& arg)
+    {
+        if (VR::getKBMouseModeActive())
+        {
+            float x = arg.xrel * Settings::input().mCameraSensitivity * (Settings::input().mInvertXAxis ? -1 : 1) / 256.f;
+            MWVR::VRInputManager::instance().mouseMove(x);
+        }
+    }
+//## VR_PATCH END
+
     void MouseManager::mouseMoved(const SDLUtil::MouseMotionEvent& arg)
     {
+//## VR_PATCH BEGIN
+        if (VR::getVR())
+        {
+            mouseMovedVR(arg);
+            return;
+        }
+
+//## VR_PATCH END
         mBindingsManager->mouseMoved(arg);
 
         MWBase::InputManager* input = MWBase::Environment::get().getInputManager();
@@ -180,14 +207,21 @@ namespace MWInput
             && !MWBase::Environment::get().getWindowManager()->isConsoleMode();
 
         bool wasRelative = mInputWrapper->getMouseRelative();
-        bool isRelative = !MWBase::Environment::get().getWindowManager()->isGuiMode();
+//## VR_PATCH BEGIN
+// VR in KBMosueMode needs to use the mouse to pan the camera also when the game is paused
+        bool isRelative = (VR::getVR() && VR::getKBMouseModeActive())
+            || !MWBase::Environment::get().getWindowManager()->isGuiMode();
+//## VR_PATCH END
 
         // don't keep the pointer away from the window edge in gui mode
         // stop using raw mouse motions and switch to system cursor movements
         mInputWrapper->setMouseRelative(isRelative);
 
         // we let the mouse escape in the main menu
-        mInputWrapper->setGrabPointer(grab && (Settings::input().mGrabCursor || isRelative));
+//## VR_PATCH BEGIN
+// In VR the user can't see the mouse escaping.
+        mInputWrapper->setGrabPointer((grab && (Settings::input().mGrabCursor || isRelative)) || VR::getKBMouseModeActive());
+//## VR_PATCH END
 
         // we switched to non-relative mode, move our cursor to where the in-game
         // cursor is
@@ -205,6 +239,13 @@ namespace MWInput
             return;
 
         float xAxis = mBindingsManager->getActionValue(A_LookLeftRight) * 2.0f - 1.0f;
+//## VR_PATCH BEGIN
+        if (VR::getVR())
+        {
+            MWVR::VRInputManager::instance().turnLeftRight(xAxis, mPreviousXAxis, dt);
+            mPreviousXAxis = xAxis;
+        }
+//## VR_PATCH END
         float yAxis = mBindingsManager->getActionValue(A_LookUpDown) * 2.0f - 1.0f;
         if (xAxis == 0 && yAxis == 0)
             return;
@@ -245,6 +286,10 @@ namespace MWInput
 
     void MouseManager::injectMouseMove(float xMove, float yMove, float mouseWheelMove)
     {
+//## VR_PATCH BEGIN
+        if (VR::getVR())
+            return;
+//## VR_PATCH END
         mGuiCursorX += xMove;
         mGuiCursorY += yMove;
         mMouseWheel += mouseWheelMove;
@@ -263,4 +308,13 @@ namespace MWInput
         mInputWrapper->warpMouse(
             static_cast<int>(mGuiCursorX * guiUiScale), static_cast<int>(mGuiCursorY * guiUiScale));
     }
+//## VR_PATCH BEGIN
+// VR sets mouse position based on pointing at 3d gui elements.
+    void MouseManager::setMousePosition(int x, int y)
+    {
+        float uiScale = MWBase::Environment::get().getWindowManager()->getScalingFactor();
+        mGuiCursorX = x / uiScale;
+        mGuiCursorY = y / uiScale;
+    }
+//## VR_PATCH END
 }

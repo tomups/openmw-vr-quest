@@ -118,6 +118,10 @@ namespace MWGui
             messageBox->update(height);
             height += messageBox->getHeight();
         }
+//## VR_PATCH BEGIN
+// Make sure message boxes become visible to VR.
+        mMessageBoxes.back()->setVisible(true);
+//## VR_PATCH END
     }
 
     void MessageBoxManager::removeStaticMessageBox()
@@ -196,6 +200,14 @@ namespace MWGui
         mMessageWidget->setCaptionWithReplacing(mMessage);
     }
 
+//## VR_PATCH BEGIN
+// Make sure message boxes are hidden from VR on destruction
+    MessageBox::~MessageBox()
+    {
+        setVisible(false);
+    }
+
+//## VR_PATCH END
     void MessageBox::update(int height)
     {
         MyGUI::IntSize gameWindowSize = MyGUI::RenderManager::getInstance().getViewSize();
@@ -211,10 +223,13 @@ namespace MWGui
         return mMainWidget->getHeight() + mNextBoxPadding;
     }
 
-    void MessageBox::setVisible(bool value)
-    {
-        mMainWidget->setVisible(value);
-    }
+//## VR_PATCH BEGIN
+// Do not override setVisible
+//    void MessageBox::setVisible(bool value)
+//    {
+//        mMainWidget->setVisible(value);
+//    }
+//## VR_PATCH END
 
     InteractiveMessageBox::InteractiveMessageBox(MessageBoxManager& parMessageBoxManager, const std::string& message,
         const std::vector<std::string>& buttons, bool immediate, int defaultFocus)

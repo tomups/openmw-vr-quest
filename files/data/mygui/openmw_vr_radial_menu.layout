@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<MyGUI type="Layout">
+    <Widget type="Window" skin="MW_Dialog" position="0 0 512 512" layer="RadialMenu" align="Center" name="_Main">
+    
+        <Widget type="TextBox" skin="SandText" position="79 8 354 18">
+            <Property key="Caption" value="Quick Select"/>
+            <Property key="TextAlign" value="Center"/>
+        </Widget>
+
+        <Widget type="EditBox" skin="SandText" position="79 26 354 36" name="InstructionLabel" align="Left Top VStretch">
+            <Property key="Caption" value="You can assign favorite items to quick select from the Quick Menu"/>
+            <Property key="MultiLine" value="true"/>
+            <Property key="WordWrap" value="true"/>
+            <Property key="Static" value="true"/>
+            <Property key="TextAlign" value="Center"/>
+        </Widget>
+        
+        <Widget type="ItemWidget" skin="MW_ItemIconBox" position="0 0 60 60" name="QuickKey1"/>
+        <Widget type="ItemWidget" skin="MW_ItemIconBox" position="68 0 60 60" name="QuickKey2"/>
+        <Widget type="ItemWidget" skin="MW_ItemIconBox" position="136 0 60 60" name="QuickKey3"/>
+        <Widget type="ItemWidget" skin="MW_ItemIconBox" position="204 0 60 60" name="QuickKey4"/>
+        <Widget type="ItemWidget" skin="MW_ItemIconBox" position="272 0 60 60" name="QuickKey5"/>
+        <Widget type="ItemWidget" skin="MW_ItemIconBox" position="0 67 60 60" name="QuickKey6"/>
+        <Widget type="ItemWidget" skin="MW_ItemIconBox" position="68 67 60 60" name="QuickKey7"/>
+        <Widget type="ItemWidget" skin="MW_ItemIconBox" position="136 67 60 60" name="QuickKey8"/>
+        <Widget type="ItemWidget" skin="MW_ItemIconBox" position="204 67 60 60" name="QuickKey9"/>
+        <Widget type="ItemWidget" skin="MW_ItemIconBox" position="272 67 60 60" name="QuickKey10"/>
+    </Widget>
+</MyGUI>

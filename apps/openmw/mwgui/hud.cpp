@@ -30,6 +30,10 @@
 
 #include "itemwidget.hpp"
 
+//## VR_PATCH BEGIN
+#include <components/vr/vr.hpp>
+//## VR_PATCH END
+
 namespace MWGui
 {
 
@@ -87,7 +91,9 @@ namespace MWGui
     };
 
     HUD::HUD(CustomMarkerCollection& customMarkers, DragAndDrop* dragAndDrop, MWRender::LocalMap* localMapRender)
-        : WindowBase("openmw_hud.layout")
+//## VR_PATCH BEGIN
+        : WindowBase(VR::getVR() ? "openmw_hud_vr.layout" : "openmw_hud.layout")
+//## VR_PATCH END
         , LocalMapBase(customMarkers, localMapRender, Settings::map().mLocalMapHudFogOfWar)
         , mHealth(nullptr)
         , mMagicka(nullptr)
@@ -120,6 +126,20 @@ namespace MWGui
         , mIsDrowning(false)
         , mDrowningFlashTheta(0.f)
     {
+//## VR_PATCH BEGIN
+// Hud size shouldn't depend on window size in VR
+        if(VR::getVR())
+        {
+            mMainWidgetBaseSize = mMainWidget->getSize();
+            mMainWidget->setSize(mMainWidgetBaseSize);
+        }
+        else
+        {
+            mMainWidget->setSize(MyGUI::RenderManager::getInstance().getViewSize());
+            mMainWidgetBaseSize = mMainWidget->getSize();
+        }
+
+//## VR_PATCH END
         // Energy bars
         getWidget(mHealthFrame, "HealthFrame");
         getWidget(mHealth, "Health");
@@ -608,19 +628,30 @@ namespace MWGui
         mSpellBox->setPosition(mSpellBoxBaseLeft - spellDx, mSpellBox->getTop());
         mSneakBox->setPosition(mSneakBoxBaseLeft - sneakDx, mSneakBox->getTop());
 
-        const MyGUI::IntSize& viewSize = MyGUI::RenderManager::getInstance().getViewSize();
-
-        // effect box can have variable width -> variable left coordinate
-        int effectsDx = 0;
-        if (!mMinimapBox->getVisible())
-            effectsDx = mEffectBoxBaseRight - mMinimapBoxBaseRight;
-
-        mMapVisible = mMinimapBox->getVisible();
-        if (!mMapVisible)
-            mCellNameBox->setVisible(false);
-
-        mEffectBox->setPosition(
-            (viewSize.width - mEffectBoxBaseRight) - mEffectBox->getWidth() + effectsDx, mEffectBox->getTop());
+//## VR_PATCH BEGIN
+// Hud size shouldn't depend on window size in VR
+        if(VR::getVR())
+        {
+            // in VR mode, the effect box grows to the right and does not need repositioning
+            // VR-TODO: If the user by preference attaches the HUD to the right instead, it should grow to the left again
+            int width = std::max(mMainWidgetBaseSize.width, mEffectBox->getSize().width);
+            mMainWidget->setSize(width, mMainWidget->getHeight());
+        }
+        else
+        {
+            const MyGUI::IntSize& viewSize = MyGUI::RenderManager::getInstance().getViewSize();
+            // effect box can have variable width -> variable left coordinate
+            int effectsDx = 0;
+            if (!mMinimapBox->getVisible())
+                effectsDx = mEffectBoxBaseRight - mMinimapBoxBaseRight;
+    
+            mMapVisible = mMinimapBox->getVisible();
+            if (!mMapVisible)
+                mCellNameBox->setVisible(false);
+    
+            mEffectBox->setPosition(
+                (viewSize.width - mEffectBoxBaseRight) - mEffectBox->getWidth() + effectsDx, mEffectBox->getTop());
+        }
     }
 
     void HUD::updateEnemyHealthBar()

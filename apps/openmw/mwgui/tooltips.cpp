@@ -29,10 +29,16 @@
 
 #include "itemmodel.hpp"
 
+//## VR_PATCH BEGIN
+#include <components/vr/vr.hpp>
+//## VR_PATCH END
+
 namespace MWGui
 {
     ToolTips::ToolTips()
-        : Layout("openmw_tooltips.layout")
+//## VR_PATCH BEGIN
+        : Layout(VR::getVR() ? "openmw_tooltips_vr.layout" : "openmw_tooltips.layout")
+//## VR_PATCH END
         , mFocusToolTipX(0.0)
         , mFocusToolTipY(0.0)
         , mHorizontalScrollIndex(0)
@@ -52,6 +58,11 @@ namespace MWGui
         mDynamicToolTipBox->setNeedMouseFocus(false);
         mMainWidget->setNeedMouseFocus(false);
 
+//## VR_PATCH BEGIN
+        // Tooltip delay is not useful in vr as a player cannot be perfectly still.
+        if (!VR::getVR())
+            mRemainingDelay = 0;
+//## VR_PATCH END
         for (unsigned int i = 0; i < mMainWidget->getChildCount(); ++i)
         {
             mMainWidget->getChildAt(i)->setVisible(false);
@@ -137,7 +148,14 @@ namespace MWGui
                 else
                 {
                     mHorizontalScrollIndex = 0;
-                    mRemainingDelay = Settings::gui().mTooltipDelay;
+                    
+//## VR_PATCH BEGIN
+                    if(VR::getVR())
+                        mRemainingDelay = 0;
+                    else
+                        mRemainingDelay = Settings::gui().mTooltipDelay;
+                    
+//## VR_PATCH END
                 }
                 mLastMouseX = mousePos.left;
                 mLastMouseY = mousePos.top;
@@ -354,6 +372,17 @@ namespace MWGui
         mFocusObject = focus;
 
         update(mFrameDuration);
+//## VR_PATCH BEGIN
+// Make sure visibility is updated in VR
+        bool visible = false;
+        for (unsigned int i = 0; i < mMainWidget->getChildCount(); ++i)
+        {
+            visible |= mMainWidget->getChildAt(i)->getVisible();
+        }
+
+        if (visible != mMainWidget->getVisible())
+            setVisible(visible);
+//## VR_PATCH END
     }
 
     MyGUI::IntSize ToolTips::getToolTipViaPtr(int count, bool image, bool isOwned)

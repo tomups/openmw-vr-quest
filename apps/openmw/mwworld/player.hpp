@@ -102,6 +102,11 @@ namespace MWWorld
         /// Checks all nearby actors to see if anyone has an aipackage against you
         bool isInCombat();
 
+//## VR_PATCH BEGIN
+        /// Checks if the player is currently in a state where he cannot act
+        bool isDisabled();
+
+//## VR_PATCH END
         bool enemiesNearby();
 
         void clear();

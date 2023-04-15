@@ -79,6 +79,24 @@ namespace MWGui
         void onResolutionCancel();
         void highlightCurrentResolution();
 
+//## VR_PATCH BEGIN
+        MyGUI::ComboBox* mVRHudPosition;
+        MyGUI::ComboBox* mVRTooltipPosition;
+        MyGUI::ComboBox* mVRMirrorTextureEye;
+        MyGUI::ComboBox* mVRSnapAngle;
+        MyGUI::ComboBox* mVRThumbstickUp;
+        MyGUI::ComboBox* mVRThumbstickDown;
+        MyGUI::Button* mVRHeightCalibButton;
+
+        void onVRMirrorTextureEyeChanged(MyGUI::ComboBox* _sender, size_t pos);
+        void onVRHudPositionChanged(MyGUI::ComboBox* _sender, size_t pos);
+        void onVRTooltipPositionChanged(MyGUI::ComboBox* _sender, size_t pos);
+        void onVRSnapAngleChanged(MyGUI::ComboBox* _sender, size_t pos);
+        void onVRThumbstickUpChanged(MyGUI::ComboBox* _sender, size_t pos);
+        void onVRThumbstickDownChanged(MyGUI::ComboBox* _sender, size_t pos);
+        void onVRHeightCalibButtonClicked(MyGUI::Widget* _sender);
+//## VR_PATCH END
+
         void onRefractionButtonClicked(MyGUI::Widget* _sender);
         void onWaterTextureSizeChanged(MyGUI::ComboBox* _sender, size_t pos);
         void onWaterReflectionDetailChanged(MyGUI::ComboBox* _sender, size_t pos);
@@ -103,7 +121,9 @@ namespace MWGui
         void onKeyboardSwitchClicked(MyGUI::Widget* _sender);
         void onControllerSwitchClicked(MyGUI::Widget* _sender);
 
-        void onWindowResize(MyGUI::Window* _sender);
+//## VR_PATCH BEGIN
+        void onWindowResize(MyGUI::Window* _sender) override;
+//## VR_PATCH END
 
         void onScriptFilterChange(MyGUI::EditBox*);
         void onScriptListSelection(MyGUI::ListBox*, size_t index);

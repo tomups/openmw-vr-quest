@@ -27,6 +27,10 @@
 
 #include "backgroundimage.hpp"
 
+//## VR_PATCH BEGIN
+#include <components/misc/callbackmanager.hpp>
+//## VR_PATCH END
+
 namespace MWGui
 {
 
@@ -110,30 +114,32 @@ namespace MWGui
             return mTargetFrameRate;
     }
 
-    class CopyFramebufferToTextureCallback : public osg::Camera::DrawCallback
+//## VR_PATCH BEGIN
+// Ported to Misc::CallbackManager::MwDrawCallback
+    class CopyFramebufferToTextureCallback : public Misc::CallbackManager::MwDrawCallback
     {
     public:
         CopyFramebufferToTextureCallback(osg::Texture2D* texture)
-            : mOneshot(true)
-            , mTexture(texture)
+            : mTexture(texture)
         {
         }
 
-        void operator()(osg::RenderInfo& renderInfo) const override
+        bool operator()(osg::RenderInfo& renderInfo, Misc::CallbackManager::View view) const override
         {
+            if (view == Misc::CallbackManager::View::Right)
+                return false;
+
             int w = renderInfo.getCurrentCamera()->getViewport()->width();
             int h = renderInfo.getCurrentCamera()->getViewport()->height();
             mTexture->copyTexImage2D(*renderInfo.getState(), 0, 0, w, h);
 
-            mOneshot = false;
+            return true;
         }
 
-        void reset() { mOneshot = true; }
-
     private:
-        mutable bool mOneshot;
         osg::ref_ptr<osg::Texture2D> mTexture;
     };
+//## VR_PATCH END
 
     class DontComputeBoundCallback : public osg::Node::ComputeBoundingSphereCallback
     {
@@ -299,12 +305,14 @@ namespace MWGui
 
         if (!mCopyFramebufferToTextureCallback)
         {
-            mCopyFramebufferToTextureCallback = new CopyFramebufferToTextureCallback(mTexture);
+//## VR_PATCH BEGIN
+// Ported to Misc::CallbackManager::MwDrawCallback
+            mCopyFramebufferToTextureCallback = std::make_shared<CopyFramebufferToTextureCallback>(mTexture);
         }
 
-        mViewer->getCamera()->removeInitialDrawCallback(mCopyFramebufferToTextureCallback);
-        mViewer->getCamera()->addInitialDrawCallback(mCopyFramebufferToTextureCallback);
-        mCopyFramebufferToTextureCallback->reset();
+        Misc::CallbackManager::instance().addCallbackOneshot(
+            Misc::CallbackManager::DrawStage::Initial, mCopyFramebufferToTextureCallback);
+//## VR_PATCH END
 
         mSplashImage->setBackgroundImage({});
         mSplashImage->setVisible(false);
@@ -347,9 +355,9 @@ namespace MWGui
         // at the time this function is called we are in the middle of a frame,
         // so out of order calls are necessary to get a correct frameNumber for the next frame.
         // refer to the advance() and frame() order in Engine::go()
-        mViewer->eventTraversal();
-        mViewer->updateTraversal();
-        mViewer->renderingTraversals();
+//## VR_PATCH BEGIN
+        MWBase::Environment::get().getWindowManager()->viewerTraversals();
+//## VR_PATCH END
         mViewer->advance(mViewer->getFrameStamp()->getSimulationTime());
 
         mLastRenderTime = mTimer.time_m();

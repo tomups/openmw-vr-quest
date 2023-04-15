@@ -59,7 +59,7 @@ namespace Stereo
         struct CustomViewCallback : public UpdateViewCallback
         {
         public:
-            CustomViewCallback(View& left, View& right);
+            CustomViewCallback(const View& left, const View& right);
 
             void updateView(View& left, View& right) override;
 
@@ -78,7 +78,8 @@ namespace Stereo
         //! @Param enableMultiview whether or not to make use of the GL_OVR_Multiview extension, if supported.
         //! @Param near defines distance to near camera clipping plane from view point.
         //! @Param far defines distance to far camera clipping plane from view point.
-        explicit Manager(osgViewer::Viewer* viewer, bool enableStereo, double near, double far);
+        //! @Param number of samples to use in the multiview framebuffer (if relevant).
+        explicit Manager(osgViewer::Viewer* viewer, bool enableStereo, double near, double far, int samples);
         ~Manager();
 
         //! Called during update traversal
@@ -96,9 +97,6 @@ namespace Stereo
 
         //! Callback that updates stereo configuration during the update pass
         void setUpdateViewCallback(std::shared_ptr<UpdateViewCallback> cb);
-
-        //! Set the cull callback on the appropriate camera object
-        void setCullCallback(osg::ref_ptr<osg::NodeCallback> cb);
 
         osg::Matrixd computeEyeProjection(int view, bool reverseZ) const;
         osg::Matrixd computeEyeViewOffset(int view) const;
@@ -131,10 +129,15 @@ namespace Stereo
         /// Determine which view the cull visitor belongs to
         Eye getEye(const osgUtil::CullVisitor* cv) const;
 
+//## VR_PATCH BEGIN
+        void setShouldAttachMultiviewFramebufferToMainCamera(bool attach);
+
+        void setSamples(int samples);
+
     private:
         friend class MultiviewStereoStatesetUpdateCallback;
         void updateMultiviewStateset(osg::StateSet* stateset);
-        void updateStereoFramebuffer();
+        void updateMultiviewFramebuffer();
         void setupBruteForceTechnique();
         void setupOVRMultiView2Technique();
 
@@ -144,10 +147,14 @@ namespace Stereo
         std::string mError;
         osg::Matrixd mMasterProjectionMatrix;
         std::shared_ptr<MultiviewFramebuffer> mMultiviewFramebuffer;
+        bool mShouldAttachMultiviewFramebufferToMainCamera = false;
+        bool mMultiviewFramebufferIsAttached = false;
+//## VR_PATCH END
         bool mEyeResolutionOverriden;
         osg::Vec2i mEyeResolutionOverride;
         double mNear;
         double mFar;
+        int mSamples = 0;
 
         std::array<View, 2> mView;
         std::array<osg::Matrixd, 2> mViewOffsetMatrix;

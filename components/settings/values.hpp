@@ -24,6 +24,9 @@
 #include "categories/stereoview.hpp"
 #include "categories/terrain.hpp"
 #include "categories/video.hpp"
+//## VR_PATCH BEGIN
+#include "categories/vr.hpp"
+//## VR_PATCH END
 #include "categories/water.hpp"
 #include "categories/windows.hpp"
 #include "settingvalue.hpp"
@@ -63,6 +66,10 @@ namespace Settings
         StereoCategory mStereo{ mIndex };
         StereoViewCategory mStereoView{ mIndex };
         PostProcessingCategory mPostProcessing{ mIndex };
+//## VR_PATCH BEGIN
+        VRCategory mVr{ mIndex };
+        VRDebugCategory mVrDebug{ mIndex };
+//## VR_PATCH END
     };
 
     class StaticValues
@@ -218,6 +225,18 @@ namespace Settings
     {
         return values().mPostProcessing;
     }
+//## VR_PATCH BEGIN
+    
+    inline VRCategory& vr()
+    {
+        return values().mVr;
+    }
+
+    inline VRDebugCategory& vrDebug()
+    {
+        return values().mVrDebug;
+    }
+//## VR_PATCH END
 
     template <class T>
     SettingValue<T>* find(std::string_view category, std::string_view name)

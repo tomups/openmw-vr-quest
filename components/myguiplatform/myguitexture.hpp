@@ -8,7 +8,7 @@
 namespace osg
 {
     class Image;
-    class Texture2D;
+    class Texture;
     class StateSet;
 }
 
@@ -26,7 +26,11 @@ namespace osgMyGUI
         Resource::ImageManager* mImageManager;
 
         osg::ref_ptr<osg::Image> mLockedImage;
-        osg::ref_ptr<osg::Texture2D> mTexture;
+//## VR_PATCH BEGIN
+// Texture2D -> Texture for multiview compatibility
+// VR-TODO: Again, why am i not using texture views for this? Upstream is and I merged multiview upstream!
+        osg::ref_ptr<osg::Texture> mTexture;
+//## VR_PATCH END
         osg::ref_ptr<osg::StateSet> mInjectState;
         MyGUI::PixelFormat mFormat;
         MyGUI::TextureUsage mUsage;
@@ -37,7 +41,10 @@ namespace osgMyGUI
 
     public:
         OSGTexture(const std::string& name, Resource::ImageManager* imageManager);
-        OSGTexture(osg::Texture2D* texture, osg::StateSet* injectState = nullptr);
+//## VR_PATCH BEGIN
+// Texture2D -> Texture
+        OSGTexture(osg::Texture* texture, osg::StateSet* injectState = nullptr);
+//## VR_PATCH END
         ~OSGTexture() override;
 
         osg::StateSet* getInjectState() { return mInjectState; }
@@ -66,7 +73,9 @@ namespace osgMyGUI
         void setShader(const std::string& _shaderName) override;
 
         /*internal:*/
-        osg::Texture2D* getTexture() const { return mTexture.get(); }
+//## VR_PATCH BEGIN
+        osg::Texture* getTexture() const { return mTexture.get(); }
+//## VR_PATCH END
     };
 
 }

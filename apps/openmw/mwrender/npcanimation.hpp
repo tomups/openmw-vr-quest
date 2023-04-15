@@ -40,10 +40,14 @@ namespace MWRender
         {
             VM_Normal,
             VM_FirstPerson,
-            VM_HeadOnly
+//## VR_PATCH BEGIN
+            VM_HeadOnly,
+            VM_VRNormal,
+            VM_VRFirstPerson,
         };
 
-    private:
+    protected:
+//## VR_PATCH END
         static const PartBoneMap sPartList;
 
         // Bounded Parts
@@ -156,9 +160,12 @@ namespace MWRender
         // WeaponAnimation
         void showWeapon(bool show) override { showWeapons(show); }
 
-        void setViewMode(ViewMode viewMode);
+//## VR_PATCH BEGIN
+// Overridden in vr-animation
+        virtual void setViewMode(ViewMode viewMode);
 
-        void updateParts();
+        virtual void updateParts();
+//## VR_PATCH END
 
         /// Rebuilds the NPC, updating their root model, animation sources, and equipment.
         void rebuild();

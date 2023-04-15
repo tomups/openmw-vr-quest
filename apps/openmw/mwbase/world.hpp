@@ -58,6 +58,24 @@ namespace ESM
     struct ExteriorCellLocation;
 }
 
+//## VR_PATCH BEGIN
+namespace Stereo
+{
+    struct Pose;
+}
+
+namespace osg
+{
+    class Node;
+    class Transform;
+}
+
+namespace MWRender
+{
+    struct RayResult;
+}
+//## VR_PATCH END
+
 namespace MWPhysics
 {
     class RayCastingResult;
@@ -590,6 +608,32 @@ namespace MWBase
         virtual MWWorld::DateTimeManager* getTimeManager() = 0;
 
         virtual void setActorActive(const MWWorld::Ptr& ptr, bool value) = 0;
+
+//## VR_PATCH BEGIN
+        /// @result pointer to the object and/or node the given node is currently pointing at
+        /// @Return distance to the target object, or -1 if no object was targeted / in range
+        virtual float getTargetObject(MWRender::RayResult& result, const osg::Vec3f& origin,
+            const osg::Quat& orientation, float maxDistance, bool ignorePlayer, bool ignore3DUI = true)
+            = 0;
+
+        /// @Return ESM::Weapon::Type enum describing the type of weapon currently drawn by the player.
+        virtual int getActiveWeaponType(void) = 0;
+
+        virtual void enableVRPointer(bool left, bool right) = 0;
+
+        virtual void getWeaponPose(Stereo::Pose& pose) = 0;
+
+        virtual void setWeaponPosePath(int64_t path) = 0;
+
+        virtual MWWorld::Ptr placeObject(const MWWorld::ConstPtr& object, const MWRender::RayResult& ray, int amount)
+            = 0;
+        ///< copy and place an object into the gameworld based on the given intersection
+        /// @param object
+        /// @param world position to place object
+        /// @param number of objects to place
+
+        virtual float getActivationDistancePlusTelekinesis() = 0;
+//## VR_PATCH END
     };
 }
 

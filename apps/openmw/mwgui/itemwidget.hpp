@@ -50,6 +50,15 @@ namespace MWGui
 
         std::string mCurrentIcon;
         std::string mCurrentFrame;
+//## VR_PATCH BEGIN
+    public:
+        const std::string& getIcon() const { return mCurrentIcon; }
+        bool hasFrame() const { return !!mFrame; }
+        const std::string& getFrame() const { return mCurrentFrame; }
+        const MyGUI::IntCoord& getFrameCoords() const { return mCurrentFrameCoords; }
+    protected:
+        MyGUI::IntCoord mCurrentFrameCoords;
+//## VR_PATCH END
 
         static std::map<std::string, float> mScales;
     };

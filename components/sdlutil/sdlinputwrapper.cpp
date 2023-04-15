@@ -1,4 +1,7 @@
 #include "sdlinputwrapper.hpp"
+//## VR_PATCH BEGIN
+#include "sdlgraphicswindow.hpp"
+//## VR_PATCH END
 
 #include <components/debug/debuglog.hpp>
 #include <components/settings/values.hpp>
@@ -269,8 +272,14 @@ namespace SDLUtil
                 if (w == 0 && h == 0)
                     return;
 
-                mViewer->getCamera()->getGraphicsContext()->resized(x, y, w, h);
+//## VR_PATCH BEGIN
 
+                // When rendering with stereo, the main camera might not have a GC set so we have to search
+                // slave cameras instead.
+                // TODO: Is this still true? We still using slave cameras for VR?
+                // mViewer->getCamera()->getGraphicsContext()->resized(x, y, w, h);
+                GraphicsWindowSDL2::findContext(*mViewer)->resized(x, y, w, h);
+//## VR_PATCH END
                 mViewer->getEventQueue()->windowResize(x, y, w, h);
 
                 if (mWindowListener)

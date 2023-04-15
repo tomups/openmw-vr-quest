@@ -106,6 +106,14 @@ namespace Stereo
     //! Texture2DArray or Texture2DMultisampleArray
     osg::FrameBufferAttachment createMultiviewCompatibleAttachment(osg::Texture* tex);
 
+//## VR_PATCH BEGIN
+    //! Create a framebuffer attachment from the specified opengl texture handle. Target must be GL_TEXTURE_2D or
+    //! GL_TEXTURE_2D_ARRAY. If the target is GL_TEXTURE_2D_ARRAY, the specified layer will be attached. The layer
+    //! argument is ignore if target is GL_TEXTURE_2D.
+    osg::FrameBufferAttachment createLayerAttachmentFromHandle(
+        osg::State* state, uint32_t handle, uint32_t target, uint32_t width, uint32_t height, uint32_t layer);
+
+//## VR_PATCH END
     //! If OSG has multiview, returns the magic number used to tell OSG to create a multiview attachment. Otherwise
     //! returns 0.
     unsigned int osgFaceControlledByMultiviewShader();

@@ -39,6 +39,11 @@
 #include "transparentpass.hpp"
 #include "vismask.hpp"
 
+//## VR_PATCH BEGIN
+#include <components/vr/vr.hpp>
+#include "../mwvr/vrpingpongcallback.hpp"
+
+//## VR_PATCH END
 namespace
 {
     struct ResizedCallback : osg::GraphicsContext::ResizedCallback
@@ -265,6 +270,15 @@ namespace MWRender
     {
         mReload = true;
         mUsePostProcessing = true;
+//## VR_PATCH BEGIN
+
+        if (VR::getVR())
+        {
+            Stereo::Manager::instance().setShouldAttachMultiviewFramebufferToMainCamera(false);
+            mCanvases[0]->setPingPongCallback(std::make_unique<MWVR::PingPongCallback>(this));
+            mCanvases[1]->setPingPongCallback(std::make_unique<MWVR::PingPongCallback>(this));
+        }
+//## VR_PATCH END
     }
 
     void PostProcessor::disable()
@@ -303,10 +317,15 @@ namespace MWRender
         mCanvases[frameId]->setTextureDepth(getTexture(Tex_OpaqueDepth, frameId));
         mCanvases[frameId]->setTextureDistortion(getTexture(Tex_Distortion, frameId));
 
-        mTransparentDepthPostPass->mFbo[frameId] = mFbos[frameId][FBO_Primary];
-        mTransparentDepthPostPass->mMsaaFbo[frameId] = mFbos[frameId][FBO_Multisample];
-        mTransparentDepthPostPass->mOpaqueFbo[frameId] = mFbos[frameId][FBO_OpaqueDepth];
-
+//## VR_PATCH BEGIN
+// VR-TODO: Why this change?
+        if (mTransparentDepthPostPass->mFbo[frameId] != mFbos[frameId][FBO_Primary])
+        {
+            mTransparentDepthPostPass->mFbo[frameId] = mFbos[frameId][FBO_Primary];
+            mTransparentDepthPostPass->mMsaaFbo[frameId] = mFbos[frameId][FBO_Multisample];
+            mTransparentDepthPostPass->mOpaqueFbo[frameId] = mFbos[frameId][FBO_OpaqueDepth];
+        }
+//## VR_PATCH END
         mDistortionCallback->setFBO(mFbos[frameId][FBO_Distortion], frameId);
         mDistortionCallback->setOriginalFBO(mFbos[frameId][FBO_Primary], frameId);
 

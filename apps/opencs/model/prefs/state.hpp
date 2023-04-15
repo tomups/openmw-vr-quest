@@ -82,6 +82,11 @@ namespace CSMPrefs
 
         void declareSubcategory(const QString& label);
 
+//## VR_PATCH BEGIN
+        //! Adds a setting without exposing it in the user interface
+        void setDefaultHidden(const std::string& key, const std::string& category, const std::string& default_);
+
+//## VR_PATCH END
     public:
         State(const Files::ConfigurationManager& configurationManager);
 

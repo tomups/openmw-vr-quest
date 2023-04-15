@@ -63,6 +63,8 @@ CONFIGURATIONS=()
 TEST_FRAMEWORK=""
 INSTALL_PREFIX="."
 BUILD_BENCHMARKS=""
+SKIP_VR=""
+VR_BUILD_NONVR=""
 USE_WERROR=""
 USE_CLANG_TIDY=""
 
@@ -79,118 +81,125 @@ while [ $# -gt 0 ]; do
 		wrappedExit 1
 	fi
 
-	for (( i=1; i<${#ARGSTR}; i++ )); do
-		ARG=${ARGSTR:$i:1}
-		case $ARG in
-			V )
-				VERBOSE=true ;;
+    ARG=${ARGSTR:1}
+    case $ARG in
+        V )
+            VERBOSE=true ;;
+            
+        skip-vr )
+            SKIP_VR=true ;;
+            
+        vr-build-nonvr )
+            VR_BUILD_NONVR=true ;;
 
-			d )
-				SKIP_DOWNLOAD=true ;;
+        d )
+            SKIP_DOWNLOAD=true ;;
 
-			e )
-				SKIP_EXTRACT=true ;;
+        e )
+            SKIP_EXTRACT=true ;;
 
-			C )
-				USE_CCACHE=true ;;
+        C )
+            USE_CCACHE=true ;;
 
-			k )
-				KEEP=true ;;
+        k )
+            KEEP=true ;;
 
-			u )
-				UNITY_BUILD=true ;;
+        u )
+            UNITY_BUILD=true ;;
 
-			v )
-				VS_VERSION=$1
-				shift ;;
+        v )
+            VS_VERSION=$1
+            shift ;;
 
-			n )
-				NMAKE=true ;;
+        n )
+            NMAKE=true ;;
 
-			N )
-				NINJA=true ;;
+        N )
+            NINJA=true ;;
 
-			p )
-				PLATFORM=$1
-				shift ;;
+        p )
+            PLATFORM=$1
+            shift ;;
 
-			P )
-				PDBS=true ;;
+        P )
+            PDBS=true ;;
 
-			c )
-				CONFIGURATIONS+=( $1 )
-				shift ;;
+        c )
+            CONFIGURATIONS+=( $1 )
+            shift ;;
 
-			t )
-				TEST_FRAMEWORK=true ;;
+        t )
+            TEST_FRAMEWORK=true ;;
 
-			i )
-				INSTALL_PREFIX=$(echo "$1" | sed 's;\\;/;g' | sed -E 's;/+;/;g')
-				shift ;;
+        i )
+            INSTALL_PREFIX=$(echo "$1" | sed 's;\\;/;g' | sed -E 's;/+;/;g')
+            shift ;;
 
-			b )
-				BUILD_BENCHMARKS=true ;;
+        b )
+            BUILD_BENCHMARKS=true ;;
 
-			E )
-				USE_WERROR=true ;;
+        M )
+            OSG_MULTIVIEW_BUILD=true ;;
 
-			T )
-				USE_CLANG_TIDY=true ;;
+        E )
+            USE_WERROR=true ;;
 
-			h )
-				cat <<EOF
+        T )
+            USE_CLANG_TIDY=true ;;
+
+        h )
+            cat <<EOF
 Usage: $0 [-cdehkpuvVi]
 Options:
-	-c <Release/Debug/RelWithDebInfo>
-		Set the configuration, can also be set with environment variable CONFIGURATION.
-		For mutli-config generators, this is ignored, and all configurations are set up.
-		For single-config generators, several configurations can be set up at once by specifying -c multiple times.
-	-C
-		Use ccache.
-	-d
-		Skip checking the downloads.
-	-e
-		Skip extracting dependencies.
-	-h
-		Show this message.
-	-k
-		Keep the old build directory, default is to delete it.
-	-p <Win32/Win64>
-		Set the build platform, can also be set with environment variable PLATFORM.
-	-t
-		Build unit tests / Google test
-	-u
-		Configure for unity builds.
-	-v <2019/2022>
-		Choose the Visual Studio version to use.
-	-n
-		Produce NMake makefiles instead of a Visual Studio solution. Cannot be used with -N.
-	-N
-		Produce Ninja (multi-config if CMake is new enough to support it) files instead of a Visual Studio solution. Cannot be used with -n..
-	-P
-		Download debug symbols where available
-	-V
-		Run verbosely
-	-i
-		CMake install prefix
-	-b
-		Build benchmarks
-	-M
-		Use a multiview build of OSG
-	-E
-		Use warnings as errors (/WX)
-	-T
-		Run clang-tidy
+-c <Release/Debug/RelWithDebInfo>
+    Set the configuration, can also be set with environment variable CONFIGURATION.
+    For mutli-config generators, this is ignored, and all configurations are set up.
+    For single-config generators, several configurations can be set up at once by specifying -c multiple times.
+-C
+    Use ccache.
+-d
+    Skip checking the downloads.
+-e
+    Skip extracting dependencies.
+-h
+    Show this message.
+-k
+    Keep the old build directory, default is to delete it.
+-p <Win32/Win64>
+    Set the build platform, can also be set with environment variable PLATFORM.
+-t
+    Build unit tests / Google test
+-u
+    Configure for unity builds.
+-v <2019/2022>
+    Choose the Visual Studio version to use.
+-n
+    Produce NMake makefiles instead of a Visual Studio solution. Cannot be used with -N.
+-N
+    Produce Ninja (multi-config if CMake is new enough to support it) files instead of a Visual Studio solution. Cannot be used with -n..
+-P
+    Download debug symbols where available
+-V
+    Run verbosely
+-i
+    CMake install prefix
+-b
+    Build benchmarks
+-M
+    Use a multiview build of OSG
+-E
+    Use warnings as errors (/WX)
+-T
+    Run clang-tidy
 EOF
-				wrappedExit 0
-				;;
+            wrappedExit 0
+            ;;
 
-			* )
-				echo "Unknown argument $ARG."
-				echo "Try '$0 -h'"
-				wrappedExit 1 ;;
-		esac
-	done
+        * )
+            echo "Unknown argument $ARG."
+            echo "Try '$0 -h'"
+            wrappedExit 1 ;;
+    esac
 done
 
 if [ -n "$NMAKE" ] || [ -n "$NINJA" ]; then
@@ -727,6 +736,19 @@ printf "Qt ${QT_VER}... "
 
 add_cmake_opts -DCMAKE_PREFIX_PATH="\"${QT_SDK}\""
 
+# VR build
+if [ ! -z $SKIP_VR ]; then
+	add_cmake_opts -DBUILD_OPENMW_VR=no
+    add_cmake_opts -DBUILD_OPENMW=yes
+else
+	add_cmake_opts -DBUILD_OPENMW_VR=yes
+	if [ ! -z $VR_BUILD_NONVR ]; then
+		add_cmake_opts -DBUILD_OPENMW=yes
+	else
+		add_cmake_opts -DBUILD_OPENMW=no
+	fi
+fi
+
 echo
 cd $DEPS_INSTALL/..
 echo
@@ -744,6 +766,7 @@ if [ ! -z $CI ]; then
 				-DBUILD_MWINIIMPORTER=no \
 				-DBUILD_OPENCS=no \
 				-DBUILD_OPENMW=no \
+				-DBUILD_OPENMW_VR=no \
 				-DBUILD_WIZARD=no
 			;;
 		openmw )
@@ -752,7 +775,16 @@ if [ ! -z $CI ]; then
 				-DBUILD_LAUNCHER=no \
 				-DBUILD_MWINIIMPORTER=no \
 				-DBUILD_OPENCS=no \
+				-DBUILD_OPENMW_VR=no \
 				-DBUILD_WIZARD=no
+			;;
+		vr )
+			echo "  Building subproject: OpenMW-VR."
+			add_cmake_opts -DBUILD_ESSIMPORTER=no \
+				-DBUILD_OPENCS=no \
+				-DBUILD_BSATOOL=no \
+				-DBUILD_OPENMW=no \
+				-DBUILD_ESMTOOL=no 
 			;;
 		opencs )
 			echo "  Building subproject: OpenCS."
@@ -760,12 +792,14 @@ if [ ! -z $CI ]; then
 				-DBUILD_LAUNCHER=no \
 				-DBUILD_MWINIIMPORTER=no \
 				-DBUILD_OPENMW=no \
+				-DBUILD_OPENMW_VR=no \
 				-DBUILD_WIZARD=no
 			;;
 		misc )
 			echo "  Building subprojects: Misc."
 			add_cmake_opts -DBUILD_OPENCS=no \
-				-DBUILD_OPENMW=no
+				-DBUILD_OPENMW=no \
+				-DBUILD_OPENMW_VR=no
 			;;
 	esac
 fi

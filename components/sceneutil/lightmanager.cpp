@@ -1311,25 +1311,36 @@ namespace SceneUtil
                 if (light.mViewBound.intersects(nodeBound))
                     mLightList.push_back(&light);
             }
+//## VR_PATCH BEGIN
+// Keep the same light list between both eyes
+// MERGETODO: I had rewritten this to not re-compute lights between eyes in stereo.
+// But it was completely rewritten by someone. This SHOULD have been part of my stereo MR but
+// i guess it didn't get included? Anyway, CHECK THIS MERGE and leave a comment next time.
 
             const size_t maxLights = mLightManager->getMaxLights() - mLightManager->getStartLight();
 
-            if (mLightList.size() > maxLights)
+            if (mLightListCropped.empty())
             {
-                // Sort by proximity to object: prefer closer lights with larger radius
-                std::sort(mLightList.begin(), mLightList.end(),
-                    [&](const SceneUtil::LightManager::LightSourceViewBound* left,
-                        const SceneUtil::LightManager::LightSourceViewBound* right) {
-                        const float leftDist = (nodeBound.center() - left->mViewBound.center()).length2();
-                        const float rightDist = (nodeBound.center() - right->mViewBound.center()).length2();
-                        // A tricky way to compare normalized distance. This avoids division by near zero
-                        return left->mViewBound.radius() * rightDist > right->mViewBound.radius() * leftDist;
-                    });
+                mLightListCropped = mLightList;
+                if (mLightList.size() > maxLights)
+                {
+                    // Sort by proximity to object: prefer closer lights with larger radius
+                    std::sort(mLightListCropped.begin(), mLightListCropped.end(),
+                        [&](const SceneUtil::LightManager::LightSourceViewBound* left,
+                            const SceneUtil::LightManager::LightSourceViewBound* right) {
+                            const float leftDist = (nodeBound.center() - left->mViewBound.center()).length2();
+                            const float rightDist = (nodeBound.center() - right->mViewBound.center()).length2();
+                            // A tricky way to compare normalized distance. This avoids division by near zero
+                            return left->mViewBound.radius() * rightDist > right->mViewBound.radius() * leftDist;
+                        });
 
-                mLightList.resize(maxLights);
+                    mLightListCropped.resize(maxLights);
+                }
             }
         }
 
+
+//## VR_PATCH END
         if (!mLightList.empty())
         {
             cv->pushStateSet(mLightManager->getLightListStateSet(mLightList, mLastFrameNumber, viewMatrix));

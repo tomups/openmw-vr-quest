@@ -83,7 +83,10 @@ namespace MWClass
 
         void onHit(const MWWorld::Ptr& ptr, float damage, bool ishealth, const MWWorld::Ptr& object,
             const MWWorld::Ptr& attacker, const osg::Vec3f& hitPosition, bool successful,
-            const MWMechanics::DamageSourceType sourceType) const override;
+//## VR_PATCH BEGIN
+// Add hitStrength to signature
+            float hitStrength, const MWMechanics::DamageSourceType sourceType) const override;
+//## VR_PATCH END
 
         void getModelsToPreload(const MWWorld::ConstPtr& ptr, std::vector<std::string_view>& models) const override;
         ///< Get a list of models to preload that this object may use (directly or indirectly). default implementation:

@@ -487,6 +487,10 @@ namespace MWRender
 
         virtual void removeFromScene();
 
+//## VR_PATCH BEGIN
+        virtual void updateCrosshairs(){}
+
+//## VR_PATCH END
     private:
         Animation(const Animation&);
         void operator=(Animation&);

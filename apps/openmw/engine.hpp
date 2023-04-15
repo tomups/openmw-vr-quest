@@ -68,6 +68,31 @@ namespace SceneUtil
     }
 }
 
+//## VR_PATCH BEGIN
+namespace Misc
+{
+    class CallbackManager;
+}
+
+namespace VR
+{
+    class Session;
+    class TrackingManager;
+    class Viewer;
+}
+
+namespace XR
+{
+    class Instance;
+    class Session;
+}
+
+namespace MWVR
+{
+    class VRGUIManager;
+}
+
+//## VR_PATCH END
 namespace MWState
 {
     class StateManager;
@@ -265,6 +290,18 @@ namespace OMW
         void setRandomSeed(unsigned int seed);
 
         void setRecastMaxLogLevel(Debug::Level value) { mMaxRecastLogLevel = value; }
+//## VR_PATCH BEGIN
+    public:
+        void configureVR(osg::GraphicsContext* gc);
+
+    private:
+        std::unique_ptr<Misc::CallbackManager> mCallbackManager;
+        std::unique_ptr<VR::TrackingManager> mVrTrackingManager;
+        std::unique_ptr<MWVR::VRGUIManager> mVrGUIManager;
+        std::unique_ptr<XR::Instance> mXrInstance;
+        std::shared_ptr<XR::Session> mXrSession;
+        std::unique_ptr<VR::Viewer> mVrViewer;
+//## VR_PATCH END
     };
 }
 

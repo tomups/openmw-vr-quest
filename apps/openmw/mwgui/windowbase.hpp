@@ -51,6 +51,11 @@ namespace MWGui
 
         virtual std::string_view getWindowIdForLua() const { return ""; }
         void setDisabledByLua(bool disabled) { mDisabledByLua = disabled; }
+//## VR_PATCH BEGIN
+        
+        /// Called when Window widget changes in size
+        virtual void onWindowResize(MyGUI::Window* window) {}
+//## VR_PATCH END
 
         static void clampWindowCoordinates(MyGUI::Window* window);
 

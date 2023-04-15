@@ -24,6 +24,19 @@ namespace Gui
     class EditBox : public FontWrapper<MyGUI::EditBox>
     {
         MYGUI_RTTI_DERIVED(EditBox)
+//## VR_PATCH BEGIN
+// Integrate virtual keyboard with edit box
+        /// @param supportsVirtualKeyboard If true, VR mode will spawn a virtual keyboard whenever this widget is
+        /// focused.
+        EditBox();
+        ~EditBox();
+
+    private:
+        void registerVirtualKeyboard();
+        void unregisterVirtualKeyboard();
+
+        bool mVirtualKeyboardRegistered;
+//## VR_PATCH END
     };
 
     class AutoSizedWidget

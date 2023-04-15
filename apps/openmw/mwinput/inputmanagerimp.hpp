@@ -45,7 +45,10 @@ namespace MWInput
     /**
      * @brief Class that provides a high-level API for game input
      */
-    class InputManager final : public MWBase::InputManager
+//## VR_PATCH BEGIN
+// the vr input manager needs to derive this.
+    class InputManager : public MWBase::InputManager
+//## VR_PATCH END
     {
     public:
         InputManager(SDL_Window* window, osg::ref_ptr<osgViewer::Viewer> viewer,
@@ -53,7 +56,9 @@ namespace MWInput
             bool userFileExists, const std::filesystem::path& userControllerBindingsFile,
             const std::filesystem::path& controllerBindingsFile, bool grab);
 
-        ~InputManager() final;
+//## VR_PATCH BEGIN
+        virtual ~InputManager();
+//## VR_PATCH END
 
         /// Clear all savegame-specific data
         void clear() override;
@@ -102,8 +107,12 @@ namespace MWInput
         void executeAction(int action) override;
 
         bool controlsDisabled() override { return mControlsDisabled; }
+//## VR_PATCH BEGIN
+        void applyHapticsLeftHand(float intensity) override{}
+        void applyHapticsRightHand(float intensity) override{}
 
-    private:
+    protected:
+//## VR_PATCH END
         bool mControlsDisabled;
 
         std::unique_ptr<SDLUtil::InputWrapper> mInputWrapper;

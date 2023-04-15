@@ -20,6 +20,9 @@
 #include <components/files/configurationmanager.hpp>
 #include <components/misc/strings/algorithm.hpp>
 #include <components/misc/strings/conversion.hpp>
+//## VR_PATCH BEGIN
+#include <components/vr/vr.hpp>
+//## VR_PATCH END
 
 namespace Settings
 {
@@ -123,6 +126,9 @@ namespace Settings
 
     CategorySettingValueMap Manager::mDefaultSettings = CategorySettingValueMap();
     CategorySettingValueMap Manager::mUserSettings = CategorySettingValueMap();
+//## VR_PATCH BEGIN
+    CategorySettingValueMap Manager::mSettingsOverrides = CategorySettingValueMap();
+//## VR_PATCH END
     CategorySettingVector Manager::mChangedSettings = CategorySettingVector();
     std::set<std::pair<std::string_view, std::string_view>> Manager::sInitialized;
 
@@ -133,6 +139,9 @@ namespace Settings
         mDefaultSettings.clear();
         mUserSettings.clear();
         mChangedSettings.clear();
+//## VR_PATCH BEGIN
+        mSettingsOverrides.clear();
+//## VR_PATCH END
     }
 
     std::filesystem::path Manager::load(const Files::ConfigurationManager& cfgMgr, bool loadEditorSettings)
@@ -184,6 +193,18 @@ namespace Settings
         if (std::filesystem::exists(settingspath))
             parser.loadSettingsFile(settingspath, mUserSettings, false, false);
 
+//## VR_PATCH BEGIN
+        if (VR::getVR())
+        {
+            auto overridesFile = paths.front() / "overrides.bin";
+            if (std::filesystem::exists(overridesFile))
+                parser.loadSettingsFile(overridesFile, mSettingsOverrides, true, false);
+            else
+                throw std::runtime_error(
+                    "No settings overrides file found! Make sure the file \"overrides.bin\" was properly installed.");
+        }
+
+//## VR_PATCH END
         if (!loadEditorSettings)
             Settings::StaticValues::init();
 
@@ -203,7 +224,13 @@ namespace Settings
     const std::string& Manager::getString(std::string_view setting, std::string_view category)
     {
         const auto key = std::make_pair(category, setting);
-        CategorySettingValueMap::iterator it = mUserSettings.find(key);
+//## VR_PATCH BEGIN
+        CategorySettingValueMap::iterator it = mSettingsOverrides.find(key);
+        if (it != mSettingsOverrides.end())
+            return it->second;
+
+        it = mUserSettings.find(key);
+//## VR_PATCH END
         if (it != mUserSettings.end())
             return it->second;
 

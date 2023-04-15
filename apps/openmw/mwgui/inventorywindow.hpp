@@ -123,7 +123,7 @@ namespace MWGui
         void sellItem(MyGUI::Widget* sender, int count);
         void dragItem(MyGUI::Widget* sender, int count);
 
-        void onWindowResize(MyGUI::Window* _sender);
+        void onWindowResize(MyGUI::Window* _sender) override;
         void onFilterChanged(MyGUI::Widget* _sender);
         void onNameFilterChanged(MyGUI::EditBox* _sender);
         void onAvatarClicked(MyGUI::Widget* _sender);

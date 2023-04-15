@@ -1,4 +1,7 @@
 #include "box.hpp"
+//## VR_PATCH BEGIN
+#include "virtualkeyboardmanager.hpp"
+//## VR_PATCH END
 
 #include <MyGUI_EditText.h>
 
@@ -488,4 +491,33 @@ namespace Gui
         setUserString("VStretch", "true");
     }
 
+//## VR_PATCH BEGIN
+    EditBox::EditBox()
+        : mVirtualKeyboardRegistered(false)
+    {
+        registerVirtualKeyboard();
+    }
+    EditBox::~EditBox()
+    {
+        unregisterVirtualKeyboard();
+    }
+    void EditBox::registerVirtualKeyboard()
+    {
+        auto* vkm = Gui::VirtualKeyboardManager::instance();
+        if (vkm)
+        {
+            vkm->registerEditBox(this);
+            mVirtualKeyboardRegistered = true;
+        }
+    }
+    void EditBox::unregisterVirtualKeyboard()
+    {
+        if (mVirtualKeyboardRegistered)
+        {
+            // No need to check here
+            Gui::VirtualKeyboardManager::instance()->unregisterEditBox(this);
+            mVirtualKeyboardRegistered = false;
+        }
+    }
+//## VR_PATCH END
 }

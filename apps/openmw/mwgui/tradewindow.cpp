@@ -30,6 +30,10 @@
 #include "tooltips.hpp"
 #include "tradeitemmodel.hpp"
 
+//## VR_PATCH BEGIN
+#include <components/vr/vr.hpp>
+//## VR_PATCH END
+
 namespace
 {
 
@@ -117,7 +121,9 @@ namespace
 namespace MWGui
 {
     TradeWindow::TradeWindow()
-        : WindowBase("openmw_trade_window.layout")
+//## VR_PATCH BEGIN
+        : WindowBase(VR::getVR() ? "openmw_trade_window_vr.layout" : "openmw_trade_window.layout")
+//## VR_PATCH END
         , mSortModel(nullptr)
         , mTradeModel(nullptr)
         , mItemToSell(-1)

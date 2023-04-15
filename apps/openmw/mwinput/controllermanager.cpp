@@ -21,6 +21,12 @@
 #include "bindingsmanager.hpp"
 #include "mousemanager.hpp"
 
+//## VR_PATCH BEGIN
+#include <components/vr/vr.hpp>
+#include "../mwvr/vrinputmanager.hpp"
+
+//## VR_PATCH END
+
 namespace MWInput
 {
     ControllerManager::ControllerManager(BindingsManager* bindingsManager, MouseManager* mouseManager,
@@ -31,6 +37,9 @@ namespace MWInput
         , mGamepadGuiCursorEnabled(true)
         , mGuiCursorEnabled(true)
         , mJoystickLastUsed(false)
+//## VR_PATCH BEGIN
+        , mThumbstickAutoRun(Settings::Manager::getBool("thumbstick auto run", "Input"))
+//## VR_PATCH END
     {
         if (!controllerBindingsFile.empty())
         {
@@ -211,6 +220,17 @@ namespace MWInput
 
     void ControllerManager::axisMoved(int deviceID, const SDL_ControllerAxisEvent& arg)
     {
+//## VR_PATCH BEGIN
+        if (VR::getVR() && !MWBase::Environment::get().getWindowManager()->isGuiMode())
+        {
+            if (arg.axis == SDL_CONTROLLER_AXIS_RIGHTY)
+            {
+                float value = static_cast<float>(arg.value) / (arg.value < 0 ? 32768.f : 32767.f);
+                MWVR::VRInputManager::instance().processUtilityStickY(-value);
+            }
+        }
+//## VR_PATCH END
+
         if (!Settings::input().mEnableController || MWBase::Environment::get().getInputManager()->controlsDisabled())
             return;
 
@@ -383,6 +403,14 @@ namespace MWInput
 #endif
         return std::array<float, 3>({ gyro[0], gyro[1], gyro[2] });
     }
+
+//## VR_PATCH BEGIN
+    void ControllerManager::setThumbstickAutoRun(bool enabled)
+    {
+        mThumbstickAutoRun = enabled;
+        Settings::Manager::setBool("thumbstick auto run", "Input", enabled);
+    }
+//## VR_PATCH END
 
     void ControllerManager::touchpadMoved(int deviceId, const SDLUtil::TouchEvent& arg)
     {

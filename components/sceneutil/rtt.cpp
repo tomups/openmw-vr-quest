@@ -25,7 +25,10 @@ namespace SceneUtil
         , mTextureHeight(textureHeight)
         , mSamples(samples)
         , mGenerateMipmaps(generateMipmaps)
-        , mColorBufferInternalFormat(Color::colorInternalFormat())
+//## VR_PATCH BEGIN
+// VR-TODO: Why?
+        , mColorBufferInternalFormat(GL_RGB)
+//## VR_PATCH END
         , mDepthBufferInternalFormat(SceneUtil::AutoDepth::depthInternalFormat())
         , mRenderOrderNum(renderOrderNum)
         , mStereoAwareness(stereoAwareness)

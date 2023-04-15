@@ -68,6 +68,10 @@ namespace MWInput
 
         A_TogglePostProcessorHUD = 50,
 
+//## VR_PATCH BEGIN
+        A_ToggleThumbstickAutoRun,
+
+//## VR_PATCH END
         A_Last // Marker for the last item
     };
 }

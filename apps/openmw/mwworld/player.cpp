@@ -34,6 +34,11 @@
 #include "class.hpp"
 #include "ptr.hpp"
 
+//## VR_PATCH BEGIN
+#include <components/vr/session.hpp>
+#include <components/vr/vr.hpp>
+
+//## VR_PATCH END
 namespace MWWorld
 {
     namespace
@@ -229,6 +234,16 @@ namespace MWWorld
         return MWBase::Environment::get().getMechanicsManager()->getActorsFighting(getPlayer()).size() != 0;
     }
 
+//## VR_PATCH BEGIN
+    bool Player::isDisabled()
+    {
+        auto ptr = getPlayer();
+        const MWWorld::Class& cls = ptr.getClass();
+        auto& stats = cls.getCreatureStats(ptr);
+        return stats.isParalyzed() || stats.getKnockedDown() || stats.isDead();
+    }
+
+//## VR_PATCH END
     bool Player::enemiesNearby()
     {
         return MWBase::Environment::get().getMechanicsManager()->getEnemiesNearby(getPlayer()).size() != 0;

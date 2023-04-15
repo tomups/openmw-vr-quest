@@ -121,6 +121,15 @@
 #include "videowidget.hpp"
 #include "waitdialog.hpp"
 
+//## VR_PATCH BEGIN
+#include "../mwvr/radialmenu.hpp"
+#include "../mwvr/vrgui.hpp"
+#include "../mwvr/vrmetamenu.hpp"
+#include "../mwvr/vrvirtualkeyboard.hpp"
+#include <components/vr/viewer.hpp>
+#include <components/vr/vr.hpp>
+//## VR_PATCH END
+
 namespace MWGui
 {
     namespace
@@ -197,6 +206,11 @@ namespace MWGui
         , mVersionDescription(versionDescription)
         , mWindowVisible(true)
         , mCfgMgr(cfgMgr)
+//## VR_PATCH BEGIN
+        , mVrMetaMenu(nullptr)
+        , mVirtualKeyboardManager(nullptr)
+        , mVideoEnabled(false)
+//## VR_PATCH END
     {
         int w, h;
         SDL_GetWindowSize(window, &w, &h);
@@ -206,6 +220,11 @@ namespace MWGui
         mScalingFactor = Settings::gui().mScalingFactor * (dw / w);
         mGuiPlatform = std::make_unique<osgMyGUI::Platform>(viewer, guiRoot, resourceSystem->getImageManager(),
             resourceSystem->getVFS(), mScalingFactor, "mygui", logpath / "MyGUI.log");
+//## VR_PATCH BEGIN
+// Force GUI window to be 1024x1024
+        if(VR::getVR())
+            mGuiPlatform->getRenderManagerPtr()->setViewSize(1024, 1024);
+//## VR_PATCH END
 
         mGui = std::make_unique<MyGUI::Gui>();
         mGui->initialise({});
@@ -245,7 +264,17 @@ namespace MWGui
             "Resource", "ResourceImageSetPointer");
         MyGUI::FactoryManager::getInstance().registerFactory<AutoSizedResourceSkin>(
             "Resource", "AutoSizedResourceSkin");
-        MyGUI::ResourceManager::getInstance().load("core.xml");
+//## VR_PATCH BEGIN
+        if (VR::getVR())
+        {
+            MWVR::VRGUIManager::registerMyGUIFactories();
+            MyGUI::ResourceManager::getInstance().load("core_vr.xml");
+        }
+        else
+        {
+            MyGUI::ResourceManager::getInstance().load("core.xml");
+        }
+//## VR_PATCH END
 
         const bool keyboardNav = Settings::gui().mKeyboardNavigation;
         mKeyboardNavigation = std::make_unique<KeyboardNavigation>();
@@ -280,7 +309,11 @@ namespace MWGui
         mVideoBackground->setNeedMouseFocus(true);
         mVideoBackground->setNeedKeyFocus(true);
 
-        mVideoWidget = mVideoBackground->createWidgetReal<VideoWidget>("ImageBox", 0, 0, 1, 1, MyGUI::Align::Default);
+//## VR_PATCH BEGIN
+// Assign video widget to the InputBlocker layer
+        mVideoWidget = mVideoBackground->createWidgetReal<VideoWidget>(
+            "ImageBox", 0, 0, 1, 1, MyGUI::Align::Default, "InputBlocker");
+//## VR_PATCH END
         mVideoWidget->setNeedMouseFocus(true);
         mVideoWidget->setNeedKeyFocus(true);
         mVideoWidget->setVFS(resourceSystem->getVFS());
@@ -294,7 +327,10 @@ namespace MWGui
         MyGUI::ClipboardManager::getInstance().eventClipboardRequested
             += MyGUI::newDelegate(this, &WindowManager::onClipboardRequested);
 
+//## VR_PATCH BEGIN
+// SDL should not manage gamma in VR. This must be done via shaders.
         mVideoWrapper = std::make_unique<SDLUtil::VideoWrapper>(window, viewer);
+//## VR_PATCH END
         mVideoWrapper->setGammaContrast(Settings::video().mGamma, Settings::video().mContrast);
 
         if (useShaders)
@@ -316,6 +352,11 @@ namespace MWGui
         auto recharge = std::make_unique<Recharge>();
         mGuiModeStates[GM_Recharge] = GuiModeState(recharge.get());
         mWindows.push_back(std::move(recharge));
+//## VR_PATCH BEGIN
+        if(VR::getVR())
+            mVirtualKeyboardManager = new MWVR::VirtualKeyboardManager;
+
+//## VR_PATCH END
 
         auto menu = std::make_unique<MainMenu>(w, h, mResourceSystem->getVFS(), mVersionDescription);
         mGuiModeStates[GM_MainMenu] = GuiModeState(menu.get());
@@ -512,6 +553,20 @@ namespace MWGui
 
         mCharGen = std::make_unique<CharacterCreation>(mViewer->getSceneData()->asGroup(), mResourceSystem);
 
+//## VR_PATCH BEGIN
+#ifdef USE_OPENXR
+        auto vrMetaMenu = std::make_unique<MWVR::VrMetaMenu>(w, h);
+        mVrMetaMenu = vrMetaMenu.get();
+        mWindows.emplace_back(std::move(vrMetaMenu));
+        mGuiModeStates[GM_VrMetaMenu] = GuiModeState(mVrMetaMenu);
+
+        auto radialMenu = std::make_unique<MWVR::RadialMenu>(w, h, mQuickKeysMenu);
+        mRadialMenu = radialMenu.get();
+        mWindows.emplace_back(std::move(radialMenu));
+        mGuiModeStates[GM_RadialMenu] = GuiModeState(mRadialMenu);
+#endif
+
+//## VR_PATCH END
         updatePinnedWindows();
 
         // Set up visibility
@@ -594,19 +649,38 @@ namespace MWGui
 
     void WindowManager::enableScene(bool enable)
     {
-        unsigned int disablemask = MWRender::Mask_GUI | MWRender::Mask_PreCompile;
-        if (!enable && getCullMask() != disablemask)
+//## VR_PATCH BEGIN
+// VR has a different set of masks to enable/disable.
+// And needs to ensure the clear color is turned to black to create a proper void, when the scene is disabled.
+
+        unsigned int disableCullMask = MWRender::Mask_GUI | MWRender::Mask_PreCompile;
+        unsigned int disableUpdateMask = disableCullMask;
+        osg::Vec4 disableClearColor = osg::Vec4(0, 0, 0, 1);
+
+        if (VR::getVR())
+        {
+            disableCullMask = MWRender::Mask_Pointer | MWRender::Mask_3DGUI | MWRender::Mask_PreCompile
+                | MWRender::Mask_RenderToTexture;
+            // GUI must still be updated.
+            disableUpdateMask = disableCullMask | MWRender::Mask_GUI;
+        }
+
+        if (!enable && getCullMask() != disableCullMask)
         {
             mOldUpdateMask = mViewer->getUpdateVisitor()->getTraversalMask();
             mOldCullMask = getCullMask();
-            mViewer->getUpdateVisitor()->setTraversalMask(disablemask);
-            setCullMask(disablemask);
+            mOldClearColor = mViewer->getCamera()->getClearColor();
+            mViewer->getUpdateVisitor()->setTraversalMask(disableUpdateMask);
+            mViewer->getCamera()->setClearColor(disableClearColor);
+            setCullMask(disableCullMask);
         }
-        else if (enable && getCullMask() == disablemask)
+        else if (enable && getCullMask() == disableCullMask)
         {
             mViewer->getUpdateVisitor()->setTraversalMask(mOldUpdateMask);
+            mViewer->getCamera()->setClearColor(mOldClearColor);
             setCullMask(mOldCullMask);
         }
+//## VR_PATCH END
     }
 
     void WindowManager::updateConsoleObjectPtr(const MWWorld::Ptr& currentPtr, const MWWorld::Ptr& newPtr)
@@ -621,7 +695,10 @@ namespace MWGui
         bool mainmenucover = containsMode(GM_MainMenu)
             && MWBase::Environment::get().getStateManager()->getState() == MWBase::StateManager::State_NoGame;
 
-        enableScene(!loading && !mainmenucover);
+//## VR_PATCH BEGIN
+// Don't enable the scene while in the void
+        enableScene(!loading && !mainmenucover && !mTheVoid);
+//## VR_PATCH END
 
         if (!mMap)
             return; // UI not created yet
@@ -745,6 +822,10 @@ namespace MWGui
             }
         }
 
+//## VR_PATCH BEGIN
+        mVideoEnabled = false;
+
+//## VR_PATCH END
         popGuiMode();
     }
 
@@ -772,11 +853,9 @@ namespace MWGui
                 if (!mWindowVisible)
                     std::this_thread::sleep_for(std::chrono::milliseconds(5));
                 else
-                {
-                    mViewer->eventTraversal();
-                    mViewer->updateTraversal();
-                    mViewer->renderingTraversals();
-                }
+//## VR_PATCH BEGIN
+                    viewerTraversals();
+//## VR_PATCH END
                 // at the time this function is called we are in the middle of a frame,
                 // so out of order calls are necessary to get a correct frameNumber for the next frame.
                 // refer to the advance() and frame() order in Engine::go()
@@ -1177,6 +1256,10 @@ namespace MWGui
 
     void WindowManager::windowResized(int x, int y)
     {
+//## VR_PATCH BEGIN
+        if(VR::getVR())
+            return;
+//## VR_PATCH END
         Settings::video().mResolutionX.set(x);
         Settings::video().mResolutionY.set(y);
 
@@ -1310,6 +1393,20 @@ namespace MWGui
         return mViewer->getCamera()->getCullMask();
     }
 
+//## VR_PATCH BEGIN
+    void WindowManager::enterVoid()
+    {
+        mTheVoid = true;
+        updateVisible();
+    }
+
+    void WindowManager::exitVoid()
+    {
+        mTheVoid = false;
+        updateVisible();
+    }
+
+//## VR_PATCH END
     void WindowManager::popGuiMode(bool forceExit)
     {
         if (mDragAndDrop && mDragAndDrop->mIsOnDragAndDrop)
@@ -1540,6 +1637,13 @@ namespace MWGui
         updateVisible();
     }
 
+//## VR_PATCH BEGIN
+    DragAndDrop& WindowManager::getDragAndDrop(void)
+    {
+        return *mDragAndDrop;
+    }
+
+//## VR_PATCH END
     void WindowManager::forceHide(GuiWindow wnd)
     {
         mForceHidden = (GuiWindow)(mForceHidden | wnd);
@@ -1731,9 +1835,12 @@ namespace MWGui
     {
         MyGUI::IntSize viewSize = MyGUI::RenderManager::getInstance().getViewSize();
 
-        const WindowRectSettingValues& rect = settings.mIsMaximized ? settings.mMaximized : settings.mRegular;
-
+//## VR_PATCH BEGIN
+        // All windows need to be maximized in VR.
         MyGUI::Window* window = layout->mMainWidget->castType<MyGUI::Window>();
+        const WindowRectSettingValues& rect = settings.mIsMaximized || VR::getVR() ? settings.mMaximized : settings.mRegular;
+//## VR_PATCH END
+
         window->setPosition(
             MyGUI::IntPoint(static_cast<int>(rect.mX * viewSize.width), static_cast<int>(rect.mY * viewSize.height)));
         window->setSize(
@@ -1755,6 +1862,12 @@ namespace MWGui
         const WindowSettingValues& settings = it->second;
         const WindowRectSettingValues& rect = settings.mIsMaximized ? settings.mRegular : settings.mMaximized;
 
+//## VR_PATCH BEGIN
+// Windows are always maximized in VR
+        if (VR::getVR() && settings.mIsMaximized)
+            return;
+//## VR_PATCH END
+
         MyGUI::IntSize viewSize = MyGUI::RenderManager::getInstance().getViewSize();
         const float x = rect.mX * viewSize.width;
         const float y = rect.mY * viewSize.height;
@@ -1767,6 +1880,12 @@ namespace MWGui
 
     void WindowManager::onWindowChangeCoord(MyGUI::Window* window)
     {
+//## VR_PATCH BEGIN
+// Windows never move in VR
+        if (VR::getVR())
+            return;
+//## VR_PATCH END
+
         const auto it = mTrackedWindows.find(window);
         if (it == mTrackedWindows.end())
             return;
@@ -1873,6 +1992,9 @@ namespace MWGui
 
     void WindowManager::playVideo(std::string_view name, bool allowSkipping, bool overrideSounds)
     {
+//## VR_PATCH BEGIN
+        mVideoEnabled = true;
+//## VR_PATCH END
         mVideoWidget->playVideo("video\\" + std::string{ name });
 
         mVideoWidget->eventKeyButtonPressed.clear();
@@ -1893,6 +2015,11 @@ namespace MWGui
 
         mVideoBackground->setVisible(true);
 
+//## VR_PATCH BEGIN
+        if(VR::getVR())
+            MWVR::VRGUIManager::instance().showLayer(mVideoBackground->getLayer()->getName());
+//## VR_PATCH END
+
         bool cursorWasVisible = mCursorVisible;
         setCursorVisible(false);
 
@@ -1902,7 +2029,10 @@ namespace MWGui
 
         Misc::FrameRateLimiter frameRateLimiter
             = Misc::makeFrameRateLimiter(MWBase::Environment::get().getFrameRateLimit());
-        while (mVideoWidget->update() && !MWBase::Environment::get().getStateManager()->hasQuitRequest())
+//## VR_PATCH BEGIN
+        while (
+            mVideoEnabled && mVideoWidget->update() && !MWBase::Environment::get().getStateManager()->hasQuitRequest())
+//## VR_PATCH END
         {
             const double dt
                 = std::chrono::duration_cast<std::chrono::duration<double>>(frameRateLimiter.getLastFrameDuration())
@@ -1920,9 +2050,9 @@ namespace MWGui
                 if (mVideoWidget->isPaused())
                     mVideoWidget->resume();
 
-                mViewer->eventTraversal();
-                mViewer->updateTraversal();
-                mViewer->renderingTraversals();
+//## VR_PATCH BEGIN
+                viewerTraversals();
+//## VR_PATCH END
             }
             // at the time this function is called we are in the middle of a frame,
             // so out of order calls are necessary to get a correct frameNumber for the next frame.
@@ -1942,8 +2072,20 @@ namespace MWGui
         // Restore normal rendering
         updateVisible();
 
+//## VR_PATCH BEGIN
+        if(VR::getVR())
+            MWVR::VRGUIManager::instance().hideLayer(mVideoBackground->getLayer()->getName());
         mVideoBackground->setVisible(false);
+        mVideoEnabled = false;
+//## VR_PATCH END
     }
+
+//## VR_PATCH BEGIN
+    bool WindowManager::isPlayingVideo(void) const
+    {
+        return mVideoEnabled;
+    }
+//## VR_PATCH END
 
     void WindowManager::sizeVideo(int screenWidth, int screenHeight)
     {
@@ -2360,6 +2502,15 @@ namespace MWGui
         return MyGUI::InputManager::getInstance().injectKeyRelease(key);
     }
 
+//## VR_PATCH BEGIN
+    void WindowManager::viewerTraversals()
+    {
+        mViewer->eventTraversal();
+        mViewer->updateTraversal();
+        mViewer->renderingTraversals();
+    }
+
+//## VR_PATCH END
     void WindowManager::GuiModeState::update(bool visible)
     {
         for (const auto& window : mWindows)

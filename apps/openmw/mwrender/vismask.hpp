@@ -56,6 +56,12 @@ namespace MWRender
         Mask_Lighting = (1 << 19),
 
         Mask_Groundcover = (1 << 20),
+//## VR_PATCH BEGIN
+
+        // Vr masks
+        Mask_3DGUI = (1 << 21),
+        Mask_Pointer = (1 << 22)
+//## VR_PATCH END
     };
 
     // Defines masks to remove when using ToggleWorld command

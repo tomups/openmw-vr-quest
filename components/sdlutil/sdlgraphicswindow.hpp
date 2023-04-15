@@ -90,6 +90,11 @@ namespace SDLUtil
             SDL_Window* mWindow;
         };
 
+//## VR_PATCH BEGIN
+        /** Convenience function for finding the context among the main camera or slaves */
+        static osg::GraphicsContext* findContext(osgViewer::View& view);
+
+//## VR_PATCH END
     private:
         void setSwapInterval(VSyncMode mode);
     };

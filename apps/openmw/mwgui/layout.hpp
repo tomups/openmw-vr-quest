@@ -59,6 +59,9 @@ namespace MWGui
 
     public:
         void setCoord(int x, int y, int w, int h);
+//## VR_PATCH BEGIN
+        void setCoordf(float x, float y, float w, float h);
+//## VR_PATCH END
 
         virtual void setVisible(bool b);
 

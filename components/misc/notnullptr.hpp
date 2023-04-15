@@ -25,6 +25,10 @@ namespace Misc
 
         constexpr T& operator*() const noexcept { return *mValue; }
 
+//## VR_PATCH BEGIN
+        T* get() const { return mValue; }
+
+//## VR_PATCH END
     private:
         T* mValue;
     };

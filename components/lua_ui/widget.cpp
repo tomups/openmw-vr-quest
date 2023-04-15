@@ -51,35 +51,61 @@ namespace LuaUi
 
     void WidgetExtension::registerEvents(MyGUI::Widget* w)
     {
-        w->eventKeyButtonPressed += MyGUI::newDelegate(this, &WidgetExtension::keyPress);
-        w->eventKeyButtonReleased += MyGUI::newDelegate(this, &WidgetExtension::keyRelease);
-        w->eventMouseButtonClick += MyGUI::newDelegate(this, &WidgetExtension::mouseClick);
-        w->eventMouseButtonDoubleClick += MyGUI::newDelegate(this, &WidgetExtension::mouseDoubleClick);
-        w->eventMouseButtonPressed += MyGUI::newDelegate(this, &WidgetExtension::mousePress);
-        w->eventMouseButtonReleased += MyGUI::newDelegate(this, &WidgetExtension::mouseRelease);
-        w->eventMouseMove += MyGUI::newDelegate(this, &WidgetExtension::mouseMove);
-        w->eventMouseDrag += MyGUI::newDelegate(this, &WidgetExtension::mouseDrag);
+//## VR_PATCH BEGIN
+// Upstream uses .clear(), but this interferes with the virtual keyboard
+// Use -= to only clear the handlers WidgetExtension added.
 
-        w->eventMouseSetFocus += MyGUI::newDelegate(this, &WidgetExtension::focusGain);
-        w->eventMouseLostFocus += MyGUI::newDelegate(this, &WidgetExtension::focusLoss);
-        w->eventKeySetFocus += MyGUI::newDelegate(this, &WidgetExtension::focusGain);
-        w->eventKeyLostFocus += MyGUI::newDelegate(this, &WidgetExtension::focusLoss);
+        if (!mEventsInitialized)
+        {
+            mEventKeyButtonPressed = MyGUI::newDelegate(this, &WidgetExtension::keyPress);
+            mEventKeyButtonReleased = MyGUI::newDelegate(this, &WidgetExtension::keyRelease);
+            mEventMouseButtonClick = MyGUI::newDelegate(this, &WidgetExtension::mouseClick);
+            mEventMouseButtonDoubleClick = MyGUI::newDelegate(this, &WidgetExtension::mouseDoubleClick);
+            mEventMouseButtonPressed = MyGUI::newDelegate(this, &WidgetExtension::mousePress);
+            mEventMouseButtonReleased = MyGUI::newDelegate(this, &WidgetExtension::mouseRelease);
+            mEventMouseMove = MyGUI::newDelegate(this, &WidgetExtension::mouseMove);
+            mEventMouseDrag = MyGUI::newDelegate(this, &WidgetExtension::mouseDrag);
+            mEventMouseSetFocus = MyGUI::newDelegate(this, &WidgetExtension::focusGain);
+            mEventMouseLostFocus = MyGUI::newDelegate(this, &WidgetExtension::focusLoss);
+            mEventKeySetFocusDelegate = MyGUI::newDelegate(this, &WidgetExtension::focusGain);
+            mEventKeyLostFocusDelegate = MyGUI::newDelegate(this, &WidgetExtension::focusLoss);
+
+            w->eventKeyButtonPressed += mEventKeyButtonPressed;
+            w->eventKeyButtonReleased += mEventKeyButtonReleased;
+            w->eventMouseButtonClick += mEventMouseButtonClick;
+            w->eventMouseButtonDoubleClick += mEventMouseButtonDoubleClick;
+            w->eventMouseButtonPressed += mEventMouseButtonPressed;
+            w->eventMouseButtonReleased += mEventMouseButtonReleased;
+            w->eventMouseMove += mEventMouseMove;
+            w->eventMouseDrag += mEventMouseDrag;
+            w->eventMouseSetFocus += mEventMouseSetFocus;
+            w->eventMouseLostFocus += mEventMouseLostFocus;
+            w->eventKeySetFocus += mEventKeySetFocusDelegate;
+            w->eventKeyLostFocus += mEventKeyLostFocusDelegate;
+
+            mEventsInitialized = true;
+        }
     }
     void WidgetExtension::clearEvents(MyGUI::Widget* w)
     {
-        w->eventKeyButtonPressed.clear();
-        w->eventKeyButtonReleased.clear();
-        w->eventMouseButtonClick.clear();
-        w->eventMouseButtonDoubleClick.clear();
-        w->eventMouseButtonPressed.clear();
-        w->eventMouseButtonReleased.clear();
-        w->eventMouseMove.clear();
-        w->eventMouseDrag.clear();
+        if (mEventsInitialized)
+        {
+            w->eventKeyButtonPressed -= mEventKeyButtonPressed;
+            w->eventKeyButtonReleased -= mEventKeyButtonReleased;
+            w->eventMouseButtonClick -= mEventMouseButtonClick;
+            w->eventMouseButtonDoubleClick -= mEventMouseButtonDoubleClick;
+            w->eventMouseButtonPressed -= mEventMouseButtonPressed;
+            w->eventMouseButtonReleased -= mEventMouseButtonReleased;
+            w->eventMouseMove -= mEventMouseMove;
+            w->eventMouseDrag -= mEventMouseDrag;
+            w->eventMouseSetFocus -= mEventMouseSetFocus;
+            w->eventMouseLostFocus -= mEventMouseLostFocus;
+            w->eventKeySetFocus -= mEventKeySetFocusDelegate;
+            w->eventKeyLostFocus -= mEventKeyLostFocusDelegate;
 
-        w->eventMouseSetFocus.clear();
-        w->eventMouseLostFocus.clear();
-        w->eventKeySetFocus.clear();
-        w->eventKeyLostFocus.clear();
+            mEventsInitialized = false;
+        }
+//## VR_PATCH END
     }
 
     void WidgetExtension::reset()

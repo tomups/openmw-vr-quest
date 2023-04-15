@@ -33,10 +33,16 @@
 
 #include "tooltips.hpp"
 
+//## VR_PATCH BEGIN
+#include <components/vr/vr.hpp>
+//## VR_PATCH END
+
 namespace MWGui
 {
     StatsWindow::StatsWindow(DragAndDrop* drag)
-        : WindowPinnableBase("openmw_stats_window.layout")
+//## VR_PATCH BEGIN
+        : WindowPinnableBase(VR::getVR() ? "openmw_stats_window_vr.layout" : "openmw_stats_window.layout")
+//## VR_PATCH END
         , NoDrop(drag, mMainWidget)
         , mSkillView(nullptr)
         , mReputation(0)

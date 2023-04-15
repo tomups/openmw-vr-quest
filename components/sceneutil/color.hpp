@@ -7,6 +7,11 @@ namespace SceneUtil
 {
     bool isColorFormat(GLenum format);
     bool isFloatingPointColorFormat(GLenum format);
+//## VR_PATCH BEGIN
+    bool isSrgbxFormat(GLenum format);
+    //! Converts an srgbx format to the equivalent rgbx format. E.g. GL_SRGB8_ALPHA8 -> GL_RGBA8
+    GLenum getRgbxFromSrgbx(GLenum format);
+//## VR_PATCH END
     int getColorFormatChannelCount(GLenum format);
     void getColorFormatSourceFormatAndType(GLenum internalFormat, GLenum& sourceFormat, GLenum& sourceType);
 
@@ -125,8 +130,8 @@ namespace SceneUtil
 #define GL_SRGB8 0x8C41
 #endif
 
-#ifndef GL_SRGB_ALPHA8
-#define GL_SRGB_ALPHA8 0x8C42
+#ifndef GL_SRGB_ALPHA
+#define GL_SRGB_ALPHA 0x8C42
 #endif
 
 #ifndef GL_SRGB8_ALPHA8

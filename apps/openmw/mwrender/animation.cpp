@@ -65,6 +65,11 @@
 #include "util.hpp"
 #include "vismask.hpp"
 
+//## VR_PATCH BEGIN
+#include <components/vr/vr.hpp>
+#include "../mwmechanics/actorutil.hpp"
+//## VR_PATCH END
+
 namespace
 {
     class MarkDrawablesVisitor : public osg::NodeVisitor
@@ -1077,6 +1082,43 @@ namespace MWRender
         return mNodeMap;
     }
 
+//## VR_PATCH BEGIN
+// VR needs some bones to just do nothing.
+    static bool vrOverride(const std::string& groupname, const std::string& bone)
+    {
+#ifdef USE_OPENXR
+
+        if (!VR::getRightControllerActive())
+            return false;
+
+        // TODO: It's difficult to design a good override system when
+        // I don't have a good understanding of the animation code. So for
+        // now i just hardcode blocking of updaters for nodes that should not be animated in VR.
+        // Add any bone+groupname pair that is messing with Vr comfort here.
+        using Overrides = std::set<std::string>;
+        using GroupOverrides = std::map<std::string, Overrides>;
+        static GroupOverrides sVrOverrides = {
+            { "crossbow", { "weapon bone" } },
+            { "throwweapon", { "weapon bone" } },
+            { "bowandarrow", { "weapon bone" } },
+        };
+
+        bool override = false;
+        auto find = sVrOverrides.find(groupname);
+        if (find != sVrOverrides.end())
+        {
+            override = !!find->second.count(bone);
+        }
+
+        return override;
+#else
+        (void)bone;
+        (void)groupname;
+        return false;
+#endif
+    }
+
+//## VR_PATCH END
     template <typename ControllerType>
     inline osg::Callback* Animation::handleBlendTransform(const osg::ref_ptr<osg::Node>& node,
         osg::ref_ptr<SceneUtil::KeyframeController> keyframeController,
@@ -1121,6 +1163,10 @@ namespace MWRender
 
     void Animation::resetActiveGroups()
     {
+//## VR_PATCH BEGIN
+        const bool isPlayer = (mPtr == MWMechanics::getPlayer());
+
+//## VR_PATCH END
         // remove all previous external controllers from the scene graph
         for (auto it = mActiveControllers.begin(); it != mActiveControllers.end(); ++it)
         {
@@ -1182,11 +1228,21 @@ namespace MWRender
                                 mBoneAnimBlendControllers, stateData, animsrc->mAnimBlendRules, active->second);
                         }
                     }
-
-                    node->addUpdateCallback(callback);
+//## VR_PATCH BEGIN
+                    // Some bones need to be still and do nothing in VR
+                    // I'm SURE we'll TOTALLY make a cleaner solution for this before the end of 2090
+                    if (!isPlayer || !vrOverride(active->first, it->first))
+//## VR_PATCH END
+                        node->addUpdateCallback(callback);
                     mActiveControllers.emplace_back(node, callback);
 
-                    if (blendMask == 0 && node == mAccumRoot)
+//## VR_PATCH BEGIN
+// This change was my early attempt at eliminating movement accumulation.
+// VR-TODO: I understand the code MUCH better now and should be able to do this much cleaner.
+                    if (blendMask == 0 && node == mAccumRoot
+                        && !(isPlayer && VR::getVR() && VR::getRightControllerActive())
+                    )
+//## VR_PATCH END
                     {
                         mAccumCtrl = it->second;
 

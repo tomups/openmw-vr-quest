@@ -8,9 +8,9 @@
 **/
 
 #include <memory>
-#include <stack>
 #include <vector>
 
+#include <osg/Vec4>
 #include <osg/ref_ptr>
 
 #include "../mwbase/windowmanager.hpp"
@@ -87,6 +87,18 @@ namespace Gui
 {
     class FontLoader;
 }
+
+//## VR_PATCH BEGIN
+namespace Gui
+{
+    class VirtualKeyboardManager;
+}
+namespace MWVR
+{
+    class VrMetaMenu;
+    class RadialMenu;
+}
+//## VR_PATCH END
 
 namespace MWGui
 {
@@ -274,7 +286,7 @@ namespace MWGui
         int readPressedButton() override; ///< returns the index of the pressed button or -1 if no button was pressed
                                           ///< (->MessageBoxmanager->InteractiveMessageBox)
 
-        void update(float duration);
+        void update(float duration) override;
 
         /**
          * Fetches a GMST string from the store, if there is no setting with the given
@@ -591,6 +603,23 @@ namespace MWGui
         ///< set the indices of the map texture that should be used
 
         Files::ConfigurationManager& mCfgMgr;
+
+//## VR_PATCH BEGIN
+    public:
+        bool isPlayingVideo(void) const override;
+        DragAndDrop& getDragAndDrop(void) override;
+        void viewerTraversals() override;
+        void enterVoid() override;
+        void exitVoid() override;
+    private:
+        osg::Vec4 mOldClearColor;
+        bool mVRMode;
+        MWVR::VrMetaMenu* mVrMetaMenu;
+        MWVR::RadialMenu* mRadialMenu;
+        Gui::VirtualKeyboardManager* mVirtualKeyboardManager;
+        bool mVideoEnabled;
+        bool mTheVoid = false;
+//## VR_PATCH END
     };
 }
 

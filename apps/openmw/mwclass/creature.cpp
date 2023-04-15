@@ -25,6 +25,7 @@
 #include "../mwmechanics/setbaseaisetting.hpp"
 
 #include "../mwbase/environment.hpp"
+#include "../mwbase/inputmanager.hpp"
 #include "../mwbase/mechanicsmanager.hpp"
 #include "../mwbase/soundmanager.hpp"
 #include "../mwbase/windowmanager.hpp"
@@ -284,7 +285,7 @@ namespace MWClass
         if (!success)
         {
             victim.getClass().onHit(
-                victim, 0.0f, false, MWWorld::Ptr(), ptr, osg::Vec3f(), false, MWMechanics::DamageSourceType::Melee);
+                victim, 0.0f, false, MWWorld::Ptr(), ptr, osg::Vec3f(), false, -1, MWMechanics::DamageSourceType::Melee);
             MWMechanics::reduceWeaponCondition(0.f, false, weapon, ptr);
             return;
         }
@@ -343,12 +344,15 @@ namespace MWClass
         MWMechanics::diseaseContact(victim, ptr);
 
         victim.getClass().onHit(
-            victim, damage, healthdmg, weapon, ptr, hitPosition, true, MWMechanics::DamageSourceType::Melee);
+            victim, damage, healthdmg, weapon, ptr, hitPosition, true, attackStrength, MWMechanics::DamageSourceType::Melee);
     }
 
+//## VR_PATCH BEGIN
+// Add hitStrength to signature
     void Creature::onHit(const MWWorld::Ptr& ptr, float damage, bool ishealth, const MWWorld::Ptr& object,
-        const MWWorld::Ptr& attacker, const osg::Vec3f& hitPosition, bool successful,
+        const MWWorld::Ptr& attacker, const osg::Vec3f& hitPosition, bool successful, float hitStrength,
         const MWMechanics::DamageSourceType sourceType) const
+//## VR_PATCH END
     {
         MWMechanics::CreatureStats& stats = getCreatureStats(ptr);
 
@@ -454,6 +458,16 @@ namespace MWClass
                 stats.setFatigue(fatigue);
             }
         }
+//## VR_PATCH BEGIN
+        if (successful)
+        {
+            if (attacker == MWMechanics::getPlayer() && hitStrength > 0.f)
+            {
+                float hapticIntensity = std::max(0.25f, std::min(1.f, hitStrength));
+                MWBase::Environment::get().getInputManager()->applyHapticsRightHand(hapticIntensity);
+            }
+        }
+//## VR_PATCH END
     }
 
     std::unique_ptr<MWWorld::Action> Creature::activate(const MWWorld::Ptr& ptr, const MWWorld::Ptr& actor) const

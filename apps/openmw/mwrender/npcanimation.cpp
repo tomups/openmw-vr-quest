@@ -928,7 +928,9 @@ namespace MWRender
                 }
             }
         }
-        else if (mViewMode == VM_Normal)
+//## VR_PATCH BEGIN
+        else if (mViewMode != VM_HeadOnly)
+//## VR_PATCH END
         {
             WeaponAnimation::addControllers(mNodeMap, mActiveControllers, mObjectRoot.get());
         }

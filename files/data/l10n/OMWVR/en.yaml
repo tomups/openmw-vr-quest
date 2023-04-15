@@ -1,0 +1,13 @@
+VRPage: "OpenMW VR"
+VRPageDescription: "Additional settings related to VR"
+
+VrSettings: "VR Settings"
+
+physicalSneak: "Physical Sneak"
+physicalSneakDescription: |
+    If this setting is true, the character will be sneaking whenever the player ducks physically. Note that this feature requires
+    standing mode.
+
+physicalSneakOffset: "Toggle sneak"
+physicalSneakOffsetDescription: |
+    How much height in meters the player must duck before sneak becomes active, if physical sneak is enabled.

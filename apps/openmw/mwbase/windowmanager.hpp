@@ -87,6 +87,10 @@ namespace MWGui
     };
 
     struct TextColours;
+
+//## VR_PATCH BEGIN
+    class DragAndDrop;
+//## VR_PATCH END
 }
 
 namespace SFO
@@ -231,6 +235,15 @@ namespace MWBase
         virtual void showCrosshair(bool show) = 0;
         virtual bool setHudVisibility(bool show) = 0;
         virtual bool isHudVisible() const = 0;
+//## VR_PATCH BEGIN
+        virtual MWGui::DragAndDrop& getDragAndDrop(void) = 0;
+        virtual bool isPlayingVideo(void) const = 0;
+        virtual void update(float duration) = 0;
+        virtual void viewerTraversals() = 0;
+        // Disables the scene until exitVoid() is called
+        virtual void enterVoid() = 0;
+        virtual void exitVoid() = 0;
+//## VR_PATCH END
 
         virtual void disallowMouse() = 0;
         virtual void allowMouse() = 0;

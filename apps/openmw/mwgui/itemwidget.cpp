@@ -108,6 +108,11 @@ namespace MWGui
 
     void ItemWidget::setFrame(const std::string& frame, const MyGUI::IntCoord& coord)
     {
+//## VR_PATCH BEGIN
+// VR-TODO: Explain this
+        mCurrentFrameCoords = coord;
+
+//## VR_PATCH END
         if (mFrame)
         {
             mFrame->setImageTile(MyGUI::IntSize(coord.width, coord.height)); // Why is this needed? MyGUI bug?

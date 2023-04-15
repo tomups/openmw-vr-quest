@@ -107,13 +107,34 @@ namespace MWRender
     class Groundcover;
     class PostProcessor;
 
+//## VR_PATCH BEGIN
+// Needs to be declared outside the RenderingManager class to be forward declarable
+// Add mHitNode
+    // Result data of ray cast methods.
+    struct RayResult
+    {
+        bool mHit;
+        osg::Vec3f mHitNormalWorld;
+        osg::Vec3f mHitPointWorld;
+        osg::Vec3f mHitPointLocal;
+        MWWorld::Ptr mHitObject;
+        osg::Node* mHitNode;
+        /// Cast a ray between two points
+        ESM::RefNum mHitRefnum;
+        float mRatio;
+    };
+//## VR_PATCH END
+
     class RenderingManager : public MWRender::RenderingInterface
     {
     public:
         RenderingManager(osgViewer::Viewer* viewer, osg::ref_ptr<osg::Group> rootNode,
             Resource::ResourceSystem* resourceSystem, SceneUtil::WorkQueue* workQueue,
             DetourNavigator::Navigator& navigator, const MWWorld::GroundcoverStore& groundcoverStore,
-            SceneUtil::UnrefQueue& unrefQueue);
+//## VR_PATCH BEGIN
+// Add the Camera as a parameter instead, as VR needs it before RenderingManager is created.
+            SceneUtil::UnrefQueue& unrefQueue, std::unique_ptr<Camera> camera);
+//## VR_PATCH END
         ~RenderingManager();
 
         osgUtil::IncrementalCompileOperation* getIncrementalCompileOperation();
@@ -167,23 +188,15 @@ namespace MWRender
         /// Take a screenshot of w*h onto the given image, not including the GUI.
         void screenshot(osg::Image* image, int w, int h);
 
-        struct RayResult
-        {
-            bool mHit;
-            osg::Vec3f mHitNormalWorld;
-            osg::Vec3f mHitPointWorld;
-            MWWorld::Ptr mHitObject;
-            ESM::RefNum mHitRefnum;
-            float mRatio;
-        };
-
+//## VR_PATCH BEGIN
         RayResult castRay(const osg::Vec3f& origin, const osg::Vec3f& dest, bool ignorePlayer,
-            bool ignoreActors = false, std::span<const MWWorld::Ptr> ignoreList = {});
+            bool ignoreActors = false, bool ignore3DUI = true, std::span<const MWWorld::Ptr> ignoreList = {});
 
         /// Return the object under the mouse cursor / crosshair position, given by nX and nY normalized screen
         /// coordinates, where (0,0) is the top left corner.
-        RayResult castCameraToViewportRay(
-            const float nX, const float nY, float maxDistance, bool ignorePlayer, bool ignoreActors = false);
+        RayResult castCameraToViewportRay(const float nX, const float nY, float maxDistance, bool ignorePlayer,
+            bool ignoreActors = false, bool ignore3DUI = true);
+//## VR_PATCH END
 
         /// Get normalized screen coordinates of the bounding box's summit, where (0,0) is the top left corner
         osg::Vec2f getScreenCoords(const osg::BoundingBox& bb);
@@ -274,6 +287,15 @@ namespace MWRender
         void setScreenRes(int width, int height);
 
         void setNavMeshMode(Settings::NavMeshRenderMode value);
+//## VR_PATCH BEGIN
+        /// Cast a ray from a node in the scene graph
+        RayResult castRay(const osg::Transform* source, float maxDistance, bool ignorePlayer, bool ignoreActors = false,
+            bool ignore3DUI = true);
+        void enableVRPointer(bool left, bool right);
+        osg::Uniform* mUniformStereoViewOffsets;
+        osg::Uniform* mUniformStereoProjections;
+
+//## VR_PATCH END
 
     private:
         void updateTextureFiltering();
@@ -298,7 +320,9 @@ namespace MWRender
         const bool mSkyBlending;
 
         osg::ref_ptr<osgUtil::IntersectionVisitor> getIntersectionVisitor(osgUtil::Intersector* intersector,
-            bool ignorePlayer, bool ignoreActors, std::span<const MWWorld::Ptr> ignoreList = {});
+//## VR_PATCH BEGIN
+            bool ignorePlayer, bool ignoreActors, bool ignore3DUI, std::span<const MWWorld::Ptr> ignoreList = {});
+//## VR_PATCH END
 
         osg::ref_ptr<IntersectionVisitorWithIgnoreList> mIntersectionVisitor;
 

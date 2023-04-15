@@ -84,7 +84,9 @@ namespace MWGui
         std::vector<std::string> mSplashScreens;
 
         osg::ref_ptr<osg::Texture2D> mTexture;
-        osg::ref_ptr<CopyFramebufferToTextureCallback> mCopyFramebufferToTextureCallback;
+//## VR_PATCH BEGIN
+        std::shared_ptr<CopyFramebufferToTextureCallback> mCopyFramebufferToTextureCallback;
+//## VR_PATCH END
         std::unique_ptr<MyGUI::ITexture> mGuiTexture;
 
         void changeWallpaper();

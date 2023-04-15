@@ -4,6 +4,10 @@
 
 #include <osg/StateSet>
 #include <osg/Texture2D>
+//## VR_PATCH BEGIN
+// Change members from osg::Texture2D to osg::Texture
+#include <osg/Texture>
+//## VR_PATCH END
 
 #include <components/debug/debuglog.hpp>
 #include <components/resource/imagemanager.hpp>
@@ -22,7 +26,9 @@ namespace osgMyGUI
     {
     }
 
-    OSGTexture::OSGTexture(osg::Texture2D* texture, osg::StateSet* injectState)
+//## VR_PATCH BEGIN
+    OSGTexture::OSGTexture(osg::Texture* texture, osg::StateSet* injectState)
+//## VR_PATCH END
         : mImageManager(nullptr)
         , mTexture(texture)
         , mInjectState(injectState)
@@ -62,18 +68,21 @@ namespace osgMyGUI
         if (glfmt == GL_NONE)
             throw std::runtime_error("Texture format not supported");
 
-        mTexture = new osg::Texture2D();
-        mTexture->setTextureSize(width, height);
-        mTexture->setSourceFormat(glfmt);
-        mTexture->setSourceType(GL_UNSIGNED_BYTE);
+//## VR_PATCH BEGIN
+        auto* texture2D = new osg::Texture2D();
+        mTexture = texture2D;
+        texture2D->setTextureSize(width, height);
+        texture2D->setSourceFormat(glfmt);
+        texture2D->setSourceType(GL_UNSIGNED_BYTE);
 
         mWidth = width;
         mHeight = height;
 
-        mTexture->setFilter(osg::Texture::MIN_FILTER, osg::Texture::LINEAR);
-        mTexture->setFilter(osg::Texture::MAG_FILTER, osg::Texture::LINEAR);
-        mTexture->setWrap(osg::Texture::WRAP_S, osg::Texture::CLAMP_TO_EDGE);
-        mTexture->setWrap(osg::Texture::WRAP_T, osg::Texture::CLAMP_TO_EDGE);
+        texture2D->setFilter(osg::Texture::MIN_FILTER, osg::Texture::LINEAR);
+        texture2D->setFilter(osg::Texture::MAG_FILTER, osg::Texture::LINEAR);
+        texture2D->setWrap(osg::Texture::WRAP_S, osg::Texture::CLAMP_TO_EDGE);
+        texture2D->setWrap(osg::Texture::WRAP_T, osg::Texture::CLAMP_TO_EDGE);
+//## VR_PATCH END
 
         mFormat = format;
         mUsage = usage;
@@ -96,13 +105,16 @@ namespace osgMyGUI
             throw std::runtime_error("No imagemanager set");
 
         osg::ref_ptr<osg::Image> image(mImageManager->getImage(VFS::Path::Normalized(fname)));
-        mTexture = new osg::Texture2D(image);
-        mTexture->setWrap(osg::Texture::WRAP_S, osg::Texture::CLAMP_TO_EDGE);
-        mTexture->setWrap(osg::Texture::WRAP_T, osg::Texture::CLAMP_TO_EDGE);
-        mTexture->setTextureWidth(image->s());
-        mTexture->setTextureHeight(image->t());
+//## VR_PATCH BEGIN
+        auto* texture2D = new osg::Texture2D(image);
+        mTexture = texture2D;
+        texture2D->setWrap(osg::Texture::WRAP_S, osg::Texture::CLAMP_TO_EDGE);
+        texture2D->setWrap(osg::Texture::WRAP_T, osg::Texture::CLAMP_TO_EDGE);
+        texture2D->setTextureWidth(image->s());
+        texture2D->setTextureHeight(image->t());
         // disable mip-maps
-        mTexture->setFilter(osg::Texture2D::MIN_FILTER, osg::Texture2D::LINEAR);
+        texture2D->setFilter(osg::Texture::MIN_FILTER, osg::Texture::LINEAR);
+//## VR_PATCH END
 
         mWidth = image->s();
         mHeight = image->t();

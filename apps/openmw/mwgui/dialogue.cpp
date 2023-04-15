@@ -34,6 +34,10 @@
 
 #include "journalbooks.hpp" // to_utf8_span
 
+//## VR_PATCH BEGIN
+#include <components/vr/vr.hpp>
+//## VR_PATCH END
+
 namespace MWGui
 {
     void ResponseCallback::addResponse(std::string_view title, std::string_view text)
@@ -301,7 +305,9 @@ namespace MWGui
     // --------------------------------------------------------------------------------------------------
 
     DialogueWindow::DialogueWindow()
-        : WindowBase("openmw_dialogue_window.layout")
+//## VR_PATCH BEGIN
+        : WindowBase(VR::getVR() ? "openmw_dialogue_window_vr.layout" : "openmw_dialogue_window.layout")
+//## VR_PATCH END
         , mIsCompanion(false)
         , mGoodbye(false)
         , mPersuasionDialog(std::make_unique<ResponseCallback>(this))

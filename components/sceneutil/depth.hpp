@@ -58,6 +58,20 @@ namespace SceneUtil
     // Converts depth-stencil formats to their corresponding depth formats.
     GLenum getDepthFormatOfDepthStencilFormat(GLenum internalFormat);
 
+//## VR_PATCH BEGIN
+    // Returns true if the GL format is a depth format
+    bool isDepthFormat(GLenum format);
+
+    // Returns true if the GL format is a depth+stencil format
+    bool isDepthStencilFormat(GLenum format);
+
+    // Returns the corresponding source format and type for the given internal format
+    void getDepthFormatSourceFormatAndType(GLenum internalFormat, GLenum& sourceFormat, GLenum& sourceType);
+
+    // Converts depth-stencil formats to their corresponding depth formats.
+    GLenum getDepthFormatOfDepthStencilFormat(GLenum internalFormat);
+
+//## VR_PATCH END
     // Brief wrapper around an osg::Depth that applies the reversed depth function when a reversed depth buffer is in
     // use
     class AutoDepth : public osg::Depth

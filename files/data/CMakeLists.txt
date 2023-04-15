@@ -48,6 +48,7 @@ set(BUILTIN_DATA_FILES
     l10n/OMWControls/fr.yaml
     l10n/OMWControls/ru.yaml
     l10n/OMWControls/sv.yaml
+    l10n/OMWVR/en.yaml
 
     # L10n for OpenMW menus and non-game-specific messages
     l10n/OMWEngine/de.yaml
@@ -214,6 +215,23 @@ set(BUILTIN_DATA_FILES
     mygui/openmw_jail_screen.layout
     mygui/OpenMWResourcePlugin.xml
     mygui/skins.xml
+	
+    mygui/core_vr.xml
+    mygui/openmw_container_window_vr.layout
+    mygui/openmw_dialogue_window_vr.layout
+    mygui/openmw_hud_vr.layout
+    mygui/openmw_inventory_window_vr.layout
+    mygui/openmw_layers_vr.xml
+    mygui/openmw_map_window_vr.layout
+    mygui/openmw_settings_window_vr.layout
+    mygui/openmw_spell_window_vr.layout
+    mygui/openmw_stats_window_vr.layout
+    mygui/openmw_tooltips_vr.layout
+    mygui/openmw_trade_window_vr.layout
+    mygui/openmw_vr_listbox.layout
+    mygui/openmw_vr_metamenu.layout
+    mygui/openmw_vr_virtual_keyboard.layout
+    mygui/openmw_vr_radial_menu.layout
 )
 
 foreach (f ${BUILTIN_DATA_FILES})

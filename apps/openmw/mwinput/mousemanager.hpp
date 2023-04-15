@@ -51,6 +51,14 @@ namespace MWInput
 
         int mMouseMoveX;
         int mMouseMoveY;
+//## VR_PATCH BEGIN
+    public:
+        void mouseMovedVR(const SDLUtil::MouseMotionEvent& arg);
+        // VR computes mouse position based on intersections with 3d gui elements
+        void setMousePosition(int x, int y);
+    private:
+        float mPreviousXAxis;
+//## VR_PATCH END
     };
 }
 #endif

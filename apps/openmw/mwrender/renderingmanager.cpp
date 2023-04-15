@@ -87,6 +87,14 @@
 #include "vismask.hpp"
 #include "water.hpp"
 
+//## VR_PATCH BEGIN
+#include <osg/ViewportIndexed>
+#include <components/vr/vr.hpp>
+#include "../mwvr/vranimation.hpp"
+#include "../mwvr/vrgui.hpp"
+#include "../mwvr/vrpointer.hpp"
+
+//## VR_PATCH END
 namespace MWRender
 {
     class PerViewUniformStateUpdater final : public SceneUtil::StateSetUpdater
@@ -307,7 +315,10 @@ namespace MWRender
     RenderingManager::RenderingManager(osgViewer::Viewer* viewer, osg::ref_ptr<osg::Group> rootNode,
         Resource::ResourceSystem* resourceSystem, SceneUtil::WorkQueue* workQueue,
         DetourNavigator::Navigator& navigator, const MWWorld::GroundcoverStore& groundcoverStore,
-        SceneUtil::UnrefQueue& unrefQueue)
+//## VR_PATCH BEGIN
+// Add camera to signature
+        SceneUtil::UnrefQueue& unrefQueue, std::unique_ptr<Camera> camera)
+//## VR_PATCH END
         : mSkyBlending(Settings::fog().mSkyBlending)
         , mViewer(viewer)
         , mRootNode(rootNode)
@@ -520,7 +531,9 @@ namespace MWRender
         mWater = std::make_unique<Water>(
             sceneRoot->getParent(0), sceneRoot, mResourceSystem, mViewer->getIncrementalCompileOperation());
 
-        mCamera = std::make_unique<Camera>(mViewer->getCamera());
+//## VR_PATCH BEGIN
+        mCamera = std::move(camera);
+//## VR_PATCH END
 
         mScreenshotManager = std::make_unique<ScreenshotManager>(viewer);
 
@@ -858,6 +871,10 @@ namespace MWRender
                 mask &= ~sToggleWorldMask;
             mWater->showWorld(enabled);
             wm->setCullMask(mask);
+//## VR_PATCH BEGIN
+            mViewer->getCamera()->setCullMaskLeft(mask);
+            mViewer->getCamera()->setCullMaskRight(mask);
+//## VR_PATCH END
             return enabled;
         }
         else if (mode == Render_NavMesh)
@@ -949,6 +966,10 @@ namespace MWRender
         stateUpdater->setWindSpeed(world->getWindSpeed());
         stateUpdater->setSkyColor(mSky->getSkyColor());
         mPostProcessor->setUnderwaterFlag(isUnderwater);
+//## VR_PATCH BEGIN
+
+        mPlayerAnimation->updateCrosshairs();
+//## VR_PATCH END
     }
 
     void RenderingManager::updatePlayerPtr(const MWWorld::Ptr& ptr)
@@ -1038,18 +1059,25 @@ namespace MWRender
         return osg::Vec2f(0.5f, 0.f);
     }
 
-    RenderingManager::RayResult getIntersectionResult(osgUtil::LineSegmentIntersector* intersector,
+    RayResult getIntersectionResult(osgUtil::LineSegmentIntersector* intersector,
         const osg::ref_ptr<osgUtil::IntersectionVisitor>& visitor, std::span<const MWWorld::Ptr> ignoreList = {})
     {
+//## VR_PATCH BEGIN
+// VR needs the actual node hit, because the 3dgui does not exist as an object in the world.
+        RayResult result;
         constexpr auto nonObjectWorldMask = Mask_Terrain | Mask_Water;
-        RenderingManager::RayResult result;
         result.mHit = false;
         result.mRatio = 0;
+        result.mHitNode = nullptr;
 
         if (!intersector->containsIntersections())
             return result;
 
         auto test = [&](const osgUtil::LineSegmentIntersector::Intersection& intersection) {
+            if (!intersection.nodePath.empty())
+                result.mHitNode = intersection.nodePath.back();
+
+//## VR_PATCH END
             PtrHolder* ptrHolder = nullptr;
             std::vector<RefnumMarker*> refnumMarkers;
             bool hitNonObjectWorld = false;
@@ -1178,7 +1206,9 @@ namespace MWRender
     };
 
     osg::ref_ptr<osgUtil::IntersectionVisitor> RenderingManager::getIntersectionVisitor(
-        osgUtil::Intersector* intersector, bool ignorePlayer, bool ignoreActors,
+//## VR_PATCH BEGIN
+        osgUtil::Intersector* intersector, bool ignorePlayer, bool ignoreActors, bool ignore3DUI,
+//## VR_PATCH END
         std::span<const MWWorld::Ptr> ignoreList)
     {
         if (!mIntersectionVisitor)
@@ -1206,28 +1236,54 @@ namespace MWRender
         mask &= ~(Mask_RenderToTexture | Mask_Sky | Mask_Debug | Mask_Effect | Mask_Water | Mask_SimpleWater
             | Mask_Groundcover);
         if (ignorePlayer)
-            mask &= ~(Mask_Player);
+//## VR_PATCH BEGIN
+// Ignore the 3d pointer, but include the 3d gui
+            mask &= ~(Mask_Player | Mask_Pointer);
         if (ignoreActors)
-            mask &= ~(Mask_Actor | Mask_Player);
+            mask &= ~(Mask_Actor | Mask_Player | Mask_Pointer);
+        if (ignore3DUI)
+            mask &= ~(Mask_3DGUI);
 
         mIntersectionVisitor->setTraversalMask(mask);
         return mIntersectionVisitor;
     }
 
-    RenderingManager::RayResult RenderingManager::castRay(const osg::Vec3f& origin, const osg::Vec3f& dest,
-        bool ignorePlayer, bool ignoreActors, std::span<const MWWorld::Ptr> ignoreList)
+    RayResult RenderingManager::castRay(const osg::Vec3f& origin, const osg::Vec3f& dest,
+        bool ignorePlayer, bool ignoreActors, bool ignore3DUI, std::span<const MWWorld::Ptr> ignoreList)
     {
         osg::ref_ptr<osgUtil::LineSegmentIntersector> intersector(
             new osgUtil::LineSegmentIntersector(osgUtil::LineSegmentIntersector::MODEL, origin, dest));
         intersector->setIntersectionLimit(osgUtil::LineSegmentIntersector::LIMIT_NEAREST);
 
-        mRootNode->accept(*getIntersectionVisitor(intersector, ignorePlayer, ignoreActors, ignoreList));
+        mRootNode->accept(*getIntersectionVisitor(intersector, ignorePlayer, ignoreActors, ignore3DUI, ignoreList));
 
         return getIntersectionResult(intersector, mIntersectionVisitor, ignoreList);
     }
 
-    RenderingManager::RayResult RenderingManager::castCameraToViewportRay(
-        const float nX, const float nY, float maxDistance, bool ignorePlayer, bool ignoreActors)
+    RayResult RenderingManager::castRay(
+        const osg::Transform* source, float maxDistance, bool ignorePlayer, bool ignoreActors, bool ignore3DUI)
+    {
+
+        if (source)
+        {
+            osg::Matrix worldMatrix = osg::computeLocalToWorld(source->getParentalNodePaths()[0]);
+
+            osg::Vec3f direction = worldMatrix.getRotate() * osg::Vec3f(0, 1, 0);
+            direction.normalize();
+
+            osg::Vec3f raySource = worldMatrix.getTrans();
+            osg::Vec3f rayTarget = worldMatrix.getTrans() + direction * maxDistance;
+
+            return castRay(raySource, rayTarget, ignorePlayer, ignoreActors, ignore3DUI);
+        }
+        return RayResult();
+    }
+//## VR_PATCH END
+
+//## VR_PATCH BEGIN
+    RayResult RenderingManager::castCameraToViewportRay(
+        const float nX, const float nY, float maxDistance, bool ignorePlayer, bool ignoreActors, bool ignore3DUI)
+//## VR_PATCH END
     {
         osg::ref_ptr<osgUtil::LineSegmentIntersector> intersector(new osgUtil::LineSegmentIntersector(
             osgUtil::LineSegmentIntersector::PROJECTION, nX * 2.f - 1.f, nY * (-2.f) + 1.f));
@@ -1241,7 +1297,9 @@ namespace MWRender
         intersector->setEnd(end);
         intersector->setIntersectionLimit(osgUtil::LineSegmentIntersector::LIMIT_NEAREST);
 
-        mViewer->getCamera()->accept(*getIntersectionVisitor(intersector, ignorePlayer, ignoreActors));
+//## VR_PATCH BEGIN
+        mViewer->getCamera()->accept(*getIntersectionVisitor(intersector, ignorePlayer, ignoreActors, ignore3DUI));
+//## VR_PATCH END
 
         return getIntersectionResult(intersector, mIntersectionVisitor);
     }
@@ -1315,8 +1373,20 @@ namespace MWRender
 
     void RenderingManager::renderPlayer(const MWWorld::Ptr& player)
     {
-        mPlayerAnimation = new NpcAnimation(player, player.getRefData().getBaseNode(), mResourceSystem, 0,
-            NpcAnimation::VM_Normal, mFirstPersonFieldOfView);
+//## VR_PATCH BEGIN
+        if(VR::getVR())
+        {
+            mPlayerAnimation
+                = new MWVR::VRAnimation(player, player.getRefData().getBaseNode(), mResourceSystem, false, mSceneRoot);
+            static_cast<MWVR::VRAnimation*>(mPlayerAnimation.get())
+                ->setEnableCrosshairs(Settings::Manager::getBool("show 3D crosshairs", "VR"));
+        }
+        else
+        {
+            mPlayerAnimation = new NpcAnimation(player, player.getRefData().getBaseNode(), mResourceSystem, 0,
+                NpcAnimation::VM_Normal, mFirstPersonFieldOfView);
+        }
+//## VR_PATCH END
 
         mCamera->setAnimation(mPlayerAnimation.get());
         mCamera->attachTo(player);
@@ -1410,6 +1480,14 @@ namespace MWRender
         mSharedUniformStateUpdater->setScreenRes(width, height);
     }
 
+//## VR_PATCH BEGIN
+    void RenderingManager::enableVRPointer(bool left, bool right)
+    {
+        if (mPlayerAnimation)
+            static_cast<MWVR::VRAnimation*>(mPlayerAnimation.get())->enablePointers(left, right);
+    }
+
+//## VR_PATCH END
     void RenderingManager::updateTextureFiltering()
     {
         mViewer->stopThreading();
@@ -1437,6 +1515,14 @@ namespace MWRender
     void RenderingManager::setFogColor(const osg::Vec4f& color)
     {
         mViewer->getCamera()->setClearColor(color);
+//## VR_PATCH BEGIN
+        for (unsigned int i = 0; i < mViewer->getNumSlaves(); i++)
+        {
+            const auto& slave = mViewer->getSlave(i);
+            if (slave._camera)
+                slave._camera->setClearColor(color);
+        }
+//## VR_PATCH END
 
         mStateUpdater->setFogColor(color);
     }
@@ -1589,6 +1675,17 @@ namespace MWRender
                         hud->setVisible(false);
                 }
             }
+//## VR_PATCH BEGIN
+            else if (it->first == "VR")
+            {
+                if (it->second == "show 3D crosshairs")
+                {
+                    if(VR::getVR())
+                        static_cast<MWVR::VRAnimation*>(mPlayerAnimation.get())
+                            ->setEnableCrosshairs(Settings::Manager::getBool("show 3D crosshairs", "VR"));
+                }
+            }
+//## VR_PATCH END
         }
 
         if (updateProjection)
