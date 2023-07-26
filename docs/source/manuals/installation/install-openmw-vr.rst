@@ -19,7 +19,7 @@ OpenMW-VR is not yet a part of official OpenMW and must be installed separately.
 Windows Binaries
 ================
 
-`Download <https://gitlab.com/madsbuvi/openmw/-/jobs/artifacts/openmw-vr/download?job=Windows_MSBuild_Release>`_
+`Download <https://gitlab.com/madsbuvi/openmw/-/jobs/artifacts/openmw-vr/download?job=Windows_MSBuild_RelWithDebInfo>`_
 
 If you're not sure what any of the different methods mean, you should probably stick to this one.
 Simply download the latest build from the link above and extract the archive into a new/empty folder.
