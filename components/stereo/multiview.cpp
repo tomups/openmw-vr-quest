@@ -809,7 +809,7 @@ namespace Stereo
         {
             mResolveLayers[view]->apply(state, osg::FrameBufferObject::BindTarget::DRAW_FRAMEBUFFER);
             mMsaaLayers[view]->apply(state, osg::FrameBufferObject::BindTarget::READ_FRAMEBUFFER);
-            ext->glBlitFramebuffer(0, 0, mWidth, mHeight, 0, 0, mWidth, mHeight, GL_DEPTH_BUFFER_BIT, GL_NEAREST);
+            ext->glBlitFramebuffer(0, 0, mWidth, mHeight, 0, 0, mWidth, mHeight, mBlitMask, GL_NEAREST);
         }
     }
     void MultiviewFramebufferResolve::setupLayers()
