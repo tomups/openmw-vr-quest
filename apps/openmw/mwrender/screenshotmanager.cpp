@@ -3,6 +3,7 @@
 #include <condition_variable>
 #include <mutex>
 
+#include <osg/Texture2DArray>
 #include <components/stereo/multiview.hpp>
 #include <components/stereo/stereomanager.hpp>
 
@@ -80,6 +81,19 @@ namespace MWRender
             int width = screenW - leftPadding * 2;
             int height = screenH - topPadding * 2;
 
+                {
+                    if (Stereo::getMultiview())
+                    {
+                        auto tex = fbo->getAttachment(osg::FrameBufferObject::BufferComponent::COLOR_BUFFER0).getTexture();
+                        auto tex2dArray = dynamic_cast<const osg::Texture2DArray*>(tex);
+                        if (tex2dArray)
+                        {
+                            fbo = new osg::FrameBufferObject;
+                            fbo->setAttachment(osg::FrameBufferObject::BufferComponent::COLOR_BUFFER0,
+                                osg::FrameBufferAttachment(const_cast<osg::Texture2DArray*>(tex2dArray), 0));
+                        }
+                    }
+                }
             mImage->readPixels(leftPadding, topPadding, width, height, GL_RGB, GL_UNSIGNED_BYTE);
             mImage->scaleImage(mWidth, mHeight, 1);
         }

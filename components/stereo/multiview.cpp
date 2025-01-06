@@ -146,17 +146,17 @@ namespace Stereo
     class Texture2DViewSubloadCallback : public osg::Texture2D::SubloadCallback
     {
     public:
-        Texture2DViewSubloadCallback(osg::Texture2DArray* textureArray, int layer);
+        Texture2DViewSubloadCallback(const osg::Texture2DArray* textureArray, int layer);
 
         void load(const osg::Texture2D& texture, osg::State& state) const override;
         void subload(const osg::Texture2D& texture, osg::State& state) const override;
 
     private:
-        osg::ref_ptr<osg::Texture2DArray> mTextureArray;
+        osg::ref_ptr<const osg::Texture2DArray> mTextureArray;
         int mLayer;
     };
 
-    Texture2DViewSubloadCallback::Texture2DViewSubloadCallback(osg::Texture2DArray* textureArray, int layer)
+    Texture2DViewSubloadCallback::Texture2DViewSubloadCallback(const osg::Texture2DArray* textureArray, int layer)
         : mTextureArray(textureArray)
         , mLayer(layer)
     {
@@ -233,7 +233,7 @@ namespace Stereo
     }
 
     osg::ref_ptr<osg::Texture2D> createTextureView_Texture2DFromTexture2DArray(
-        osg::Texture2DArray* textureArray, int layer)
+        const osg::Texture2DArray* textureArray, int layer)
     {
         if (!getTextureViewSupported())
         {

@@ -41,7 +41,7 @@ namespace Stereo
 
     //! Creates a Texture2D as a texture view into a Texture2DArray
     osg::ref_ptr<osg::Texture2D> createTextureView_Texture2DFromTexture2DArray(
-        osg::Texture2DArray* textureArray, int layer);
+        const osg::Texture2DArray* textureArray, int layer);
 
     //! Class that manages the specifics of GL_OVR_Multiview aware framebuffers, separating the layers into separate
     //! framebuffers, and disabling
