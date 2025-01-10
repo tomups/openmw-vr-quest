@@ -38,7 +38,7 @@ namespace VR
             QuadLayer
         };
 
-        virtual ~Layer(){};
+        virtual ~Layer(){}
 
         virtual Type getType() const = 0;
     };
@@ -61,7 +61,7 @@ namespace VR
         ProjectionLayer();
         ~ProjectionLayer() override;
 
-        Type getType() const override { return Type::ProjectionLayer; };
+        Type getType() const override { return Type::ProjectionLayer; }
 
         std::array<ProjectionLayerView, 2> views;
     };
@@ -81,7 +81,7 @@ namespace VR
         EyeVisibility eyeVisibility = EyeVisibility::Both;
         ReferenceSpace space = ReferenceSpace::View;
 
-        Type getType() const override { return Type::QuadLayer; };
+        Type getType() const override { return Type::QuadLayer; }
     };
 }
 

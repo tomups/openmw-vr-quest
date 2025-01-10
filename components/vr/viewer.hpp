@@ -70,7 +70,7 @@ namespace VR
         void processChangedSettings(const std::set<std::pair<std::string, std::string>>& changed);
         void updateView(Stereo::View& left, Stereo::View& right);
 
-        bool callbacksConfigured() { return mCallbacksConfigured; };
+        bool callbacksConfigured() { return mCallbacksConfigured; }
 
         void insertLayer(std::shared_ptr<Layer> layer);
         void removeLayer(std::shared_ptr<Layer> layer);

@@ -2,8 +2,7 @@
 #define VR_SWAPCHAIN_H
 
 #include <cstdint>
-#include <map>
-#include <memory>
+#include <string>
 
 #include <osg/ref_ptr>
 
@@ -43,7 +42,7 @@ namespace VR
             : mImage(image)
         {
         }
-        uint32_t glImage() const override { return mImage; };
+        uint32_t glImage() const override { return mImage; }
 
         uint32_t mImage;
     };
@@ -60,7 +59,7 @@ namespace VR
         Swapchain(uint32_t width, uint32_t height, uint32_t samples, uint32_t arraySize, Attachment attachment,
             const std::string& name);
 
-        virtual ~Swapchain(){};
+        virtual ~Swapchain(){}
 
         //! Must be called before accessing an image from this swapchain
         virtual void beginFrame(osg::GraphicsContext* gc) = 0;
@@ -69,22 +68,22 @@ namespace VR
         virtual void endFrame(osg::GraphicsContext* gc) = 0;
 
         //! Width of the surface
-        uint32_t width() const { return mWidth; };
+        uint32_t width() const { return mWidth; }
 
         //! Height of the surface
-        uint32_t height() const { return mHeight; };
+        uint32_t height() const { return mHeight; }
 
         //! Samples of the surface
-        uint32_t samples() const { return mSamples; };
+        uint32_t samples() const { return mSamples; }
 
         //! Pixel format of the surface. \Note This is 0 until the swapchain has been initialized by the draw thread
-        uint32_t format() const { return mFormat; };
+        uint32_t format() const { return mFormat; }
 
         //! Array depth of the surface
-        uint32_t arraySize() const { return mArraySize; };
+        uint32_t arraySize() const { return mArraySize; }
 
         //! Array depth of the surface
-        uint32_t textureTarget() const { return mTextureTarget; };
+        uint32_t textureTarget() const { return mTextureTarget; }
 
         //! Get the currently active swapchain image
         virtual SwapchainImage* image() = 0;

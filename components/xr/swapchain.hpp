@@ -5,6 +5,7 @@
 #include <openxr/openxr.h>
 
 #include <vector>
+#include <memory>
 
 struct XrSwapchainSubImage;
 

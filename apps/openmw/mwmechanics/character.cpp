@@ -58,7 +58,7 @@
 
 //## VR_PATCH BEGIN
 #include <components/vr/vr.hpp>
-#include "../mwvr/vrutil.hpp"
+//#include "../mwvr/vrutil.hpp"
 #include "../mwrender/npcanimation.hpp"
 //## VR_PATCH END
 
@@ -1677,8 +1677,8 @@ namespace MWMechanics
 //## VR_PATCH BEGIN
 // MERGETODO: upstream removed or moved the target part of this.
 // Read what .48 VR changed here and reproduce it i guess?
-                    if(VR::getVR())
-                        MWWorld::Ptr target = MWVR::Util::getWeaponTarget().first;
+                    //if(VR::getVR())
+                        //MWWorld::Ptr target = MWVR::Util::getWeaponTarget().first;
 //## VR_PATCH END
 
                     MWBase::LuaManager::ActorControls* actorControls

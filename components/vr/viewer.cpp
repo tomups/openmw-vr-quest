@@ -69,7 +69,7 @@ namespace VR
     struct UpdateViewCallback : public Stereo::Manager::UpdateViewCallback
     {
         UpdateViewCallback(Viewer* viewer)
-            : mViewer(viewer){};
+            : mViewer(viewer){}
 
         //! Called during the update traversal of every frame to source updated stereo values.
         virtual void updateView(Stereo::View& left, Stereo::View& right) override { mViewer->updateView(left, right); }
@@ -81,7 +81,7 @@ namespace VR
     {
     public:
         SwapBuffersCallback(Viewer* viewer)
-            : mViewer(viewer){};
+            : mViewer(viewer){}
         void swapBuffersImplementation(osg::GraphicsContext* gc) override { mViewer->swapBuffersCallback(gc); }
 
     private:
@@ -100,7 +100,7 @@ namespace VR
         {
             mViewer->initialDrawCallback(info, view);
             return true;
-        };
+        }
 
     private:
         Viewer* mViewer;
@@ -118,7 +118,7 @@ namespace VR
         {
             mViewer->finalDrawCallback(info, view);
             return true;
-        };
+        }
 
     private:
         Viewer* mViewer;
