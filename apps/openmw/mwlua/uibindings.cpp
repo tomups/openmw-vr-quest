@@ -70,6 +70,8 @@ namespace MWLua
             { MWGui::GM_LoadingWallpaper, "LoadingWallpaper" },
             { MWGui::GM_Jail, "Jail" },
             { MWGui::GM_QuickKeysMenu, "QuickKeysMenu" },
+            { MWGui::GM_RadialMenu, "VrRadialMenu" },
+            { MWGui::GM_VrMetaMenu, "VrMetaMenu" },
         };
 
         const auto nameToMode = [] {
