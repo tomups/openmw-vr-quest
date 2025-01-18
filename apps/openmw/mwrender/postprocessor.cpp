@@ -226,6 +226,15 @@ namespace MWRender
 
         if (mUsePostProcessing)
             enable();
+
+        // ## VR_PATCH BEGIN
+        // VR needs to override the final output FBO
+        if (VR::getVR())
+        {
+            mCanvases[0]->setPingPongCallback(std::make_unique<MWVR::PingPongCallback>(this));
+            mCanvases[1]->setPingPongCallback(std::make_unique<MWVR::PingPongCallback>(this));
+        }
+        // ## VR_PATCH END
     }
 
     PostProcessor::~PostProcessor()
@@ -270,15 +279,6 @@ namespace MWRender
     {
         mReload = true;
         mUsePostProcessing = true;
-//## VR_PATCH BEGIN
-
-        if (VR::getVR())
-        {
-            Stereo::Manager::instance().setShouldAttachMultiviewFramebufferToMainCamera(false);
-            mCanvases[0]->setPingPongCallback(std::make_unique<MWVR::PingPongCallback>(this));
-            mCanvases[1]->setPingPongCallback(std::make_unique<MWVR::PingPongCallback>(this));
-        }
-//## VR_PATCH END
     }
 
     void PostProcessor::disable()

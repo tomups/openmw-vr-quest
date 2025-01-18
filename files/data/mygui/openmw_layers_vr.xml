@@ -22,6 +22,7 @@
     <Layer name="DrowningBar" overlapped="false" pick="false"/>
     <Layer name="MainMenuBackground" overlapped="true" pick="true"/>
     <Layer name="MainMenu" overlapped="true" pick="true"/>
+    <Layer name="Settings" overlapped="true" pick="true"/>
     <Layer name="Console" overlapped="true" pick="true"/>
     <Layer name="RadialMenu" overlapped="true" pick="true"/>
     <Layer name="LoadingScreenBackground" overlapped="false" pick="true"/>

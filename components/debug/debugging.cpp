@@ -179,7 +179,7 @@ namespace Debug
             }
         };
 
-#if defined _WIN32 && defined _DEBUG
+#if 0//defined _WIN32 && defined _DEBUG
         class DebugOutput : public DebugOutputBase
         {
         public:
@@ -349,7 +349,7 @@ namespace Debug
         static std::unique_ptr<std::mutex> rawStderrMutex = nullptr;
         static std::ofstream logfile;
 
-#if defined(_WIN32) && defined(_DEBUG)
+#if 0//defined(_WIN32) && defined(_DEBUG)
         static boost::iostreams::stream_buffer<DebugOutput> sb;
 #else
         static boost::iostreams::stream_buffer<Tee<Identity, Coloured>> standardOut;
@@ -395,7 +395,7 @@ namespace Debug
         Log::sMinDebugLevel = getDebugLevel();
         Log::sWriteLevel = true;
 
-#if !(defined(_WIN32) && defined(_DEBUG))
+//#if !(defined(_WIN32) && defined(_DEBUG))
         const std::string logName = Misc::StringUtils::lowerCase(appName) + ".log";
         logfile.open(logDir / logName, std::ios::out);
 
@@ -411,7 +411,7 @@ namespace Debug
 
         std::cout.rdbuf(&standardOut);
         std::cerr.rdbuf(&standardErr);
-#endif
+//#endif
 
 #ifdef _WIN32
         if (Crash::CrashCatcher::instance())
@@ -431,7 +431,7 @@ namespace Debug
         rawStderr = std::make_unique<std::ostream>(std::cerr.rdbuf());
         rawStderrMutex = std::make_unique<std::mutex>();
 
-#if defined(_WIN32) && defined(_DEBUG)
+#if 0//defined(_WIN32) && defined(_DEBUG)
         // Redirect cout and cerr to VS debug output when running in debug mode
         sb.open(DebugOutput());
         std::cout.rdbuf(&sb);

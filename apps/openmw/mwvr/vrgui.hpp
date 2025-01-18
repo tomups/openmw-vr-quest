@@ -187,7 +187,9 @@ namespace MWVR
 
         ~VRGUIManager(void);
 
-        void configure();
+        void initScene();
+
+        void readConfig();
 
         void clear();
 

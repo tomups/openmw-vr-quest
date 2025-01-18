@@ -130,9 +130,7 @@ namespace MWRender
         {
             mMode = Mode::VR;
             processViewChange();
-#ifdef USE_OPENXR
             mCameraTrackingUpdateCallback = std::make_unique<CameraTrackingUpdateCallback>(this);
-#endif
         }
 //## VR_PATCH END
     }

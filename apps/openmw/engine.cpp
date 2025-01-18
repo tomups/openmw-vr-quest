@@ -199,7 +199,7 @@ namespace
         {
         }
 
-        void operator()(osg::GraphicsContext* graphicsContext) override { mEngine->configureVR(graphicsContext); }
+        void operator()(osg::GraphicsContext* graphicsContext) override { mEngine->configureVRGraphics(graphicsContext); }
 
         OMW::Engine* mEngine;
     };
@@ -535,7 +535,7 @@ void OMW::Engine::createWindow()
     const SDLUtil::VSyncMode vsync = Settings::video().mVsyncMode;
     unsigned antialiasing = static_cast<unsigned>(Settings::video().mAntialiasing);
 
-           // ## VR_PATCH BEGIN
+    // ## VR_PATCH BEGIN
     if (VR::getVR())
         // MSAA needs to happen in offscreen buffers.
         antialiasing = 0;
@@ -669,7 +669,7 @@ void OMW::Engine::createWindow()
     if (Debug::shouldDebugOpenGL())
         realizeOperations->add(new Debug::EnableGLDebugOperation());
 
-           // ## VR_PATCH BEGIN
+    // ## VR_PATCH BEGIN
     if (VR::getVR())
         realizeOperations->add(new InitializeVrOperation(this));
     // ## VR_PATCH END
@@ -782,7 +782,7 @@ void OMW::Engine::prepareEngine()
 
     createWindow();
 
-           // ## VR_PATCH BEGIN
+    // ## VR_PATCH BEGIN
     mCallbackManager = std::make_unique<Misc::CallbackManager>(mViewer);
     // ## VR_PATCH END
 
@@ -874,40 +874,10 @@ void OMW::Engine::prepareEngine()
         Version::getOpenmwVersionDescription(), shadersSupported, mCfgMgr);
     mEnvironment.setWindowManager(*mWindowManager);
 
-           // ## VR_PATCH BEGIN
+    // ## VR_PATCH BEGIN
     if (VR::getVR())
     {
-        mVrGUIManager = std::make_unique<MWVR::VRGUIManager>(mResourceSystem.get(), mViewer->getSceneData()->asGroup());
-
-        const std::string xrinputuserdefault = mCfgMgr.getUserConfigPath().string() + "/xrcontrollersuggestions.xml";
-        const std::string xrinputlocaldefault = mCfgMgr.getLocalPath().string() + "/xrcontrollersuggestions.xml";
-        const std::string xrinputglobaldefault = mCfgMgr.getGlobalPath().string() + "/xrcontrollersuggestions.xml";
-
-        std::string xrControllerSuggestions;
-        if (std::filesystem::exists(xrinputuserdefault))
-            xrControllerSuggestions = xrinputuserdefault;
-        else if (std::filesystem::exists(xrinputlocaldefault))
-            xrControllerSuggestions = xrinputlocaldefault;
-        else if (std::filesystem::exists(xrinputglobaldefault))
-            xrControllerSuggestions = xrinputglobaldefault;
-        else
-            xrControllerSuggestions = ""; // if it doesn't exist, pass in an empty string
-
-        std::string defaultXrControllerSuggestions;
-        if (std::filesystem::exists(xrinputlocaldefault))
-            defaultXrControllerSuggestions = xrinputlocaldefault;
-        else if (std::filesystem::exists(xrinputglobaldefault))
-            defaultXrControllerSuggestions = xrinputglobaldefault;
-        else
-            defaultXrControllerSuggestions = ""; // if it doesn't exist, pass in an empty string
-
-        Log(Debug::Verbose) << "xrinputuserdefault: " << xrinputuserdefault;
-        Log(Debug::Verbose) << "xrinputlocaldefault: " << xrinputlocaldefault;
-        Log(Debug::Verbose) << "xrinputglobaldefault: " << xrinputglobaldefault;
-
-        mInputManager = std::make_unique<MWVR::VRInputManager>(mWindow, mViewer, mScreenCaptureHandler, keybinderUser,
-            keybinderUserExists, userGameControllerdb, gameControllerdb, mGrab, xrControllerSuggestions,
-            defaultXrControllerSuggestions);
+        configureVRPreScene(keybinderUser, keybinderUserExists, userGameControllerdb, gameControllerdb);
     }
     else
     {
@@ -922,18 +892,8 @@ void OMW::Engine::prepareEngine()
     mEnvironment.setSoundManager(*mSoundManager);
 
     // ## VR_PATCH BEGIN
-    if(VR::getVR())
-    {
-        mVrViewer = std::make_unique<VR::Viewer>(mXrSession, mViewer);
-        mVrViewer->configureCallbacks();
-        auto cullMask = ~(MWRender::VisMask::Mask_UpdateVisitor | MWRender::VisMask::Mask_SimpleWater);
-        cullMask &= ~MWRender::VisMask::Mask_GUI;
-        cullMask |= MWRender::VisMask::Mask_3DGUI;
-        mViewer->getCamera()->setCullMask(cullMask);
-        mViewer->getCamera()->setCullMaskLeft(cullMask);
-        mViewer->getCamera()->setCullMaskRight(cullMask);
-    }
-
+    // In VR, the MWRender::Camera object needs to be created right away to apply tracking updates even before the scene and
+    // RenderingManager has been created.
     auto camera = std::make_unique<MWRender::Camera>(mViewer->getCamera());
     // ## VR_PATCH END
     //  Create the world
@@ -968,6 +928,13 @@ void OMW::Engine::prepareEngine()
     mEnvironment.setWorldScene(mWorld->getWorldScene());
     mWorld->setupPlayer();
     mWorld->setRandomSeed(mRandomSeed);
+
+    // ## VR_PATCH BEGIN
+    if (VR::getVR())
+    {
+        configureVRScene();
+    }
+    // ## VR_PATCH END
 
     const MWWorld::Store<ESM::GameSetting>* gmst = &mWorld->getStore().get<ESM::GameSetting>();
     mL10nManager->setGmstLoader(
@@ -1253,7 +1220,7 @@ void OMW::Engine::setRandomSeed(unsigned int seed)
 }
 
 // ## VR_PATCH BEGIN
-void OMW::Engine::configureVR(osg::GraphicsContext* gc)
+void OMW::Engine::configureVRGraphics(osg::GraphicsContext* gc)
 {
     mVrTrackingManager = std::make_unique<VR::TrackingManager>();
     mXrInstance = std::make_unique<XR::Instance>(gc);
@@ -1261,5 +1228,61 @@ void OMW::Engine::configureVR(osg::GraphicsContext* gc)
     if (mXrSession->appShouldShareDepthInfo())
         mSelectDepthFormatOperation->setSupportedFormats(mXrInstance->platform().supportedDepthFormats());
     mSelectColorFormatOperation->setSupportedFormats({ mXrInstance->platform().supportedColorFormats() });
+}
+
+void OMW::Engine::configureVRPreScene(const std::filesystem::path& userFile, bool userFileExists,
+    const std::filesystem::path& userControllerBindingsFile, const std::filesystem::path& controllerBindingsFile)
+{
+    // Set up enough of VR to view the intro cinematic/loading screen
+    mVrGUIManager = std::make_unique<MWVR::VRGUIManager>(mResourceSystem.get(), mViewer->getSceneData()->asGroup());
+    mVrViewer = std::make_unique<VR::Viewer>(mXrSession, mViewer);
+    mVrViewer->configureCallbacks();
+    auto cullMask = ~(MWRender::VisMask::Mask_UpdateVisitor | MWRender::VisMask::Mask_SimpleWater);
+    cullMask &= ~MWRender::VisMask::Mask_GUI;
+    cullMask |= MWRender::VisMask::Mask_3DGUI;
+    mViewer->getCamera()->setCullMask(cullMask);
+    mViewer->getCamera()->setCullMaskLeft(cullMask);
+    mViewer->getCamera()->setCullMaskRight(cullMask);
+
+    const std::string xrinputuserdefault = mCfgMgr.getUserConfigPath().string() + "/xrcontrollersuggestions.xml";
+    const std::string xrinputlocaldefault = mCfgMgr.getLocalPath().string() + "/xrcontrollersuggestions.xml";
+    const std::string xrinputglobaldefault = mCfgMgr.getGlobalPath().string() + "/xrcontrollersuggestions.xml";
+
+    std::string xrControllerSuggestions;
+    if (std::filesystem::exists(xrinputuserdefault))
+        xrControllerSuggestions = xrinputuserdefault;
+    else if (std::filesystem::exists(xrinputlocaldefault))
+        xrControllerSuggestions = xrinputlocaldefault;
+    else if (std::filesystem::exists(xrinputglobaldefault))
+        xrControllerSuggestions = xrinputglobaldefault;
+    else
+        xrControllerSuggestions = ""; // if it doesn't exist, pass in an empty string
+
+    std::string defaultXrControllerSuggestions;
+    if (std::filesystem::exists(xrinputlocaldefault))
+        defaultXrControllerSuggestions = xrinputlocaldefault;
+    else if (std::filesystem::exists(xrinputglobaldefault))
+        defaultXrControllerSuggestions = xrinputglobaldefault;
+    else
+        defaultXrControllerSuggestions = ""; // if it doesn't exist, pass in an empty string
+
+    Log(Debug::Verbose) << "xrinputuserdefault: " << xrinputuserdefault;
+    Log(Debug::Verbose) << "xrinputlocaldefault: " << xrinputlocaldefault;
+    Log(Debug::Verbose) << "xrinputglobaldefault: " << xrinputglobaldefault;
+
+    mInputManager = std::make_unique<MWVR::VRInputManager>(mWindow, mViewer, mScreenCaptureHandler, userFile,
+        userFileExists, userControllerBindingsFile, controllerBindingsFile, mGrab, xrControllerSuggestions,
+        defaultXrControllerSuggestions);
+
+    // Before the RenderingManager and associated infrastructure is created, we need to render directly into the stereo framebuffer
+    mStereoManager->setShouldAttachMultiviewFramebufferToMainCamera(true);
+}
+
+void OMW::Engine::configureVRScene() 
+{
+    // Rendering should now be done in the post-processor FBOs
+    mStereoManager->setShouldAttachMultiviewFramebufferToMainCamera(false);
+    // Fully initialize with integration into the rendering manager
+    mVrGUIManager->initScene();
 }
 // ## VR_PATCH END

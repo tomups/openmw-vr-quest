@@ -217,6 +217,7 @@ set(BUILTIN_DATA_FILES
     mygui/skins.xml
 	
     mygui/core_vr.xml
+    mygui/openmw_alchemy_window_vr.layout
     mygui/openmw_container_window_vr.layout
     mygui/openmw_dialogue_window_vr.layout
     mygui/openmw_hud_vr.layout

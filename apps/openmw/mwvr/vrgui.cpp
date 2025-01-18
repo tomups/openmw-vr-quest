@@ -587,6 +587,21 @@ namespace MWVR
         mGeometries->setCullingActive(false);
         mRootNode->addChild(mGeometries);
 
+        mGUICameras->setName("VR GUI Cameras Root");
+        mGUICameras->setNodeMask(MWRender::VisMask::Mask_3DGUI);
+        mRootNode->addChild(mGUICameras);
+
+        readConfig();
+    }
+
+    VRGUIManager::~VRGUIManager(void)
+    {
+        VR::Session::instance().removeListener(mSessionListener);
+        sManager = nullptr;
+    }
+
+    void VRGUIManager::initScene()
+    {
         auto stateset = mGeometries->getOrCreateStateSet();
         stateset->setMode(GL_BLEND, osg::StateAttribute::ON);
         stateset->setAttributeAndModes(new osg::BlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA));
@@ -604,28 +619,19 @@ namespace MWVR
 
         SceneUtil::ShadowManager::instance().disableShadowsForStateSet(*stateset);
         mGeometries->setStateSet(stateset);
-
-        mGUICameras->setName("VR GUI Cameras Root");
-        mGUICameras->setNodeMask(MWRender::VisMask::Mask_3DGUI);
-        mRootNode->addChild(mGUICameras);
-
-        configure();
     }
 
-    VRGUIManager::~VRGUIManager(void)
-    {
-        VR::Session::instance().removeListener(mSessionListener);
-        sManager = nullptr;
-    }
-
-    void VRGUIManager::configure()
+    void VRGUIManager::readConfig()
     {
         clear();
 
         LayerConfig defaultConfig = createDefaultConfig(1);
-        LayerConfig loadingScreenConfig = createDefaultConfig(1, Intersectable::Yes, true, SizingMode::Fixed, "LoadingScreenBackground");
+        LayerConfig loadingScreenConfig
+            = createDefaultConfig(1, Intersectable::Yes, true, SizingMode::Fixed, "LoadingScreenBackground");
         LayerConfig mainMenuConfig
             = createDefaultConfig(1, Intersectable::Yes, true, MWVR::SizingMode::Auto, "MainMenuBackground;Popup");
+        LayerConfig settingsConfig
+            = createDefaultConfig(2, Intersectable::Yes, true, MWVR::SizingMode::Auto);
         LayerConfig journalBooksConfig = createDefaultConfig(2, Intersectable::Yes, false, SizingMode::Fixed);
         LayerConfig defaultWindowsConfig = createDefaultConfig(3, Intersectable::Yes, true);
         LayerConfig videoPlayerConfig = createDefaultConfig(4, Intersectable::Yes, true, SizingMode::Fixed);
@@ -738,6 +744,7 @@ namespace MWVR
             { "Windows", defaultWindowsConfig },
             { "ListBox", listBoxConfig },
             { "MainMenu", mainMenuConfig },
+            { "Settings", settingsConfig },
             { "Notification", notificationConfig },
             { "InputBlocker", videoPlayerConfig },
             { "Video", videoPlayerConfig },
@@ -1034,7 +1041,7 @@ namespace MWVR
                 layer.second->removeFromSceneGraph();
             }
 
-            configure();
+            readConfig();
 
             // Re-populate layers
             for (auto widget : widgets)

@@ -1086,9 +1086,7 @@ namespace MWRender
 // VR needs some bones to just do nothing.
     static bool vrOverride(const std::string& groupname, const std::string& bone)
     {
-#ifdef USE_OPENXR
-
-        if (!VR::getRightControllerActive())
+        if (VR::getKBMouseModeActive() || !VR::getVR())
             return false;
 
         // TODO: It's difficult to design a good override system when
@@ -1111,11 +1109,6 @@ namespace MWRender
         }
 
         return override;
-#else
-        (void)bone;
-        (void)groupname;
-        return false;
-#endif
     }
 
 //## VR_PATCH END

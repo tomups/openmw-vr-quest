@@ -1028,9 +1028,8 @@ namespace MWWorld
     MWWorld::Ptr World::getFacedObject()
     {
 //## VR_PATCH BEGIN
-#ifdef USE_OPENXR
-        return MWVR::Util::getPointerTarget().first;
-#endif
+        if (VR::getVR())
+            return MWVR::Util::getPointerTarget().first;
 
 //## VR_PATCH END
         MWWorld::Ptr facedObject;

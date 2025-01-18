@@ -193,7 +193,6 @@ namespace VR
         mViewer->getCamera()->getGraphicsContext()->setSwapCallback(mSwapBuffersCallback);
         mViewer->getCamera()->setViewport(0, 0, mFramebufferWidth, mFramebufferHeight);
         Stereo::Manager::instance().overrideEyeResolution(osg::Vec2i(mFramebufferWidth, mFramebufferHeight));
-        Stereo::Manager::instance().setShouldAttachMultiviewFramebufferToMainCamera(true);
 
         setupMirrorTexture();
         setupSwapchains();

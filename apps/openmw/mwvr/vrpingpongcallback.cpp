@@ -86,9 +86,9 @@ namespace MWVR
 
         osg::ref_ptr<osg::FrameBufferObject> fbo = nullptr;
         if (Settings::postProcessing().mTransparentPostpass)
-            fbo = mParent->getFbo(MWRender::PostProcessor::FBO_OpaqueDepth, frameId);
+            fbo = mParent->getFbo(MWRender::PostProcessor::FBO_OpaqueDepth, frameId%2);
         else
-            fbo = mParent->getFbo(MWRender::PostProcessor::FBO_Primary, frameId);
+            fbo = mParent->getFbo(MWRender::PostProcessor::FBO_Primary, frameId%2);
 
         VR::Viewer::instance().submitDepthForView(state, fbo, eye);
     }

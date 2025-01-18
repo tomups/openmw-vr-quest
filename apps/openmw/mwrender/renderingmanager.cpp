@@ -1138,6 +1138,7 @@ namespace MWRender
                 result.mHit = true;
                 result.mHitPointWorld = intersection.getWorldIntersectPoint();
                 result.mHitNormalWorld = intersection.getWorldIntersectNormal();
+                result.mHitPointLocal = intersection.getLocalIntersectPoint();
                 result.mRatio = intersection.ratio;
             }
         };

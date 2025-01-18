@@ -312,6 +312,9 @@ if(BUILD_OPENMW_VR)
             POST_BUILD
             COMMAND cp "${OpenMW_BINARY_DIR}/resources/version" "${BUNDLE_RESOURCES_DIR}/resources")
     endif(APPLE)
+    configure_resource_file(${OpenMW_SOURCE_DIR}/files/xrcontrollersuggestions.xml
+        "${OpenMW_BINARY_DIR}" "xrcontrollersuggestions.xml")
+
 endif()
 ### /VR_PATCH
 

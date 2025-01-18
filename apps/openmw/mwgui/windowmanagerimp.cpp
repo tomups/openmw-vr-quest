@@ -554,7 +554,6 @@ namespace MWGui
         mCharGen = std::make_unique<CharacterCreation>(mViewer->getSceneData()->asGroup(), mResourceSystem);
 
 //## VR_PATCH BEGIN
-#ifdef USE_OPENXR
         auto vrMetaMenu = std::make_unique<MWVR::VrMetaMenu>(w, h);
         mVrMetaMenu = vrMetaMenu.get();
         mWindows.emplace_back(std::move(vrMetaMenu));
@@ -564,8 +563,6 @@ namespace MWGui
         mRadialMenu = radialMenu.get();
         mWindows.emplace_back(std::move(radialMenu));
         mGuiModeStates[GM_RadialMenu] = GuiModeState(mRadialMenu);
-#endif
-
 //## VR_PATCH END
         updatePinnedWindows();
 
