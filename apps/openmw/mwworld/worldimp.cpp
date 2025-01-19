@@ -1084,24 +1084,6 @@ namespace MWWorld
         return osg::Matrixf::translate(actor.getRefData().getPosition().asVec3());
     }
 
-//## VR_PATCH BEGIN
-// MERGETODO: This code is just hanging out here in the void. Find out where it belongs
-#ifdef USE_OPENXR
-            // Use current aim of weapon to impact
-            Stereo::Pose weaponPose;
-            getWeaponPose(weaponPose);
-
-            auto result = mPhysics->getHitContact(
-                ptr, weaponPose.position.asMWUnits(), weaponPose.orientation, distance, targets);
-            if (!result.first.isEmpty())
-                Log(Debug::Verbose) << "Hit: " << result.first.getTypeDescription();
-            return result;
-#else
-            // special cased for better aiming with the camera
-            // if we do not hit anything, will use the default approach as fallback
-#endif
-//## VR_PATCH END
-
     void World::deleteObject(const Ptr& ptr)
     {
         if (!ptr.mRef->isDeleted() && ptr.getContainerStore() == nullptr)
@@ -3068,8 +3050,7 @@ namespace MWWorld
                     // VR should aim from the HAND unless it's KBMouseMode
                     if (aimFromVRPointer)
                     {
-                        Stereo::Pose weaponPose;
-                        getWeaponPose(weaponPose);
+                        Stereo::Pose weaponPose = getVRWeaponPose();
                         origin = weaponPose.position.asMWUnits();
                         orient = weaponPose.orientation;
                     }
@@ -4042,14 +4023,14 @@ namespace MWWorld
         VR::VRPath mPath;
     };
 
-    void World::getWeaponPose(Stereo::Pose& pose)
+    Stereo::Pose World::getVRWeaponPose()
     {
-        pose = {};
+        Stereo::Pose pose = {};
         if (mWeaponPoseTrackingListener)
         {
             if (!!mWeaponPoseTrackingListener->mPose.status)
                 pose = mWeaponPoseTrackingListener->mPose.pose;
-            return;
+            return pose;
         }
         auto* node = MWVR::VRInputManager::instance().vrAimNode();
 
@@ -4059,6 +4040,37 @@ namespace MWWorld
             pose.position = Stereo::Position::fromMWUnits(worldMatrix.getTrans());
             pose.orientation = worldMatrix.getRotate();
         }
+
+        return pose;
+    }
+
+    std::optional<std::pair<MWWorld::Ptr, osg::Vec3f>> MWWorld::World::getVRMeleeHitContact(MWWorld::Ptr ptr)
+    {
+        if (ptr.getClass().getCreatureStats(ptr).getDrawState() != MWMechanics::DrawState::Weapon)
+            return std::nullopt;
+
+        const MWWorld::Store<ESM::GameSetting>& store = getStore().get<ESM::GameSetting>();
+
+        // Get the weapon used (if hand-to-hand, weapon = inv.end())
+        MWWorld::InventoryStore& inv = ptr.getClass().getInventoryStore(ptr);
+        MWWorld::ContainerStoreIterator weaponslot = inv.getSlot(MWWorld::InventoryStore::Slot_CarriedRight);
+        MWWorld::Ptr weapon = ((weaponslot != inv.end()) ? *weaponslot : MWWorld::Ptr());
+        if (!weapon.isEmpty() && weapon.getType() != ESM::Weapon::sRecordId)
+            weapon = MWWorld::Ptr();
+
+
+        const float fCombatDistance = store.find("fCombatDistance")->mValue.getFloat();
+        float distance = fCombatDistance
+            * (!weapon.isEmpty() ? weapon.get<ESM::Weapon>()->mBase->mData.mReach
+                                 : store.find("fHandToHandReach")->mValue.getFloat());
+
+        Stereo::Pose weaponPose = getVRWeaponPose();
+        auto result
+            = mPhysics->getHitContact(ptr, weaponPose.position.asMWUnits(), weaponPose.orientation, distance);
+        if (result.first.isEmpty())
+            return std::nullopt;
+        Log(Debug::Verbose) << "Hit: " << result.first.getTypeDescription();
+        return result;
     }
 
     void World::setWeaponPosePath(int64_t path)

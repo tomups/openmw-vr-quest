@@ -1265,7 +1265,14 @@ namespace MWMechanics
         ESM::WeaponType::Class weapclass = getWeaponType(mWeaponType)->mWeaponClass;
         if (weapclass != ESM::WeaponType::Ranged && weapclass != ESM::WeaponType::Thrown)
         {
-            mAttackSuccess = mPtr.getClass().evaluateHit(mPtr, mAttackVictim, mAttackHitPos);
+            // ## VR_PATCH BEGIN
+            //  split evaluateHit into evaluateHit and findMeleeVictim so VR realistic combat can provide
+            //  its victim as a parameter.
+            auto res = mPtr.getClass().evaluateHit(mPtr);
+            mAttackSuccess = res.mSuccess;
+            mAttackVictim = res.mVictim;
+            mAttackHitPos = res.mHitPosition;
+            // ## VR_PATCH END
             if (!mAttackSuccess)
                 mAttackStrength = 0.f;
             playSwishSound();

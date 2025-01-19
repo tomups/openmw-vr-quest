@@ -700,7 +700,8 @@ namespace MWWorld
 
         void enableVRPointer(bool left, bool right) override;
 
-        void getWeaponPose(Stereo::Pose& pose) override;
+        Stereo::Pose getVRWeaponPose() override;
+        std::optional<std::pair<MWWorld::Ptr, osg::Vec3f>> getVRMeleeHitContact(MWWorld::Ptr ptr) override;
         void setWeaponPosePath(int64_t path) override;
 //## VR_PATCH END
     };

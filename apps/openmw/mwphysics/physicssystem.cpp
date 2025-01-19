@@ -49,6 +49,7 @@
 
 #include "closestnotmerayresultcallback.hpp"
 #include "contacttestresultcallback.hpp"
+#include "deepestnotmecontacttestresultcallback.hpp"
 #include "hasspherecollisioncallback.hpp"
 #include "heightfield.hpp"
 #include "movementsolver.hpp"
@@ -190,6 +191,65 @@ namespace MWPhysics
 
         return true;
     }
+
+    // ## VR_PATCH BEGIN
+    // VR still needs getHitContact for realistic combat
+    std::pair<MWWorld::Ptr, osg::Vec3f> PhysicsSystem::getHitContact(const MWWorld::ConstPtr& actor,
+        const osg::Vec3f& origin, const osg::Quat& orient, float queryDistance)
+    {
+        // First of all, try to hit where you aim to
+        int hitmask = CollisionType_World | CollisionType_Door | CollisionType_HeightMap | CollisionType_Actor;
+        RayCastingResult result = castRay(origin, origin + (orient * osg::Vec3f(0.0f, queryDistance, 0.0f)), { actor },
+            {}, hitmask, CollisionType_Actor);
+
+        if (result.mHit)
+        {
+            reportCollision(Misc::Convert::toBullet(result.mHitPos), Misc::Convert::toBullet(result.mHitNormal));
+            return std::make_pair(result.mHitObject, result.mHitPos);
+        }
+
+        // Use cone shape as fallback
+        const MWWorld::Store<ESM::GameSetting>& store
+            = MWBase::Environment::get().getWorld()->getStore().get<ESM::GameSetting>();
+
+        btConeShape shape(osg::DegreesToRadians(store.find("fCombatAngleXY")->mValue.getFloat() / 2.0f), queryDistance);
+        shape.setLocalScaling(btVector3(
+            1, 1, osg::DegreesToRadians(store.find("fCombatAngleZ")->mValue.getFloat() / 2.0f) / shape.getRadius()));
+
+        // The shape origin is its center, so we have to move it forward by half the length. The
+        // real origin will be provided to getFilteredContact to find the closest.
+        osg::Vec3f center = origin + (orient * osg::Vec3f(0.0f, queryDistance * 0.5f, 0.0f));
+
+        btCollisionObject object;
+        object.setCollisionShape(&shape);
+        object.setWorldTransform(btTransform(Misc::Convert::toBullet(orient), Misc::Convert::toBullet(center)));
+
+        const btCollisionObject* me = nullptr;
+        std::vector<const btCollisionObject*> targetCollisionObjects;
+
+        const Actor* physactor = getActor(actor);
+        if (physactor)
+            me = physactor->getCollisionObject();
+
+        DeepestNotMeContactTestResultCallback resultCallback(
+            me, targetCollisionObjects, Misc::Convert::toBullet(origin));
+        resultCallback.m_collisionFilterGroup = CollisionType_Actor;
+        resultCallback.m_collisionFilterMask
+            = CollisionType_World | CollisionType_Door | CollisionType_HeightMap | CollisionType_Actor;
+        mTaskScheduler->contactTest(&object, resultCallback);
+
+        if (resultCallback.mObject)
+        {
+            PtrHolder* holder = static_cast<PtrHolder*>(resultCallback.mObject->getUserPointer());
+            if (holder)
+            {
+                reportCollision(resultCallback.mContactPoint, resultCallback.mContactNormal);
+                return std::make_pair(holder->getPtr(), Misc::Convert::toOsg(resultCallback.mContactPoint));
+            }
+        }
+        return std::make_pair(MWWorld::Ptr(), osg::Vec3f());
+    }
+    // ## VR_PATCH END
 
     RayCastingResult PhysicsSystem::castRay(const osg::Vec3f& from, const osg::Vec3f& to,
         const std::vector<MWWorld::ConstPtr>& ignore, const std::vector<MWWorld::Ptr>& targets, int mask,

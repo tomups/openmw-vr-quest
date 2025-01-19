@@ -560,11 +560,11 @@ namespace MWClass
         return ptr.getRefData().getCustomData()->asNpcCustomData().mNpcStats;
     }
 
-    bool Npc::evaluateHit(const MWWorld::Ptr& ptr, MWWorld::Ptr& victim, osg::Vec3f& hitPosition) const
+    //## VR_PATCH BEGIN
+    // split evaluateHit into evaluateHit and findMeleeVictim so VR realistic combat can provide
+    // its victim as a parameter.
+    std::optional<std::pair<MWWorld::Ptr, osg::Vec3f>> Npc::findMeleeVictim(const MWWorld::Ptr& ptr) const
     {
-        victim = MWWorld::Ptr();
-        hitPosition = osg::Vec3f();
-
         // Get the weapon used (if hand-to-hand, weapon = inv.end())
         MWWorld::InventoryStore& inv = getInventoryStore(ptr);
         MWWorld::ContainerStoreIterator weaponslot = inv.getSlot(MWWorld::InventoryStore::Slot_CarriedRight);
@@ -577,21 +577,40 @@ namespace MWClass
         const float dist = MWMechanics::getMeleeWeaponReach(ptr, weapon);
         const std::pair<MWWorld::Ptr, osg::Vec3f> result = MWMechanics::getHitContact(ptr, dist);
         if (result.first.isEmpty()) // Didn't hit anything
-            return true;
+            return std::nullopt;
+        return result;
+    }
 
-        // Note that earlier we returned true in spite of an apparent failure to hit anything alive.
-        // This is because hitting nothing is not a "miss" and should be handled as such character controller-side.
-        victim = result.first;
-        hitPosition = result.second;
+    MWWorld::MeleeHit Npc::evaluateHit(const MWWorld::Ptr& ptr, std::optional<std::pair<MWWorld::Ptr, osg::Vec3f>> victim) const
+    {
+        MWWorld::MeleeHit result = { .mSuccess = true };
+        if (!victim)
+            victim = findMeleeVictim(ptr);
+        // Note that we return true in spite of an apparent failure to hit anything alive.
+        // This is because hitting nothing is not a "miss" and should be handled as such character-controller-side.
+        if (!victim)
+            return result;
+        result.mVictim = victim->first;
+        result.mHitPosition = victim->second;
 
+        // Note: If getHitChance was moved into Class, we could move evaluateHit and findMeleeVictim to Actor instead of duplicating a lot of logic like this.
+        // But this would diverge me from upstream more than i already am. And maybe it'll be dehardcoded by .50 anyway.
+        MWWorld::InventoryStore& inv = getInventoryStore(ptr);
+        MWWorld::ContainerStoreIterator weaponslot = inv.getSlot(MWWorld::InventoryStore::Slot_CarriedRight);
+        MWWorld::Ptr weapon;
+        if (weaponslot != inv.end() && weaponslot->getType() == ESM::Weapon::sRecordId)
+            weapon = *weaponslot;
         ESM::RefId weapskill = ESM::Skill::HandToHand;
         if (!weapon.isEmpty())
             weapskill = weapon.getClass().getEquipmentSkill(weapon);
 
-        float hitchance = MWMechanics::getHitChance(ptr, victim, getSkill(ptr, weapskill));
+        float hitchance = MWMechanics::getHitChance(ptr, victim->first, getSkill(ptr, weapskill));
 
-        return Misc::Rng::roll0to99(world->getPrng()) < hitchance;
+        MWBase::World* world = MWBase::Environment::get().getWorld();
+        result.mSuccess = Misc::Rng::roll0to99(world->getPrng()) < hitchance;
+        return result;
     }
+    // ## VR_PATCH END
 
     void Npc::hit(const MWWorld::Ptr& ptr, float attackStrength, int type, const MWWorld::Ptr& victim,
         const osg::Vec3f& hitPosition, bool success) const

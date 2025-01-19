@@ -287,8 +287,7 @@ namespace MWWorld
 //## VR_PATCH BEGIN
         if (VR::getVR() && caster == MWBase::Environment::get().getWorld()->getPlayerPtr())
         {
-            Stereo::Pose weaponPose;
-            MWBase::Environment::get().getWorld()->getWeaponPose(weaponPose);
+            Stereo::Pose weaponPose = MWBase::Environment::get().getWorld()->getVRWeaponPose();
             pos = weaponPose.position.asMWUnits();
             orient = weaponPose.orientation;
         }

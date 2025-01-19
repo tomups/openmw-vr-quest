@@ -621,7 +621,9 @@ namespace MWBase
 
         virtual void enableVRPointer(bool left, bool right) = 0;
 
-        virtual void getWeaponPose(Stereo::Pose& pose) = 0;
+        virtual Stereo::Pose getVRWeaponPose() = 0;
+
+        virtual std::optional<std::pair<MWWorld::Ptr, osg::Vec3f>> getVRMeleeHitContact(MWWorld::Ptr actor) = 0;
 
         virtual void setWeaponPosePath(int64_t path) = 0;
 

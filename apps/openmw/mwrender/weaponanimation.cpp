@@ -125,8 +125,7 @@ namespace MWRender
         if (VR::getVR() && !VR::getKBMouseModeActive() && actor == MWMechanics::getPlayer())
         {
             // In VR weapon aim is taken from the real orientation of the weapon.
-            Stereo::Pose weaponPose;
-            MWBase::Environment::get().getWorld()->getWeaponPose(weaponPose);
+            Stereo::Pose weaponPose = MWBase::Environment::get().getWorld()->getVRWeaponPose();
             orient = weaponPose.orientation;
         }
 

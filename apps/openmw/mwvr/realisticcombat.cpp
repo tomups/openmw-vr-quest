@@ -344,11 +344,13 @@ namespace MWVR
             if (!canSwing())
                 return transition_swingingToImpact(MWWorld::Ptr(), osg::Vec3f(), false);
 
-            MWWorld::Ptr victim;
-            osg::Vec3f hitPosition;
-            bool success = mPtr.getClass().evaluateHit(mPtr, victim, hitPosition);
-            if (!victim.isEmpty())
-                transition_swingingToImpact(victim, hitPosition, success);
+            auto victim = MWBase::Environment::get().getWorld()->getVRMeleeHitContact(mPtr);
+
+            if (victim)
+            {
+                auto hit = mPtr.getClass().evaluateHit(mPtr, victim);
+                transition_swingingToImpact(hit.mVictim, hit.mHitPosition, hit.mSuccess);
+            }
         }
 
         void StateMachine::transition_swingingToImpact(MWWorld::Ptr victim, osg::Vec3f hitPosition, bool success) 

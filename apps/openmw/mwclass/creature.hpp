@@ -61,7 +61,14 @@ namespace MWClass
         MWMechanics::CreatureStats& getCreatureStats(const MWWorld::Ptr& ptr) const override;
         ///< Return creature stats
 
-        bool evaluateHit(const MWWorld::Ptr& ptr, MWWorld::Ptr& victim, osg::Vec3f& hitPosition) const override;
+        // ## VR_PATCH BEGIN
+        //  split evaluateHit into evaluateHit and findMeleeVictim so VR realistic combat can provide
+        //  its victim as a parameter.
+        std::optional<std::pair<MWWorld::Ptr, osg::Vec3f>> findMeleeVictim(const MWWorld::Ptr& ptr) const override;
+
+        MWWorld::MeleeHit evaluateHit(
+            const MWWorld::Ptr& ptr, std::optional<std::pair<MWWorld::Ptr, osg::Vec3f>> victim) const override;
+        // ## VR_PATCH END
 
         void hit(const MWWorld::Ptr& ptr, float attackStrength, int type, const MWWorld::Ptr& victim,
             const osg::Vec3f& hitPosition, bool success) const override;
