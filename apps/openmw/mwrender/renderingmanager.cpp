@@ -458,6 +458,7 @@ namespace MWRender
         globalDefines["useOVR_multiview"] = "0";
         globalDefines["numViews"] = "1";
         globalDefines["disableNormals"] = "1";
+        globalDefines["softParticles"] = "0";
 
         for (auto itr = lightDefines.begin(); itr != lightDefines.end(); itr++)
             globalDefines[itr->first] = itr->second;
