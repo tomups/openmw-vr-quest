@@ -200,6 +200,16 @@ namespace Misc::StringUtils
                 return i;
         return std::string_view::npos;
     }
+
+    // Trying to find a function to safely copy into a C char array that is also portable is harder
+    // than just writing my own.
+    template <std::size_t N>
+    void copyCppStringToCArray(char (&dest)[N], std::string_view source)
+    {
+        std::size_t copyLen = std::min(source.size(), N - 1);
+        std::copy_n(source.begin(), copyLen, dest);
+        dest[copyLen] = '\0';
+    }
 }
 
 #endif

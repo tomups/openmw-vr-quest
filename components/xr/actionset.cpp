@@ -5,15 +5,12 @@
 
 #include <components/debug/debuglog.hpp>
 #include <components/misc/strings/lower.hpp>
+#include <components/misc/strings/algorithm.hpp>
 #include <components/xr/debug.hpp>
 #include <components/xr/instance.hpp>
 
 #include <iostream>
-
-// TODO: should implement actual safe strcpy
-#ifdef __linux__
-#define strcpy_s(dst, src) strcpy(dst, src)
-#endif
+#include <string.h>
 
 namespace XR
 {
@@ -135,8 +132,8 @@ namespace XR
         XrActionSet actionSet = XR_NULL_HANDLE;
         XrActionSetCreateInfo createInfo{};
         createInfo.type = XR_TYPE_ACTION_SET_CREATE_INFO;
-        strcpy_s(createInfo.actionSetName, internal_name.c_str());
-        strcpy_s(createInfo.localizedActionSetName, localized_name.c_str());
+        Misc::StringUtils::copyCppStringToCArray(createInfo.actionSetName, internal_name);
+        Misc::StringUtils::copyCppStringToCArray(createInfo.localizedActionSetName, localized_name);
         createInfo.priority = 0;
         CHECK_XRCMD(xrCreateActionSet(XR::Instance::instance().xrInstance(), &createInfo, &actionSet));
         XR::Debugging::setName(actionSet, "OpenMW XR Action Set " + name);
@@ -192,8 +189,8 @@ namespace XR
         XrActionCreateInfo createInfo{};
         createInfo.type = XR_TYPE_ACTION_CREATE_INFO;
         createInfo.actionType = actionType;
-        strcpy_s(createInfo.actionName, actionName.c_str());
-        strcpy_s(createInfo.localizedActionName, localName.c_str());
+        Misc::StringUtils::copyCppStringToCArray(createInfo.actionName, actionName);
+        Misc::StringUtils::copyCppStringToCArray(createInfo.localizedActionName, localName);
         createInfo.countSubactionPaths = subactionPaths.size();
         Log(Debug::Verbose) << "Creating action: " << actionName;
         if (createInfo.countSubactionPaths > 0)
