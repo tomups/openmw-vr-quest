@@ -165,8 +165,11 @@ namespace MWVR
         if (player.getDrawState() == MWMechanics::DrawState::Weapon)
         {
             MWWorld::Ptr playerPtr = player.getPlayer();
+            MWWorld::InventoryStore& invStore = playerPtr.getClass().getInventoryStore(playerPtr);
             MWWorld::ContainerStoreIterator rightHandItem
-                = playerPtr.getClass().getInventoryStore(playerPtr).getSlot(MWWorld::InventoryStore::Slot_CarriedRight);
+                = invStore.getSlot(MWWorld::InventoryStore::Slot_CarriedRight);
+            if (rightHandItem == invStore.end())
+                return false;
             MWWorld::Ptr tool = *rightHandItem;
 
             if (!target.isEmpty() && (target.getCellRef().getLockLevel() != 0))
