@@ -735,6 +735,8 @@ namespace MWVR
                     pointActivation(true);
                 break;
             default:
+                if (actionId >= MWInput::A_Last)
+                    break;
                 auto channel = mBindingsManager->ics().getChannel(actionId);
                 if (channel)
                     channel->setValue(1.0);
@@ -754,6 +756,8 @@ namespace MWVR
             case A_Recenter:
                 break;
             default:
+                if (actionId >= MWInput::A_Last)
+                    break;
                 auto channel = mBindingsManager->ics().getChannel(actionId);
                 if (channel)
                     channel->setValue(0.0);
