@@ -2758,6 +2758,10 @@ namespace MWMechanics
 
     bool CharacterController::isMovementAnimationControlled() const
     {
+        // Movement is never animation controlled in VR. This would induce extreme motion sickness.
+        if (mPtr == getPlayer() && VR::getVR())
+            return false;
+
         if (mHitState != CharState_None)
             return true;
 

@@ -1229,13 +1229,7 @@ namespace MWRender
                         node->addUpdateCallback(callback);
                     mActiveControllers.emplace_back(node, callback);
 
-//## VR_PATCH BEGIN
-// This change was my early attempt at eliminating movement accumulation.
-// VR-TODO: I understand the code MUCH better now and should be able to do this much cleaner.
-                    if (blendMask == 0 && node == mAccumRoot
-                        && !(isPlayer && VR::getVR() && VR::getRightControllerActive())
-                    )
-//## VR_PATCH END
+                    if (blendMask == 0 && node == mAccumRoot)
                     {
                         mAccumCtrl = it->second;
 
