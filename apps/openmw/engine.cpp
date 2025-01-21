@@ -436,15 +436,6 @@ OMW::Engine::~Engine()
     if (mScreenCaptureOperation != nullptr)
         mScreenCaptureOperation->stop();
 
-           // ## VR_PATCH BEGIN
-    mVrViewer = nullptr;
-    mCallbackManager = nullptr;
-    mVrGUIManager = nullptr;
-    mXrSession = nullptr;
-    mXrInstance = nullptr;
-    mVrTrackingManager = nullptr;
-    // ## VR_PATCH END
-
     mMechanicsManager = nullptr;
     mDialogueManager = nullptr;
     mJournal = nullptr;
@@ -465,6 +456,14 @@ OMW::Engine::~Engine()
     mWorkQueue = nullptr;
 
     mViewer = nullptr;
+    // ## VR_PATCH BEGIN
+    mVrViewer = nullptr;
+    mCallbackManager = nullptr;
+    mVrGUIManager = nullptr;
+    mXrSession = nullptr;
+    mXrInstance = nullptr;
+    mVrTrackingManager = nullptr;
+    // ## VR_PATCH END
 
     mResourceSystem.reset();
 
