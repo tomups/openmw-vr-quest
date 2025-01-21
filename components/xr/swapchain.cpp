@@ -64,7 +64,6 @@ namespace XR
     {
         std::string typeString = mAttachment == Attachment::Color ? "color" : "depth";
 
-        GLenum glFormat = 0;
         XrSwapchainCreateInfo swapchainCreateInfo{};
         swapchainCreateInfo.type = XR_TYPE_SWAPCHAIN_CREATE_INFO;
         swapchainCreateInfo.arraySize = mArraySize;
@@ -79,7 +78,8 @@ namespace XR
         else
             swapchainCreateInfo.usageFlags |= XR_SWAPCHAIN_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
 
-        Instance::instance().platform().selectSwapchainFormat(mAttachment, swapchainCreateInfo.format, glFormat);
+        auto [swapchainFormat, glFormat] = Instance::instance().platform().selectSwapchainFormat(mAttachment);
+        swapchainCreateInfo.format = swapchainFormat;
         mFormat = glFormat;
 
         while (mSamples > 0 && mXrSwapchain == XR_NULL_HANDLE)

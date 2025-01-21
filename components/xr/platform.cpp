@@ -429,11 +429,11 @@ namespace XR
         return session;
     }
 
-    void Platform::selectSwapchainFormat(
-        VR::Swapchain::Attachment attachment, int64_t& swapchainFormat, GLenum glFormat)
+    std::pair<int64_t, GLenum> Platform::selectSwapchainFormat(
+        VR::Swapchain::Attachment attachment)
     {
         std::string typeString = attachment == VR::Swapchain::Attachment::Color ? "color" : "depth";
-        glFormat = 0;
+        GLenum glFormat = 0;
         if (attachment == VR::Swapchain::Attachment::Color)
         {
             if (mMWColorFormatsGL.empty())
@@ -467,8 +467,6 @@ namespace XR
         Log(Debug::Verbose) << "Selected " << typeString << " format: " << std::dec << glFormat << " (" << std::hex
                             << glFormat << ")" << std::dec;
 
-        swapchainFormat = static_cast<int64_t>(glFormat);
-
 #ifdef XR_USE_GRAPHICS_API_D3D11
         // Need to translate GL format to DXGI
         if (KHR_D3D11_enable.enabled())
@@ -476,9 +474,10 @@ namespace XR
             auto dxFormat = VR::GLFormatToDXGIFormat(glFormat);
             Log(Debug::Verbose) << "Translated format to DXGI format: " << std::dec << dxFormat << " (" << std::hex
                                 << dxFormat << ")" << std::dec;
-            swapchainFormat = dxFormat;
+            return std::make_pair(dxFormat, glFormat);
         }
 #endif
+        return std::make_pair(static_cast<int64_t>(glFormat), glFormat);
     }
 
     std::vector<std::unique_ptr<VR::SwapchainImage>> enumerateSwapchainImagesOpenGL(XrSwapchain swapchain)
