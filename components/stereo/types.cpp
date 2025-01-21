@@ -176,8 +176,8 @@ namespace Stereo
         double angle_x = 0.0;
         double angle_y = 0.0;
         double angle_z = 0.0;
-        double D, C, tr_x, tr_y;
-        angle_y = D = asin(mat[2]); /* Calculate Y-axis angle */
+        double C, tr_x, tr_y;
+        angle_y = asin(mat[2]); /* Calculate Y-axis angle */
         C = cos(angle_y);
         if (fabs(C) > 0.005) /* Test for Gimball lock? */
         {
