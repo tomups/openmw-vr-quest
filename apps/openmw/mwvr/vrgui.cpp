@@ -136,13 +136,13 @@ namespace MWVR
 
             camera->addChild(mScene);
 
-            // Do not want to waste time on shadows when generating the GUI texture
             auto* stateset = camera->getOrCreateStateSet();
+            // Do not want to waste time on shadows when generating the GUI texture
             // TODO: We may be here before the shadow manager has been instantiated
             //SceneUtil::ShadowManager::instance().disableShadowsForStateSet(*stateset);
 
             // Put rendering as early as possible
-            camera->getOrCreateStateSet()->setRenderBinDetails(-1, "RenderBin");
+            stateset->setRenderBinDetails(-1, "RenderBin");
         }
 
         osg::ref_ptr<osg::Node> mScene;
