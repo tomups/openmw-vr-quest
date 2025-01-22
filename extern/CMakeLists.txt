@@ -317,6 +317,7 @@ if(BUILD_OPENMW_VR)
     ########### Import the OpenXR SDK
     # The openxr-sdk doesn't check the version of system jsoncpp so force it to build its bundled version to avoid errors.
     set(BUILD_WITH_SYSTEM_JSONCPP off) 
+    set(DYNAMIC_LOADER off)
     include(FetchContent)
     FetchContent_Declare( 
         OpenXR 
