@@ -556,6 +556,9 @@ QT_VER='6.6.3'
 AQT_VERSION='v3.1.15'
 
 VCPKG_TAG="2024-11-10"
+if [[ -n "$OSG_MULTIVIEW_BUILD" ]]; then
+    VCPKG_TAG="m1.0"
+fi
 VCPKG_PATH="vcpkg-x64-${VS_VERSION:?}-${VCPKG_TAG:?}"
 VCPKG_PDB_PATH="vcpkg-x64-${VS_VERSION:?}-pdb-${VCPKG_TAG:?}"
 VCPKG_MANIFEST="${VCPKG_PATH:?}.txt"
@@ -577,6 +580,9 @@ if [ -z $SKIP_DOWNLOAD ]; then
 	echo
 
 	DEPS_BASE_URL="https://gitlab.com/OpenMW/openmw-deps/-/raw/main/windows"
+    if [[ -n "$OSG_MULTIVIEW_BUILD" ]]; then
+        DEPS_BASE_URL="https://gitlab.com/madsbuvi/openmw-deps/-/raw/openmw-vr/windows"
+    fi
 
 	download "${VCPKG_MANIFEST:?}" \
 		"${DEPS_BASE_URL}/${VCPKG_MANIFEST:?}" \
