@@ -617,7 +617,7 @@ namespace MWVR
             // TODO: Should probably create an accessor for Slot_CarriedRight's WeaponType so this verbose code
             // doens't have to be repeated everywhere.
             MWWorld::ConstContainerStoreIterator weapon = inv.getSlot(MWWorld::InventoryStore::Slot_CarriedRight);
-            if (weapon != inv.end())
+            if (weapon != inv.end() && weapon->getType() == ESM::Weapon::sRecordId)
             {
                 int type = weapon->get<ESM::Weapon>()->mBase->mData.mType;
                 ESM::WeaponType::Class weapclass = MWMechanics::getWeaponType(type)->mWeaponClass;
