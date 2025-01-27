@@ -226,7 +226,8 @@ namespace MWInput
             if (arg.axis == SDL_CONTROLLER_AXIS_RIGHTY)
             {
                 float value = static_cast<float>(arg.value) / (arg.value < 0 ? 32768.f : 32767.f);
-                MWVR::VRInputManager::instance().processUtilityStickY(-value);
+                MWVR::VRInputManager::instance().processUtilityStickY(
+                    -value, MWBase::Environment::get().getInputManager()->controlsDisabled());
             }
         }
 //## VR_PATCH END

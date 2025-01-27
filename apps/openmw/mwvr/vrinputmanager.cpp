@@ -506,6 +506,10 @@ namespace MWVR
                         onPress = false;
                     }
                     break;
+                case A_UtilityStick:
+                    processUtilityStickX(action->value2d().x(), disableControls);
+                    processUtilityStickY(action->value2d().y(), disableControls);
+                    break;
                 default:
                     break;
             }
@@ -523,9 +527,20 @@ namespace MWVR
                         break;
                     case A_MenuBack:
                         if (MyGUI::InputManager::getInstance().isModalAny())
+                        {
                             wm->exitCurrentModal();
+                        }
                         else
-                            wm->exitCurrentGuiMode();
+                        {
+                            // Console/postprocessorhud do not respect the GUI stack
+                            // so i have to manually check for and close them.
+                            if (wm->isConsoleMode())
+                                wm->toggleConsole();
+                            else if (wm->isPostProcessorHudVisible())
+                                wm->togglePostProcessorHud();
+                            else
+                                wm->exitCurrentGuiMode();
+                        }
                         break;
                     case MWInput::A_Screenshot:
                         mActionManager->screenshot();
@@ -620,8 +635,8 @@ namespace MWVR
                     processMovementStick(action, dt, disableControls);
                     break;
                 case A_UtilityStick:
-                    processUtilityStickX(action->value2d().x());
-                    processUtilityStickY(action->value2d().y());
+                    processUtilityStickX(action->value2d().x(), disableControls);
+                    processUtilityStickY(action->value2d().y(), disableControls);
                     break;
 
                 default:
@@ -629,10 +644,10 @@ namespace MWVR
             }
 
             if (action->onActivate())
-                onActivateAction(action->openMWActionCode());
+                onActivateAction(action->openMWActionCode(), disableControls);
 
             if (action->onDeactivate())
-                onDeactivateAction(action->openMWActionCode());
+                onDeactivateAction(action->openMWActionCode(), disableControls);
         }
     }
 
@@ -644,24 +659,24 @@ namespace MWVR
             ->setValue(-action->value2d().y() / 2.f + 0.5f);
     }
 
-    void VRInputManager::processUtilityStickX(float value)
+    void VRInputManager::processUtilityStickX(float value, [[maybe_unused]] bool disableControls)
     {
         mBindingsManager->ics().getChannel(MWInput::A_LookLeftRight)->setValue(value / 2.f + 0.5f);
     }
 
-    void VRInputManager::processUtilityStickY(float value)
+    void VRInputManager::processUtilityStickY(float value, bool disableControls)
     {
         if (value < -0.9 && !mUtilityDownActive)
-            toggleUtilityDown();
+            toggleUtilityDown(disableControls);
         if (value > -0.5 && mUtilityDownActive)
-            toggleUtilityDown();
+            toggleUtilityDown(disableControls);
         if (value > 0.9 && !mUtilityUpActive)
-            toggleUtilityUp();
+            toggleUtilityUp(disableControls);
         if (value < 0.5 && mUtilityUpActive)
-            toggleUtilityUp();
+            toggleUtilityUp(disableControls);
     }
 
-    void VRInputManager::toggleUtilityDown()
+    void VRInputManager::toggleUtilityDown(bool disableControls)
     {
         mUtilityDownActive = !mUtilityDownActive;
         auto actionName = Settings::Manager::getString("utility axis down action", "VR");
@@ -669,13 +684,13 @@ namespace MWVR
         if (actionId != 0)
         {
             if (mUtilityDownActive)
-                onActivateAction(actionId);
+                onActivateAction(actionId, disableControls);
             else
-                onDeactivateAction(actionId);
+                onDeactivateAction(actionId, disableControls);
         }
     }
 
-    void VRInputManager::toggleUtilityUp()
+    void VRInputManager::toggleUtilityUp(bool disableControls)
     {
         mUtilityUpActive = !mUtilityUpActive;
         auto actionName = Settings::Manager::getString("utility axis up action", "VR");
@@ -683,13 +698,13 @@ namespace MWVR
         if (actionId != -1)
         {
             if (mUtilityUpActive)
-                onActivateAction(actionId);
+                onActivateAction(actionId, disableControls);
             else
-                onDeactivateAction(actionId);
+                onDeactivateAction(actionId, disableControls);
         }
     }
 
-    void VRInputManager::onActivateAction(int actionId)
+    void VRInputManager::onActivateAction(int actionId, [[maybe_unused]] bool disableControls)
     {
         switch (actionId)
         {
@@ -702,27 +717,6 @@ namespace MWVR
             case A_RadialMenu:
                 MWBase::Environment::get().getWindowManager()->pushGuiMode(MWGui::GM_RadialMenu);
                 break;
-                // MERGETODO: I probably don't need this since i'm setting the ics channel
-            //case MWInput::A_CycleSpellLeft:
-            //    if (mActionManager->checkAllowedToUseItems()
-            //        && MWBase::Environment::get().getWindowManager()->isAllowed(MWGui::GW_Magic))
-            //        MWBase::Environment::get().getWindowManager()->cycleSpell(false);
-            //    break;
-            //case MWInput::A_CycleSpellRight:
-            //    if (mActionManager->checkAllowedToUseItems()
-            //        && MWBase::Environment::get().getWindowManager()->isAllowed(MWGui::GW_Magic))
-            //        MWBase::Environment::get().getWindowManager()->cycleSpell(true);
-            //    break;
-            //case MWInput::A_CycleWeaponLeft:
-            //    if (mActionManager->checkAllowedToUseItems()
-            //        && MWBase::Environment::get().getWindowManager()->isAllowed(MWGui::GW_Inventory))
-            //        MWBase::Environment::get().getWindowManager()->cycleWeapon(false);
-            //    break;
-            //case MWInput::A_CycleWeaponRight:
-            //    if (mActionManager->checkAllowedToUseItems()
-            //        && MWBase::Environment::get().getWindowManager()->isAllowed(MWGui::GW_Inventory))
-            //        MWBase::Environment::get().getWindowManager()->cycleWeapon(true);
-            //    break;
             case A_Recenter:
                 if (!MWBase::Environment::get().getWindowManager()->isGuiMode())
                 {
@@ -737,6 +731,7 @@ namespace MWVR
             default:
                 if (actionId >= MWInput::A_Last)
                     break;
+                // For these i ignore disableControls, the binding manager handles that already.
                 auto channel = mBindingsManager->ics().getChannel(actionId);
                 if (channel)
                     channel->setValue(1.0);
@@ -744,7 +739,7 @@ namespace MWVR
         }
     }
 
-    void VRInputManager::onDeactivateAction(int actionId)
+    void VRInputManager::onDeactivateAction(int actionId, [[maybe_unused]] bool disableControls)
     {
         switch (actionId)
         {

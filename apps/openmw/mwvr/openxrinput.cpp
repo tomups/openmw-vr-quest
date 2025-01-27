@@ -97,6 +97,7 @@ namespace MWVR
         createMWAction(MWActionSet::GUI, XR::ControlType::Press, A_MenuSelect, "menu_select", "Menu Select");
         createMWAction(MWActionSet::GUI, XR::ControlType::Press, A_MenuBack, "menu_back", "Menu Back");
         createMWAction(MWActionSet::GUI, XR::ControlType::Hold, MWInput::A_Use, "use", "Use");
+        createMWAction(MWActionSet::GUI, XR::ControlType::Axis2D, A_UtilityStick, "utility_stick", "Utility Stick");
     }
 
     void OpenXRInput::createPoseActions()

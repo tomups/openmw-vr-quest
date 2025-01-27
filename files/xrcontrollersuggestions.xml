@@ -98,13 +98,14 @@ You will not make an interaction profile work by removing the extension requirem
             
         </ActionSet>
         <ActionSet Name="GUI">
-            <Binding ActionName="menu_up_down" Path="/user/hand/right/input/thumbstick/y"/>
-            <Binding ActionName="menu_left_right" Path="/user/hand/right/input/thumbstick/x"/>
+            <Binding ActionName="menu_up_down" Path="/user/hand/left/input/thumbstick/y"/>
+            <Binding ActionName="menu_left_right" Path="/user/hand/left/input/thumbstick/x"/>
             <Binding ActionName="menu_select" Path="/user/hand/right/input/a/click"/>
             <Binding ActionName="menu_back" Path="/user/hand/right/input/b/click"/>
             <Binding ActionName="use" Path="/user/hand/right/input/trigger/value"/>
             <Binding ActionName="game_menu" Path="/user/hand/left/input/menu/click"/>
             <Binding ActionName="reposition_menu" Path="/user/hand/left/input/menu/click"/>
+            <Binding ActionName="utility_stick" Path="/user/hand/right/input/thumbstick"/>
         </ActionSet>
     </Profile>
     <Profile LocalName="Microsoft Motion Controllers" Path="/interaction_profiles/microsoft/motion_controller">
@@ -126,10 +127,11 @@ You will not make an interaction profile work by removing the extension requirem
             <Binding ActionName="menu_back" Path="/user/hand/left/input/trackpad/click"/>
             <Binding ActionName="game_menu" Path="/user/hand/left/input/menu/click"/>
             <Binding ActionName="reposition_menu" Path="/user/hand/left/input/menu/click"/>
-            <Binding ActionName="menu_up_down" Path="/user/hand/right/input/trackpad/y"/>
-            <Binding ActionName="menu_left_right" Path="/user/hand/right/input/trackpad/x"/>
+            <Binding ActionName="menu_up_down" Path="/user/hand/left/input/trackpad/y"/>
+            <Binding ActionName="menu_left_right" Path="/user/hand/left/input/trackpad/x"/>
             <Binding ActionName="menu_select" Path="/user/hand/right/input/trackpad/click"/>
             <Binding ActionName="use" Path="/user/hand/right/input/trigger/value"/>
+            <Binding ActionName="utility_stick" Path="/user/hand/right/input/trackpad"/>
         </ActionSet>
     </Profile>
     <Profile LocalName="Index Knuckles" Path="/interaction_profiles/valve/index_controller">
@@ -155,8 +157,9 @@ You will not make an interaction profile work by removing the extension requirem
             <Binding ActionName="menu_select" Path="/user/hand/right/input/a/click"/>
             <Binding ActionName="menu_back" Path="/user/hand/right/input/b/click"/>
             <Binding ActionName="use" Path="/user/hand/right/input/trigger/value"/>
-            <Binding ActionName="menu_up_down" Path="/user/hand/right/input/thumbstick/y"/>
-            <Binding ActionName="menu_left_right" Path="/user/hand/right/input/thumbstick/x"/>
+            <Binding ActionName="menu_up_down" Path="/user/hand/left/input/thumbstick/y"/>
+            <Binding ActionName="menu_left_right" Path="/user/hand/left/input/thumbstick/x"/>
+            <Binding ActionName="utility_stick" Path="/user/hand/right/input/thumbstick"/>
         </ActionSet>
     </Profile>
     <Profile LocalName="Vive Wands" Path="/interaction_profiles/htc/vive_controller">
@@ -174,13 +177,14 @@ You will not make an interaction profile work by removing the extension requirem
             <Binding ActionName="activate_touched" Path="/user/hand/right/input/squeeze/click"/>
         </ActionSet>
         <ActionSet Name="GUI">
-            <Binding ActionName="menu_up_down" Path="/user/hand/right/input/trackpad/y"/>
-            <Binding ActionName="menu_left_right" Path="/user/hand/right/input/trackpad/x"/>
+            <Binding ActionName="menu_up_down" Path="/user/hand/left/input/trackpad/y"/>
+            <Binding ActionName="menu_left_right" Path="/user/hand/left/input/trackpad/x"/>
             <Binding ActionName="menu_select" Path="/user/hand/right/input/trackpad/click"/>
             <Binding ActionName="menu_back" Path="/user/hand/left/input/trackpad/click"/>
             <Binding ActionName="game_menu" Path="/user/hand/left/input/menu/click"/>
             <Binding ActionName="use" Path="/user/hand/right/input/trigger/value"/>
             <Binding ActionName="reposition_menu" Path="/user/hand/left/input/menu/click"/>
+            <Binding ActionName="utility_stick" Path="/user/hand/right/input/trackpad"/>
         </ActionSet>
     </Profile>
     <Profile LocalName="Hp Mixed Reality Controllers" Path="/interaction_profiles/hp/mixed_reality_controller">
@@ -205,11 +209,12 @@ You will not make an interaction profile work by removing the extension requirem
         <ActionSet Name="GUI">
             <Binding ActionName="reposition_menu" Path="/user/hand/left/input/menu/click"/>
             <Binding ActionName="game_menu" Path="/user/hand/left/input/menu/click"/>
-            <Binding ActionName="menu_up_down" Path="/user/hand/right/input/thumbstick/y"/>
-            <Binding ActionName="menu_left_right" Path="/user/hand/right/input/thumbstick/x"/>
+            <Binding ActionName="menu_up_down" Path="/user/hand/left/input/thumbstick/y"/>
+            <Binding ActionName="menu_left_right" Path="/user/hand/left/input/thumbstick/x"/>
             <Binding ActionName="menu_select" Path="/user/hand/right/input/a/click"/>
             <Binding ActionName="menu_back" Path="/user/hand/right/input/b/click"/>
             <Binding ActionName="use" Path="/user/hand/right/input/trigger/value"/>
+            <Binding ActionName="utility_stick" Path="/user/hand/right/input/thumbstick"/>
         </ActionSet>
     </Profile>
     <Profile LocalName="Huawei Controllers" Path="/interaction_profiles/huawei/controller">
@@ -230,10 +235,11 @@ You will not make an interaction profile work by removing the extension requirem
             <Binding ActionName="menu_back" Path="/user/hand/left/input/trackpad/click"/>
             <Binding ActionName="game_menu" Path="/user/hand/left/input/home/click"/>
             <Binding ActionName="reposition_menu" Path="/user/hand/left/input/home/click"/>
-            <Binding ActionName="menu_up_down" Path="/user/hand/right/input/trackpad/y"/>
-            <Binding ActionName="menu_left_right" Path="/user/hand/right/input/trackpad/x"/>
+            <Binding ActionName="menu_up_down" Path="/user/hand/left/input/trackpad/y"/>
+            <Binding ActionName="menu_left_right" Path="/user/hand/left/input/trackpad/x"/>
             <Binding ActionName="menu_select" Path="/user/hand/right/input/trackpad/click"/>
             <Binding ActionName="use" Path="/user/hand/right/input/trigger/click"/>
+            <Binding ActionName="utility_stick" Path="/user/hand/right/input/trackpad"/>
         </ActionSet>
     </Profile>
     <Profile LocalName="Vive Cosmos Controllers" Path="/interaction_profiles/htc/vive_cosmos_controller">
@@ -258,11 +264,12 @@ You will not make an interaction profile work by removing the extension requirem
         <ActionSet Name="GUI">
             <Binding ActionName="reposition_menu" Path="/user/hand/left/input/menu/click"/>
             <Binding ActionName="game_menu" Path="/user/hand/left/input/menu/click"/>
-            <Binding ActionName="menu_up_down" Path="/user/hand/right/input/thumbstick/y"/>
-            <Binding ActionName="menu_left_right" Path="/user/hand/right/input/thumbstick/x"/>
+            <Binding ActionName="menu_up_down" Path="/user/hand/left/input/thumbstick/y"/>
+            <Binding ActionName="menu_left_right" Path="/user/hand/left/input/thumbstick/x"/>
             <Binding ActionName="menu_select" Path="/user/hand/right/input/a/click"/>
             <Binding ActionName="menu_back" Path="/user/hand/right/input/b/click"/>
             <Binding ActionName="use" Path="/user/hand/right/input/trigger/click"/>
+            <Binding ActionName="utility_stick" Path="/user/hand/right/input/thumbstick"/>
         </ActionSet>
     </Profile>
 </Root>

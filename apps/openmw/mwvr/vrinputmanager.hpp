@@ -64,16 +64,16 @@ namespace MWVR
         void mouseMove(float x);
         void turnLeftRight(float value, float previousValue, float dt);
 
-        void processUtilityStickX(float value);
-        void processUtilityStickY(float value);
+        void processUtilityStickX(float value, bool disableControls);
+        void processUtilityStickY(float value, bool disableControls);
 
     protected:
         void processAction(const class XR::InputAction* action, float dt, bool disableControls);
         void processMovementStick(const class XR::InputAction* action, float dt, bool disableControls);
-        void toggleUtilityDown();
-        void toggleUtilityUp();
-        void onActivateAction(int actionId);
-        void onDeactivateAction(int actionId);
+        void toggleUtilityDown(bool disableControls);
+        void toggleUtilityUp(bool disableControls);
+        void onActivateAction(int actionId, bool disableControls);
+        void onDeactivateAction(int actionId, bool disableControls);
 
         void updateVRPointer(bool disableControls);
         void updateCombat(float dt);
