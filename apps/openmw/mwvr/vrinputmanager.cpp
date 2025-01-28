@@ -750,6 +750,8 @@ namespace MWVR
                 break;
             case A_Recenter:
                 break;
+            case A_ToggleSneak:
+                break;
             default:
                 if (actionId >= MWInput::A_Last)
                     break;

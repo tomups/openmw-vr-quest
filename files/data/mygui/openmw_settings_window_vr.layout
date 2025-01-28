@@ -877,7 +877,8 @@
                         </Widget>
                         <Widget type="HBox" skin="" position="14 282 350 24">
                             <Widget type="ComboBox" skin="MW_ComboBox" position="0 0 150 24" align="Left Top" name="VRThumbstickUp">
-                                <Property key="AddItem" value="toggle_sneak"/>
+								<Property key="AddItem" value="none"/>
+								<Property key="AddItem" value="toggle_sneak"/>
                                 <Property key="AddItem" value="radial_menu"/>
                                 <Property key="AddItem" value="rest"/>
                                 <Property key="AddItem" value="quick_save"/>
@@ -893,7 +894,8 @@
                         </Widget>
                         <Widget type="HBox" skin="" position="14 312 350 24">
                             <Widget type="ComboBox" skin="MW_ComboBox" position="0 0 150 24" align="Left Top" name="VRThumbstickDown">
-                                <Property key="AddItem" value="toggle_sneak"/>
+								<Property key="AddItem" value="none"/>
+								<Property key="AddItem" value="toggle_sneak"/>
                                 <Property key="AddItem" value="radial_menu"/>
                                 <Property key="AddItem" value="rest"/>
                                 <Property key="AddItem" value="quick_save"/>
