@@ -366,6 +366,11 @@ namespace MWVR
         material->setColorMode(osg::Material::ColorMode::AMBIENT_AND_DIFFUSE);
         stateset->setAttributeAndModes(material, osg::StateAttribute::ON);
 
+        // turn of sky blending
+        stateset->addUniform(new osg::Uniform("far", 10000000.0f));
+        stateset->addUniform(new osg::Uniform("skyBlendingStart", 8000000.0f));
+        stateset->addUniform(new osg::Uniform("screenRes", osg::Vec2f{ 1, 1 }));
+
         MWBase::Environment::get().getResourceSystem()->getSceneManager()->recreateShaders(geometry, "objects", true);
 
         return geometry;
