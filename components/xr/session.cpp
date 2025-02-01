@@ -163,7 +163,7 @@ namespace XR
                     {
                         VR::ProjectionLayer* projectionLayer = static_cast<VR::ProjectionLayer*>(layer.get());
 
-                        xrProjectionLayer.space = mReferenceSpaceStage;
+                        xrProjectionLayer.space = mReferenceSpaceLocal;
                         xrProjectionLayer.viewCount = 2;
                         xrProjectionLayer.views = compositionLayerProjectionViews.data();
 
@@ -442,12 +442,12 @@ namespace XR
                 xrPathToString(XR::Instance::instance().xrInstance(), interactionProfileState.interactionProfile, size,
                     &size, profile.data());
                 Log(Debug::Verbose) << userPath << ": Interaction profile changed to '" << profile.data() << "'";
-                setInteractionProfileActive(vrPath, true);
+                setInteractionProfileActive(vrPath, VR::stringToVRPath(profile), true);
             }
             else
             {
                 Log(Debug::Verbose) << userPath << ": Interaction profile lost";
-                setInteractionProfileActive(vrPath, false);
+                setInteractionProfileActive(vrPath, 0, false);
             }
         }
     }
@@ -493,18 +493,9 @@ namespace XR
         }
     }
 
-    void Session::createXrTracker()
-    {
-        auto stageUserPath = VR::stringToVRPath("/stage/user");
-        auto stageUserHeadPath = VR::stringToVRPath("/stage/user/head/input/pose");
-
-        mTracker.reset(new Tracker(stageUserPath, mReferenceSpaceStage));
-        mTracker->addTrackingSpace(stageUserHeadPath, mReferenceSpaceView);
-    }
-
     void Session::initCompositionLayerDepth()
     {
-        setAppShouldShareDepthBuffer(KHR_composition_layer_depth.enabled());
+        setAppShouldShareDepthBuffer(XR::Extensions::instance().extensionEnabled(XR_KHR_COMPOSITION_LAYER_DEPTH_EXTENSION_NAME));
     }
 
     PFN_xrEnumerateReprojectionModesMSFT enumerateReprojectionModesMSFT = nullptr;
@@ -530,7 +521,8 @@ namespace XR
 
     void Session::initMSFTReprojection()
     {
-        if (MSFT_composition_layer_reprojection.enabled() && KHR_composition_layer_depth.enabled())
+        if (XR::Extensions::instance().extensionEnabled(XR_MSFT_COMPOSITION_LAYER_REPROJECTION_EXTENSION_NAME)
+            && XR::Extensions::instance().extensionEnabled(XR_KHR_COMPOSITION_LAYER_DEPTH_EXTENSION_NAME))
         {
             std::vector<XrReprojectionModeMSFT> modes;
             enumerateReprojectionModesMSFT = reinterpret_cast<PFN_xrEnumerateReprojectionModesMSFT>(
@@ -646,19 +638,21 @@ namespace XR
         Log(Debug::Verbose) << ss.str();
     }
 
-    XrSpace Session::getReferenceSpace(VR::ReferenceSpace space)
+    XrSpace Session::getReferenceSpace(XrReferenceSpaceType space)
     {
         switch (space)
         {
-            case VR::ReferenceSpace::Stage:
-                return mReferenceSpaceStage;
-            case VR::ReferenceSpace::View:
+            case XR_REFERENCE_SPACE_TYPE_VIEW:
                 return mReferenceSpaceView;
+            case XR_REFERENCE_SPACE_TYPE_LOCAL:
+                return mReferenceSpaceLocal;
+            case XR_REFERENCE_SPACE_TYPE_STAGE:
+                return mReferenceSpaceStage;
         }
         return XR_NULL_HANDLE;
     }
 
-    std::array<Stereo::View, 2> Session::getPredictedViews(int64_t predictedDisplayTime, VR::ReferenceSpace space)
+    std::array<Stereo::View, 2> Session::locateViews(int64_t predictedDisplayTime, XrReferenceSpaceType space)
     {
         std::array<XrView, 2> xrViews{};
         xrViews[0].type = XR_TYPE_VIEW;
@@ -672,15 +666,7 @@ namespace XR
         viewLocateInfo.type = XR_TYPE_VIEW_LOCATE_INFO;
         viewLocateInfo.viewConfigurationType = mViewConfigType;
         viewLocateInfo.displayTime = predictedDisplayTime;
-        switch (space)
-        {
-            case VR::ReferenceSpace::Stage:
-                viewLocateInfo.space = mReferenceSpaceStage;
-                break;
-            case VR::ReferenceSpace::View:
-                viewLocateInfo.space = mReferenceSpaceView;
-                break;
-        }
+        viewLocateInfo.space = getReferenceSpace(space);
         CHECK_XRCMD(xrLocateViews(mXrSession, &viewLocateInfo, &viewState, viewCount, &viewCount, xrViews.data()));
 
         std::array<Stereo::View, 2> vrViews{};
@@ -690,6 +676,49 @@ namespace XR
             vrViews[side].fov = fromXR(xrViews[side].fov);
         }
         return vrViews;
+    }
+
+    VR::TrackingPose Session::locateSpace(XrSpace space, XrSpace referenceSpace)
+    {
+        VR::TrackingPose pose = {};
+        pose.status = VR::TrackingStatus::Good;
+        pose.time = VR::getPredictedDisplayTime();
+        XrSpaceLocation location{};
+        location.type = XR_TYPE_SPACE_LOCATION;
+        auto res = xrLocateSpace(space, referenceSpace, pose.time, &location);
+
+        if (XR_FAILED(res))
+        {
+            // Call failed, exit.
+            CHECK_XRRESULT(res, "xrLocateSpace");
+            pose.status = VR::TrackingStatus::RuntimeFailure;
+            return;
+        }
+
+        // Check that everything is being tracked
+        if (!(location.locationFlags
+                & (XR_SPACE_LOCATION_ORIENTATION_TRACKED_BIT | XR_SPACE_LOCATION_POSITION_TRACKED_BIT)))
+        {
+            // It's not, data is stale
+            pose.status = VR::TrackingStatus::Stale;
+        }
+
+        // Check that data is valid
+        if (!(location.locationFlags
+                & (XR_SPACE_LOCATION_ORIENTATION_VALID_BIT | XR_SPACE_LOCATION_POSITION_VALID_BIT)))
+        {
+            // It's not, we've lost tracking
+            pose.status = VR::TrackingStatus::Lost;
+            return;
+        }
+
+        pose.pose = fromXR(location.pose);
+        return pose;
+    }
+
+    VR::TrackingPose Session::locateSpace(XrSpace space, XrReferenceSpaceType referenceSpace)
+    {
+        return locateSpace(space, getReferenceSpace(referenceSpace));
     }
 
     std::array<VR::SwapchainConfig, 2> Session::getRecommendedSwapchainConfig() const
@@ -709,3 +738,4 @@ namespace XR
         return configs;
     }
 }
+

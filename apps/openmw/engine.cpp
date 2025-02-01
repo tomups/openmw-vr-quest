@@ -33,6 +33,7 @@
 #include <components/vr/viewer.hpp>
 #include <components/vr/vr.hpp>
 #include <components/xr/instance.hpp>
+#include <components/xr/interactionprofiles.hpp>
 #include <components/xr/session.hpp>
 // ## VR_PATCH END
 
@@ -1221,12 +1222,46 @@ void OMW::Engine::setRandomSeed(unsigned int seed)
 // ## VR_PATCH BEGIN
 void OMW::Engine::configureVRGraphics(osg::GraphicsContext* gc)
 {
+    // Interaction profiles need to be configured before XR::Instance, to enable all relevant extensions
+    configureVRInputProfiles();
+
     mVrTrackingManager = std::make_unique<VR::TrackingManager>();
     mXrInstance = std::make_unique<XR::Instance>(gc);
     mXrSession = mXrInstance->createSession();
     if (mXrSession->appShouldShareDepthInfo())
         mSelectDepthFormatOperation->setSupportedFormats(mXrInstance->platform().supportedDepthFormats());
     mSelectColorFormatOperation->setSupportedFormats({ mXrInstance->platform().supportedColorFormats() });
+}
+
+void OMW::Engine::configureVRInputProfiles()
+{
+    const std::string xrinputuserdefault = mCfgMgr.getUserConfigPath().string() + "/openxrinteractionprofiles.xml";
+    const std::string xrinputlocaldefault = mCfgMgr.getLocalPath().string() + "/openxrinteractionprofiles.xml";
+    const std::string xrinputglobaldefault = mCfgMgr.getGlobalPath().string() + "/openxrinteractionprofiles.xml";
+
+    std::string xrInteractionProfiles;
+    if (std::filesystem::exists(xrinputuserdefault))
+        xrInteractionProfiles = xrinputuserdefault;
+    else if (std::filesystem::exists(xrinputlocaldefault))
+        xrInteractionProfiles = xrinputlocaldefault;
+    else if (std::filesystem::exists(xrinputglobaldefault))
+        xrInteractionProfiles = xrinputglobaldefault;
+    else
+        xrInteractionProfiles = ""; // if it doesn't exist, pass in an empty string
+
+    std::string defaulXrInteractionProfiles;
+    if (std::filesystem::exists(xrinputlocaldefault))
+        defaulXrInteractionProfiles = xrinputlocaldefault;
+    else if (std::filesystem::exists(xrinputglobaldefault))
+        defaulXrInteractionProfiles = xrinputglobaldefault;
+    else
+        defaulXrInteractionProfiles = ""; // if it doesn't exist, pass in an empty string
+
+    Log(Debug::Verbose) << "xrinteractionprofiles user: " << xrinputuserdefault;
+    Log(Debug::Verbose) << "xrinteractionprofiles local: " << xrinputlocaldefault;
+    Log(Debug::Verbose) << "xrinteractionprofiles global: " << xrinputglobaldefault;
+
+    XR::loadInteractionProfiles(xrInteractionProfiles, defaulXrInteractionProfiles);
 }
 
 void OMW::Engine::configureVRPreScene(const std::filesystem::path& userFile, bool userFileExists,

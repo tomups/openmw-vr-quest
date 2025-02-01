@@ -540,6 +540,7 @@ if(BUILD_OPENMW_VR)
         debug
         extensions
         input
+        interactionprofiles
         instance
         platform
         session

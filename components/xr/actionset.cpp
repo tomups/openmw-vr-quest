@@ -15,11 +15,10 @@
 namespace XR
 {
 
-    ActionSet::ActionSet(const std::string& actionSetName, std::shared_ptr<AxisDeadzone> deadzone)
+    ActionSet::ActionSet(const std::string& actionSetName)
         : mActionSet(nullptr)
         , mLocalizedName(actionSetName)
         , mInternalName(Misc::StringUtils::lowerCase(actionSetName))
-        , mDeadzone(deadzone)
     {
         mActionSet = createActionSet(actionSetName);
     }
@@ -32,97 +31,134 @@ namespace XR
         }
     }
 
-    void ActionSet::createPoseAction(
-        const std::string& actionName, const std::string& localName, std::vector<VR::SubAction> subActions)
-    {
-        auto action = createXRAction(XR_ACTION_TYPE_POSE_INPUT, actionName, localName, subActions);
+    //void ActionSet::createPoseAction(
+    //    const std::string& actionName, const std::string& localName, std::vector<VR::SubAction> subActions)
+    //{
+    //    auto action = createXRAction(XR_ACTION_TYPE_POSE_INPUT, actionName, localName, subActions);
 
-        if (subActions.size() == 0)
-            subActions = { VR::SubAction::ALL };
-        for (auto subAction : subActions)
-        {
-            mTrackerMap.emplace(subAction, new PoseAction(action, subAction));
-        }
+    //    if (subActions.size() == 0)
+    //        subActions = { VR::SubAction::ALL };
+    //    for (auto subAction : subActions)
+    //    {
+    //        mTrackerMap.emplace(subAction, new PoseAction(action, subAction));
+    //    }
+    //}
+
+    //void ActionSet::createHapticsAction(
+    //    const std::string& actionName, const std::string& localName, std::vector<VR::SubAction> subActions)
+    //{
+    //    auto action = createXRAction(XR_ACTION_TYPE_VIBRATION_OUTPUT, actionName, localName, subActions);
+
+    //    if (subActions.size() == 0)
+    //        subActions = { VR::SubAction::ALL };
+    //    for (auto subAction : subActions)
+    //    {
+    //        mHapticsMap.emplace(subAction, new HapticsAction(action, subAction));
+    //    }
+    //}
+
+    //template <>
+    //void ActionSet::createMWAction<Axis1DAction>(int openMWAction, const std::string& actionName,
+    //    const std::string& localName, std::vector<VR::SubAction> subActions)
+    //{
+    //}
+
+    //template <>
+    //void ActionSet::createMWAction<Axis2DAction>(int openMWAction, const std::string& actionName,
+    //    const std::string& localName, std::vector<VR::SubAction> subActions)
+    //{
+    //    auto action = createXRAction(
+    //        Axis2DAction::ActionType, mInternalName + "_" + actionName, mLocalizedName + " " + localName, subActions);
+
+    //    if (subActions.size() == 0)
+    //        subActions = { VR::SubAction::ALL };
+    //    for (auto subAction : subActions)
+    //    {
+    //        mInputActionMap.emplace(
+    //            std::pair(openMWAction, subAction), new Axis2DAction(openMWAction, action, subAction, mDeadzone));
+    //    }
+    //}
+
+    //template <typename A>
+    //void ActionSet::createMWAction(int openMWAction, const std::string& actionName, const std::string& localName,
+    //    std::vector<VR::SubAction> subActions)
+    //{
+    //    auto action = createXRAction(
+    //        A::ActionType, mInternalName + "_" + actionName, mLocalizedName + " " + localName, subActions);
+
+    //    if (subActions.size() == 0)
+    //        subActions = { VR::SubAction::ALL };
+    //    for (auto subAction : subActions)
+    //    {
+    //        mInputActionMap.emplace(std::pair(openMWAction, subAction), new A(openMWAction, action, subAction));
+    //    }
+    //}
+
+    //void ActionSet::createMWAction(ControlType controlType, int openMWAction, const std::string& actionName,
+    //    const std::string& localName, std::vector<VR::SubAction> subActions)
+    //{
+    //    switch (controlType)
+    //    {
+    //        case ControlType::Press:
+    //            return createMWAction<ButtonPressAction>(openMWAction, actionName, localName, subActions);
+    //        case ControlType::LongPress:
+    //            return createMWAction<ButtonLongPressAction>(openMWAction, actionName, localName, subActions);
+    //        case ControlType::Hold:
+    //            return createMWAction<ButtonHoldAction>(openMWAction, actionName, localName, subActions);
+    //        case ControlType::Axis1D:
+    //            return createMWAction<Axis1DAction>(openMWAction, actionName, localName, subActions);
+    //        case ControlType::Axis2D:
+    //            return createMWAction<Axis2DAction>(openMWAction, actionName, localName, subActions);
+    //        default:
+    //            Log(Debug::Warning) << "createMWAction: pose/haptics Not implemented here";
+    //    }
+    //}
+
+    void ActionSet::createBoolAction(const std::string& actionName, const std::string& localName, const std::string& id)
+    {
+        mBoolActions.emplace(id, createXRAction(BoolAction::ActionType, actionName, localName));
+        mAllInputActions.emplace(id, &mBoolActions[id]);
+    }
+
+    void ActionSet::createAxisAction(const std::string& actionName, const std::string& localName, const std::string& id)
+    {
+        mAxisActions.emplace(id, createXRAction(AxisAction::ActionType, actionName, localName));
+        mAllInputActions.emplace(id, &mAxisActions[id]);
+    }
+
+    void ActionSet::createFloatAction(
+        const std::string& actionName, const std::string& localName, const std::string& id)
+    {
+        mFloatActions.emplace(id, createXRAction(FloatAction::ActionType, actionName, localName));
+        mAllInputActions.emplace(id, &mFloatActions[id]);
+    }
+
+    void ActionSet::createPoseAction(const std::string& actionName, const std::string& localName, const std::string& id)
+    {
+        mPoseActions.emplace(id, createXRAction(BoolAction::ActionType, actionName, localName));
+        mAllInputActions.emplace(id, &mPoseActions[id]);
     }
 
     void ActionSet::createHapticsAction(
-        const std::string& actionName, const std::string& localName, std::vector<VR::SubAction> subActions)
+        const std::string& actionName, const std::string& localName, const std::string& id)
     {
-        auto action = createXRAction(XR_ACTION_TYPE_VIBRATION_OUTPUT, actionName, localName, subActions);
-
-        if (subActions.size() == 0)
-            subActions = { VR::SubAction::ALL };
-        for (auto subAction : subActions)
-        {
-            mHapticsMap.emplace(subAction, new HapticsAction(action, subAction));
-        }
+        mHapticsActions.emplace(id, createXRAction(HapticsAction::ActionType, actionName, localName));
+        mAllInputActions.emplace(id, &mHapticsActions[id]);
     }
 
-    template <>
-    void ActionSet::createMWAction<Axis1DAction>(int openMWAction, const std::string& actionName,
-        const std::string& localName, std::vector<VR::SubAction> subActions)
+    std::optional<InputAction::Value> ActionSet::getValue(const std::string& id) const
     {
-        auto action = createXRAction(
-            Axis1DAction::ActionType, mInternalName + "_" + actionName, mLocalizedName + " " + localName, subActions);
-
-        if (subActions.size() == 0)
-            subActions = { VR::SubAction::ALL };
-        for (auto subAction : subActions)
-        {
-            mInputActionMap.emplace(
-                std::pair(openMWAction, subAction), new Axis1DAction(openMWAction, action, subAction, mDeadzone));
-        }
+        return mAllInputActions.at(id)->value();
     }
 
-    template <>
-    void ActionSet::createMWAction<Axis2DAction>(int openMWAction, const std::string& actionName,
-        const std::string& localName, std::vector<VR::SubAction> subActions)
+    void ActionSet::suggestBinding(const std::string& id, const std::string& path)
     {
-        auto action = createXRAction(
-            Axis2DAction::ActionType, mInternalName + "_" + actionName, mLocalizedName + " " + localName, subActions);
-
-        if (subActions.size() == 0)
-            subActions = { VR::SubAction::ALL };
-        for (auto subAction : subActions)
-        {
-            mInputActionMap.emplace(
-                std::pair(openMWAction, subAction), new Axis2DAction(openMWAction, action, subAction, mDeadzone));
-        }
+        mSuggestions.push_back(std::make_pair(id, path));
     }
 
-    template <typename A>
-    void ActionSet::createMWAction(int openMWAction, const std::string& actionName, const std::string& localName,
-        std::vector<VR::SubAction> subActions)
+    XrAction ActionSet::findXrAction(const std::string& id) const
     {
-        auto action = createXRAction(
-            A::ActionType, mInternalName + "_" + actionName, mLocalizedName + " " + localName, subActions);
-
-        if (subActions.size() == 0)
-            subActions = { VR::SubAction::ALL };
-        for (auto subAction : subActions)
-        {
-            mInputActionMap.emplace(std::pair(openMWAction, subAction), new A(openMWAction, action, subAction));
-        }
-    }
-
-    void ActionSet::createMWAction(ControlType controlType, int openMWAction, const std::string& actionName,
-        const std::string& localName, std::vector<VR::SubAction> subActions)
-    {
-        switch (controlType)
-        {
-            case ControlType::Press:
-                return createMWAction<ButtonPressAction>(openMWAction, actionName, localName, subActions);
-            case ControlType::LongPress:
-                return createMWAction<ButtonLongPressAction>(openMWAction, actionName, localName, subActions);
-            case ControlType::Hold:
-                return createMWAction<ButtonHoldAction>(openMWAction, actionName, localName, subActions);
-            case ControlType::Axis1D:
-                return createMWAction<Axis1DAction>(openMWAction, actionName, localName, subActions);
-            case ControlType::Axis2D:
-                return createMWAction<Axis2DAction>(openMWAction, actionName, localName, subActions);
-            default:
-                Log(Debug::Warning) << "createMWAction: pose/haptics Not implemented here";
-        }
+        return mAllInputActions.at(id)->xrAction();
     }
 
     XrActionSet ActionSet::createActionSet(const std::string& name)
@@ -140,75 +176,89 @@ namespace XR
         return actionSet;
     }
 
-    void ActionSet::suggestBindings(
-        std::vector<XrActionSuggestedBinding>& xrSuggestedBindings, const SuggestedBindings& mwSuggestedBindings)
+    std::vector<XrActionSuggestedBinding> ActionSet::suggestBindings()
     {
-        std::vector<XrActionSuggestedBinding> suggestedBindings;
-        if (!mTrackerMap.empty())
-        {
-            suggestedBindings.emplace_back(XrActionSuggestedBinding{
-                mTrackerMap[VR::SubAction::HandLeft]->xrAction(), getXrPath("/user/hand/left/input/aim/pose") });
-            suggestedBindings.emplace_back(XrActionSuggestedBinding{
-                mTrackerMap[VR::SubAction::HandRight]->xrAction(), getXrPath("/user/hand/right/input/aim/pose") });
-        }
-        if (!mHapticsMap.empty())
-        {
-            suggestedBindings.emplace_back(XrActionSuggestedBinding{
-                mHapticsMap[VR::SubAction::HandLeft]->xrAction(), getXrPath("/user/hand/left/output/haptic") });
-            suggestedBindings.emplace_back(XrActionSuggestedBinding{
-                mHapticsMap[VR::SubAction::HandRight]->xrAction(), getXrPath("/user/hand/right/output/haptic") });
-        };
+        std::vector<XrActionSuggestedBinding> suggestions;
 
-        for (auto& mwSuggestedBinding : mwSuggestedBindings)
+        for (auto& suggestion : mSuggestions)
         {
-            auto xrAction = mActionMap.find(mInternalName + "_" + mwSuggestedBinding.action);
-            if (xrAction == mActionMap.end())
+            XrActionSuggestedBinding s = {};
+            s.action = findXrAction(suggestion.first);
+            if (s.action)
             {
-                Log(Debug::Error) << "ActionSet: Unknown action " << mwSuggestedBinding.action;
-                continue;
+                s.binding = getXrPath(suggestion.second);
+                suggestions.emplace_back(s);
             }
-            suggestedBindings.push_back({ xrAction->second->xrAction(), getXrPath(mwSuggestedBinding.path) });
         }
 
-        xrSuggestedBindings.insert(xrSuggestedBindings.end(), suggestedBindings.begin(), suggestedBindings.end());
+        //auto suggest = [&](auto& actions) {
+        //    for (auto& action : actions)
+        //        suggestions.emplace_back(XrActionSuggestedBinding{ action.second.xrAction(), getXrPath(action.first) });
+        //};
+
+        //suggest(mAxisActions);
+        //suggest(mBoolActions);
+        //suggest(mFloatActions);
+        //suggest(mPoseActions);
+        //suggest(mHapticsActions);
+
+        return suggestions;
+
+        //std::vector<XrActionSuggestedBinding> suggestedBindings;
+        //if (!mTrackerMap.empty())
+        //{
+        //    suggestedBindings.emplace_back(XrActionSuggestedBinding{
+        //        mTrackerMap[VR::SubAction::HandLeft]->xrAction(), getXrPath("/user/hand/left/input/aim/pose") });
+        //    suggestedBindings.emplace_back(XrActionSuggestedBinding{
+        //        mTrackerMap[VR::SubAction::HandRight]->xrAction(), getXrPath("/user/hand/right/input/aim/pose") });
+        //}
+        //if (!mHapticsMap.empty())
+        //{
+        //    suggestedBindings.emplace_back(XrActionSuggestedBinding{
+        //        mHapticsMap[VR::SubAction::HandLeft]->xrAction(), getXrPath("/user/hand/left/output/haptic") });
+        //    suggestedBindings.emplace_back(XrActionSuggestedBinding{
+        //        mHapticsMap[VR::SubAction::HandRight]->xrAction(), getXrPath("/user/hand/right/output/haptic") });
+        //};
+
+        //for (auto& mwSuggestedBinding : mwSuggestedBindings)
+        //{
+        //    auto xrAction = mActionMap.find(mInternalName + "_" + mwSuggestedBinding.action);
+        //    if (xrAction == mActionMap.end())
+        //    {
+        //        Log(Debug::Error) << "ActionSet: Unknown action " << mwSuggestedBinding.action;
+        //        continue;
+        //    }
+        //    suggestedBindings.push_back({ xrAction->second->xrAction(), getXrPath(mwSuggestedBinding.path) });
+        //}
+
+        //xrSuggestedBindings.insert(xrSuggestedBindings.end(), suggestedBindings.begin(), suggestedBindings.end());
     }
 
-    XrSpace ActionSet::xrActionSpace(VR::SubAction side)
+    XrSpace ActionSet::xrActionSpace(std::string id) const
     {
-        return mTrackerMap[side]->xrSpace();
+        if (!mPoseActions.contains(id))
+            throw std::runtime_error("No such tracker: " + id);
+        return mPoseActions.at(id).xrSpace();
     }
 
-    std::shared_ptr<XR::Action> ActionSet::createXRAction(XrActionType actionType, const std::string& actionName,
-        const std::string& localName, std::vector<VR::SubAction> subActions)
+    std::unique_ptr<XR::Action> ActionSet::createXRAction(XrActionType actionType, const std::string& actionName,
+        const std::string& localName)
     {
-        std::vector<XrPath> subactionPaths;
-        subactionPaths.reserve(subActions.size());
-        for (auto subAction : subActions)
-            subactionPaths.push_back(subActionPath(subAction));
-
         XrActionCreateInfo createInfo{};
         createInfo.type = XR_TYPE_ACTION_CREATE_INFO;
         createInfo.actionType = actionType;
         Misc::StringUtils::copyCppStringToCArray(createInfo.actionName, actionName);
         Misc::StringUtils::copyCppStringToCArray(createInfo.localizedActionName, localName);
-        createInfo.countSubactionPaths = subactionPaths.size();
+        createInfo.countSubactionPaths = 0;
         Log(Debug::Verbose) << "Creating action: " << actionName;
-        if (createInfo.countSubactionPaths > 0)
-        {
-            createInfo.subactionPaths = subactionPaths.data();
-        }
 
         XrAction xrAction = XR_NULL_HANDLE;
         CHECK_XRCMD(xrCreateAction(mActionSet, &createInfo, &xrAction));
-        auto action = std::make_shared<XR::Action>(xrAction, actionType, actionName, localName);
-        mActionMap.emplace(actionName, action);
-        return action;
+        return std::make_unique<XR::Action>(xrAction, actionType, actionName, localName);
     }
 
-    void ActionSet::updateControls(bool shouldQueueActions)
+    void ActionSet::update()
     {
-        mActionQueue.clear();
-
         const XrActiveActionSet activeActionSet{ mActionSet, XR_NULL_PATH };
         XrActionsSyncInfo syncInfo{};
         syncInfo.type = XR_TYPE_ACTIONS_SYNC_INFO;
@@ -220,13 +270,6 @@ namespace XR
         {
             CHECK_XRRESULT(res, "xrSyncActions");
             return;
-        }
-        else if (res == XR_SUCCESS)
-        {
-            for (auto& action : mInputActionMap)
-                action.second->updateAndQueue(mActionQueue);
-            if (!shouldQueueActions)
-                mActionQueue.clear();
         }
         else
         {
@@ -241,25 +284,11 @@ namespace XR
         return xrpath;
     }
 
-    const InputAction* ActionSet::nextAction()
+    void ActionSet::applyHaptics(const std::string& id, float intensity)
     {
-        if (mActionQueue.empty())
-            return nullptr;
+        if (!mHapticsActions.contains(id))
+            throw std::runtime_error("No such haptics: " + id);
 
-        const auto* action = mActionQueue.front();
-        mActionQueue.pop_front();
-        return action;
-    }
-
-    void ActionSet::applyHaptics(VR::SubAction side, float intensity)
-    {
-        auto it = mHapticsMap.find(side);
-        if (it == mHapticsMap.end())
-        {
-            Log(Debug::Error) << "ActionSet: No such tracker: " << static_cast<int>(side);
-            return;
-        }
-
-        it->second->apply(intensity);
+        mHapticsActions.at(id).apply(intensity);
     }
 }

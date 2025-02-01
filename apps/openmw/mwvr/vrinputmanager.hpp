@@ -46,9 +46,6 @@ namespace MWVR
         /// Overriden to update XR inputs
         void update(float dt, bool disableControls = false, bool disableEvents = false) override;
 
-        /// Currently active action set
-        XR::ActionSet& activeActionSet();
-
         /// OpenXR input interface
         OpenXRInput& xrInput() { return *mXRInput; }
 
@@ -66,6 +63,7 @@ namespace MWVR
 
         void processUtilityStickX(float value, bool disableControls);
         void processUtilityStickY(float value, bool disableControls);
+        void pointActivation(bool onPress, bool injectMousePress = true);
 
     protected:
         void processAction(const class XR::InputAction* action, float dt, bool disableControls);
@@ -78,9 +76,7 @@ namespace MWVR
         void updateVRPointer(bool disableControls);
         void updateCombat(float dt);
         void updateRealisticCombat(float dt);
-        void pointActivation(bool onPress);
 
-        void injectMousePress(int sdlButton, bool onPress);
         void injectChannelValue(MWInput::Actions action, float value);
 
         void applyHapticsLeftHand(float intensity) override;

@@ -24,6 +24,8 @@
 
 #include <osg/Vec3>
 
+#include <openxr/openxr.h>
+
 namespace VR
 {
     class Swapchain;
@@ -38,16 +40,17 @@ namespace VR
 
         struct Listener
         {
-            virtual ~Listener() = default;
+            Listener();
+            virtual ~Listener();
 
             virtual void onRecenter(){}
             virtual void onEyeLevelReset(){}
             virtual void onSeatedModeChanged(){}
-            virtual void onFrameBeginUpdate([[maybe_unused]] VR::Frame& frame){}
-            virtual void onFrameBeginRender([[maybe_unused]] VR::Frame& frame){}
+            virtual void onFrameUpdate(){}
+            virtual void onFrameRender(){}
             //! \note onFrameEnd() is called from the draw thread.
-            virtual void onFrameEnd([[maybe_unused]] osg::GraphicsContext* gc, [[maybe_unused]] VR::Frame& frame){}
-            virtual void onInteractionProfileActiveChanged([[maybe_unused]] VRPath topLevelPath, [[maybe_unused]] bool isActive){}
+            virtual void onFrameEnd(osg::GraphicsContext* gc, VR::Frame& frame){}
+            virtual void onInteractionProfileActiveChanged(VRPath topLevelPath, bool isActive){}
         };
 
     public:
@@ -74,7 +77,7 @@ namespace VR
             uint32_t arraySize, Swapchain::Attachment attachment, const std::string& name)
             = 0;
 
-        virtual std::array<Stereo::View, 2> getPredictedViews(int64_t predictedDisplayTime, VR::ReferenceSpace space)
+        virtual std::array<Stereo::View, 2> locateViews(int64_t predictedDisplayTime, XrReferenceSpaceType referenceSpace)
             = 0;
 
         virtual std::array<SwapchainConfig, 2> getRecommendedSwapchainConfig() const = 0;
@@ -90,7 +93,7 @@ namespace VR
 
         VR::StageToWorldBinding& stageToWorldBinding();
 
-        void setInteractionProfileActive(VRPath topLevelPath, bool active);
+        void setInteractionProfileActive(VRPath topLevelPath, VRPath profile, bool active);
         bool getInteractionProfileActive(VRPath topLevelPath) const;
 
         osg::Vec3 getHandsOffset() const { return mHandsOffset; }
@@ -104,8 +107,8 @@ namespace VR
 
         const osg::Vec3& movementAngleOffset() const { return mMovementAnglesOffset; }
 
-        void addListener(std::shared_ptr<Listener> listener);
-        void removeListener(std::shared_ptr<Listener> listener);
+        void addListener(Listener* listener);
+        void removeListener(Listener* listener);
 
     protected:
         void readSettings();
@@ -133,9 +136,9 @@ namespace VR
         void onRecenter();
         void onEyeLevelReset();
         void onSeatedModeChanged();
-        void onFrameBeginUpdate([[maybe_unused]] VR::Frame& frame);
-        void onFrameBeginRender([[maybe_unused]] VR::Frame& frame);
-        void onFrameEnd([[maybe_unused]] osg::GraphicsContext* gc, [[maybe_unused]] VR::Frame& frame);
+        void onFrameUpdate();
+        void onFrameRender();
+        void onFrameEnd(osg::GraphicsContext* gc);
         void onInteractionProfileActiveChanged(VRPath topLevelPath, bool isActive);
 
     private:
@@ -154,8 +157,7 @@ namespace VR
         osg::Vec3 mHandsOffset;
         osg::Vec3 mMovementAnglesOffset;
 
-        std::mutex mListenersMutex;
-        std::vector<std::shared_ptr<Listener>> mListeners;
+        std::vector<Listener*> mListeners;
     };
 
 }

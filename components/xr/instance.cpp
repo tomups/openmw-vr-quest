@@ -1,4 +1,5 @@
 #include "instance.hpp"
+#include "interactionprofiles.hpp"
 #include "debug.hpp"
 #include "platform.hpp"
 #include "session.hpp"
@@ -46,6 +47,8 @@ namespace XR
         mConfigViews[1].type = XR_TYPE_VIEW_CONFIGURATION_VIEW;
 
         mExtensions = std::make_unique<Extensions>();
+        for (auto& extension : getAllKnownInteractionProfileExtensions())
+            mExtensions->requestExtension(extension);
         mPlatform = std::make_unique<Platform>(gc);
         mPlatform->selectGraphicsAPIExtension();
         mXrInstance = mExtensions->createXrInstance("openmw_vr");
@@ -214,7 +217,7 @@ namespace XR
 
     void Instance::setupDebugMessenger(void)
     {
-        if (EXT_debug_utils.enabled())
+        if (mExtensions->extensionEnabled(XR_EXT_DEBUG_UTILS_EXTENSION_NAME))
         {
             XrDebugUtilsMessengerCreateInfoEXT createInfo{};
             createInfo.type = XR_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
@@ -258,6 +261,8 @@ namespace XR
         CHECK_XRCMD(xrGetInstanceProperties(mXrInstance, &instanceProperties));
         Log(Debug::Verbose) << "Instance RuntimeName=" << instanceProperties.runtimeName
                             << " RuntimeVersion=" << instanceProperties.runtimeVersion;
+
+        VR::setRuntimeName(instanceProperties.runtimeName);
     }
 
     void Instance::endFrame(VR::Frame& frame) {}

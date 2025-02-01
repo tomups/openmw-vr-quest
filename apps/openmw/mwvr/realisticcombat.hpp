@@ -55,7 +55,7 @@ namespace MWVR
         class StateMachine : public VR::TrackingListener
         {
         public:
-            StateMachine(MWWorld::Ptr ptr, VR::VRPath trackingPath);
+            StateMachine(MWWorld::Ptr ptr, std::string_view poseAction);
             void update(float dt, bool enabled);
             MWWorld::Ptr ptr() { return mPtr; }
 
@@ -112,7 +112,7 @@ namespace MWVR
 
             osg::Vec3 mPreviousPosition{ 0.f, 0.f, 0.f };
             VR::TrackingPose mTrackingInput = VR::TrackingPose();
-            VR::VRPath mTrackingPath = 0;
+            std::string mTrackingAction = 0;
         };
 
     }

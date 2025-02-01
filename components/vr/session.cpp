@@ -69,14 +69,14 @@ namespace VR
             VR::setPredictedDisplayTime(frame.predictedDisplayTime);
             VR::setPredictedDisplayPeriod(frame.predictedDisplayPeriod);
         }
-        onFrameBeginUpdate(frame);
+        onFrameUpdate(frame);
     }
 
     void Session::frameBeginRender(VR::Frame& frame)
     {
         if (frame.shouldSyncFrameLoop)
             syncFrameRender(frame);
-        onFrameBeginRender(frame);
+        onFrameRender(frame);
     }
 
     void Session::frameEnd(osg::GraphicsContext* gc, VR::Frame& frame)
@@ -87,24 +87,14 @@ namespace VR
         onFrameEnd(gc, frame);
     }
 
-    void Session::addListener(std::shared_ptr<Listener> listener) 
+    void Session::addListener(Listener* listener) 
     {
-        std::scoped_lock lock(mListenersMutex);
-
         mListeners.push_back(listener);
     }
 
-    void Session::removeListener(std::shared_ptr<Listener> listener)
+    void Session::removeListener(Listener* listener)
     {
-        std::scoped_lock lock(mListenersMutex);
-        auto it = mListeners.begin();
-        while(it != mListeners.end())
-        {
-            if (*it == listener)
-                it = mListeners.erase(it);
-            else
-                it++;
-        }
+        std::erase_if(mListeners, listener);
     }
 
     void Session::readSettings()
@@ -182,12 +172,9 @@ namespace VR
         return *mTrackerToWorldBinding;
     }
 
-    void Session::setInteractionProfileActive(VRPath topLevelPath, bool active)
+    void Session::setInteractionProfileActive(VRPath topLevelPath, VRPath profile, bool active)
     {
-        if (topLevelPath == stringToVRPath("/user/hand/left"))
-            setLeftControllerActive(active);
-        if (topLevelPath == stringToVRPath("/user/hand/right"))
-            setRightControllerActive(active);
+        VR::setControllerActive(topLevelPath, profile, active);
 
         if (active)
             mActiveInteractionProfiles.insert(topLevelPath);
@@ -214,50 +201,53 @@ namespace VR
 
     void Session::onRecenter()
     {
-        std::scoped_lock lock(mListenersMutex);
         for (auto& listener : mListeners)
             listener->onRecenter();
     }
 
     void Session::onEyeLevelReset()
     {
-        std::scoped_lock lock(mListenersMutex);
         for (auto& listener : mListeners)
             listener->onEyeLevelReset();
     }
 
     void Session::onSeatedModeChanged()
     {
-        std::scoped_lock lock(mListenersMutex);
         for (auto& listener : mListeners)
             listener->onSeatedModeChanged();
     }
 
-    void Session::onFrameBeginUpdate(VR::Frame& frame)
+    void Session::onFrameUpdate()
     {
-        std::scoped_lock lock(mListenersMutex);
         for (auto& listener : mListeners)
-            listener->onFrameBeginUpdate(frame);
+            listener->onFrameUpdate();
     }
 
-    void Session::onFrameBeginRender(VR::Frame& frame)
+    void Session::onFrameRender()
     {
-        std::scoped_lock lock(mListenersMutex);
         for (auto& listener : mListeners)
-            listener->onFrameBeginRender(frame);
+            listener->onFrameRender();
     }
 
-    void Session::onFrameEnd(osg::GraphicsContext* gc, VR::Frame& frame)
+    void Session::onFrameEnd(osg::GraphicsContext* gc)
     {
-        std::scoped_lock lock(mListenersMutex);
         for (auto& listener : mListeners)
-            listener->onFrameEnd(gc, frame);
+            listener->onFrameEnd(gc);
     }
 
     void Session::onInteractionProfileActiveChanged(VRPath topLevelPath, bool isActive)
     {
-        std::scoped_lock lock(mListenersMutex);
         for (auto& listener : mListeners)
             listener->onInteractionProfileActiveChanged(topLevelPath, isActive);
+    }
+
+    Session::Listener::Listener()
+    {
+        Session::instance().addListener(this);
+    }
+
+    Session::Listener::~Listener()
+    {
+        Session::instance().removeListener(this);
     }
 }

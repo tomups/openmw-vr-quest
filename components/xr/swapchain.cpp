@@ -6,6 +6,28 @@
 
 #include <components/debug/debuglog.hpp>
 
+// The OpenXR SDK's platform headers assume we've included platform headers
+#ifdef _WIN32
+#ifdef NOGDI
+#undef NOGDI
+#endif
+#include <Windows.h>
+#include <objbase.h>
+
+#ifdef XR_USE_GRAPHICS_API_D3D11
+#include <d3d11_1.h>
+#endif
+
+#elif __linux__
+#include <GL/glx.h>
+#undef None
+
+#else
+#error Unsupported platform
+#endif
+#include <openxr/openxr_platform.h>
+#include <openxr/openxr_platform_defines.h>
+
 namespace XR
 {
 
@@ -57,7 +79,11 @@ namespace XR
 
     bool Swapchain::mustFlipVertical() const
     {
-        return KHR_D3D11_enable.enabled();
+#ifdef XR_USE_GRAPHICS_API_D3D11
+        return XR::Extensions::instance().extensionEnabled(XR_KHR_D3D11_ENABLE_EXTENSION_NAME);
+#else
+        return false;
+#endif
     }
 
     void Swapchain::init()

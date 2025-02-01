@@ -15,8 +15,6 @@ namespace VR
 
 namespace XR
 {
-    class Tracker;
-
     extern void getEulerAngles(const osg::Quat& quat, float& yaw, float& pitch, float& roll);
 
     /// \brief Manages VR logic, such as managing frames, predicting their poses, and handling frame synchronization
@@ -35,10 +33,13 @@ namespace XR
 
         XrSession xrSession() { return mXrSession; }
 
-        XrSpace getReferenceSpace(VR::ReferenceSpace space);
+        XrSpace getReferenceSpace(XrReferenceSpaceType referenceSpace);
 
-        XR::Tracker& tracker() { return *mTracker; }
-        std::array<Stereo::View, 2> getPredictedViews(int64_t predictedDisplayTime, VR::ReferenceSpace space) override;
+        std::array<Stereo::View, 2> locateViews(
+            int64_t predictedDisplayTime, XrReferenceSpaceType referenceSpace) override;
+
+        VR::TrackingPose locateSpace(XrSpace space, XrSpace referenceSpace);
+        VR::TrackingPose locateSpace(XrSpace space, XrReferenceSpaceType referenceSpace);
 
         void xrDebugSetNames();
 
@@ -69,7 +70,6 @@ namespace XR
         void destroyXrReferenceSpaces();
         void logXrReferenceSpaces();
 
-        void createXrTracker();
         void initCompositionLayerDepth();
         void initMSFTReprojection();
 
@@ -88,8 +88,6 @@ namespace XR
         XrSpace mReferenceSpaceView = XR_NULL_HANDLE;
         XrSpace mReferenceSpaceStage = XR_NULL_HANDLE;
         XrSpace mReferenceSpaceLocal = XR_NULL_HANDLE;
-
-        std::unique_ptr<XR::Tracker> mTracker;
 
         std::mutex mMutex;
         uint32_t mAcquiredResources = 0;

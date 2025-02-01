@@ -31,27 +31,29 @@ namespace VR
     //! Converts a path identifier back to string. Returns an empty string if no such identifier exists.
     std::string_view VRPathToString(VRPath path);
 
-
     bool getVR();
     bool getKBMouseModeActive();
-    bool getLeftControllerActive();
-    bool getRightControllerActive();
     bool getSteamVR();
     bool getSeatedPlay();
     bool getStandingPlay();
+    bool getControllerActive(VRPath controllerPath);
+    VRPath getControllerInteractionProfile(VRPath controllerPath);
+    bool getLeftControllerActive();
+    bool getRightControllerActive();
     TrackingPose getTrackedPose(VRPath path);
     Stereo::Unit getPlayerHeight();
     DisplayTime getPredictedDisplayTime();
     DisplayTime getPredictedDisplayPeriod();
+    std::string getRuntimeName();
 
     void setVR(bool VR);
-    void setLeftControllerActive(bool active);
-    void setRightControllerActive(bool active);
+    void setControllerActive(VRPath controllerPath, VRPath interactionProfilePath, bool active);
     void setSteamVR(bool steamVR);
     void setSeatedPlay(bool seated);
     void setSneakOffsetEnabled(bool enabled);
     void setPredictedDisplayTime(DisplayTime time);
     void setPredictedDisplayPeriod(DisplayTime time);
+    void setRuntimeName(std::string name);
 
     void recenter();
     void resetEyeLevel();

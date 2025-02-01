@@ -3,13 +3,6 @@
 
 namespace VR
 {
-    //! Describes what space to track the limb in
-    enum class ReferenceSpace : unsigned
-    {
-        Stage = 0, //!< Track limb in the VR stage space. Meaning a space with a floor level origin and fixed horizontal
-                   //!< orientation.
-        View = 1 //!< Track limb in the VR view space. Meaning a space with the head as origin and orientation.
-    };
 
     //! Self-descriptive.
     //! I avoid using enum class for this enum, as it is frequently used as an index.

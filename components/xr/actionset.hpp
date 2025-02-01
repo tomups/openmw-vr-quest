@@ -10,6 +10,7 @@
 #include <map>
 #include <memory>
 #include <vector>
+#include <optional>
 
 namespace XR
 {
@@ -30,49 +31,50 @@ namespace XR
         void operator=(const ActionSet&) = delete;
 
     public:
-        ActionSet(const std::string& actionSetName, std::shared_ptr<AxisDeadzone> deadzone);
+        ActionSet(const std::string& actionSetName);
         ~ActionSet();
 
-        //! Update all controls and queue any actions
-        void updateControls(bool shouldQueueActions);
-
-        //! Get next action from queue (repeat until null is returned)
-        const InputAction* nextAction();
+        //! Update all actions
+        void update();
 
         //! Apply haptics of the given intensity to the given limb
-        void applyHaptics(VR::SubAction side, float intensity);
+        void applyHaptics(const std::string& id, float intensity);
 
         XrActionSet xrActionSet() { return mActionSet; }
-        void suggestBindings(
-            std::vector<XrActionSuggestedBinding>& xrSuggestedBindings, const SuggestedBindings& mwSuggestedBindings);
+        std::vector<XrActionSuggestedBinding> suggestBindings();
 
-        XrSpace xrActionSpace(VR::SubAction side);
+        XrSpace xrActionSpace(std::string id) const;
 
-        void createMWAction(ControlType controlType, int openMWAction, const std::string& actionName,
-            const std::string& localName, std::vector<VR::SubAction> subActions = {});
-        void createPoseAction(
-            const std::string& actionName, const std::string& localName, std::vector<VR::SubAction> subActions = {});
-        void createHapticsAction(
-            const std::string& actionName, const std::string& localName, std::vector<VR::SubAction> subActions = {});
+        void createBoolAction(const std::string& actionName, const std::string& localName, const std::string& id);
+        void createAxisAction(const std::string& actionName, const std::string& localName, const std::string& id);
+        void createFloatAction(const std::string& actionName, const std::string& localName, const std::string& id);
+        void createPoseAction(const std::string& actionName, const std::string& localName, const std::string& id);
+        void createHapticsAction(const std::string& actionName, const std::string& localName, const std::string& id);
+
+        std::optional<InputAction::Value> getValue(const std::string& id) const;
+
+        void suggestBinding(const std::string& id, const std::string& path);
+
+        XrAction findXrAction(const std::string& id) const;
 
     protected:
-        template <typename A>
-        void createMWAction(int openMWAction, const std::string& actionName, const std::string& localName,
-            std::vector<VR::SubAction> subActions = {});
-        std::shared_ptr<XR::Action> createXRAction(XrActionType actionType, const std::string& actionName,
-            const std::string& localName, std::vector<VR::SubAction> subActions);
+        std::unique_ptr<XR::Action> createXRAction(XrActionType actionType, const std::string& actionName,
+            const std::string& localName);
         XrPath getXrPath(const std::string& path) const;
         XrActionSet createActionSet(const std::string& name);
 
         XrActionSet mActionSet{ nullptr };
         std::string mLocalizedName{};
         std::string mInternalName{};
-        std::map<std::string, std::shared_ptr<Action>> mActionMap;
-        std::map<std::pair<int, VR::SubAction>, std::unique_ptr<InputAction>> mInputActionMap;
-        std::map<VR::SubAction, std::unique_ptr<PoseAction>> mTrackerMap;
-        std::map<VR::SubAction, std::unique_ptr<HapticsAction>> mHapticsMap;
-        std::deque<const InputAction*> mActionQueue{};
-        std::shared_ptr<AxisDeadzone> mDeadzone;
+
+        std::map<std::string, BoolAction> mBoolActions;
+        std::map<std::string, FloatAction> mFloatActions;
+        std::map<std::string, AxisAction> mAxisActions;
+        std::map<std::string, PoseAction> mPoseActions;
+        std::map<std::string, HapticsAction> mHapticsActions;
+        std::map<std::string, InputAction*> mAllInputActions;
+
+        std::vector<std::pair<std::string, std::string>> mSuggestions;
     };
 }
 

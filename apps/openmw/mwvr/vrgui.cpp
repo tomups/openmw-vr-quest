@@ -285,16 +285,6 @@ namespace MWVR
         updatePose();
     }
 
-    void VRGUILayer::onTrackingUpdated(VR::TrackingManager& manager)
-    {
-        auto tp = manager.locate(mTrackingPath);
-        if (!!tp.status)
-        {
-            mTrackedPose = tp.pose;
-            updatePose();
-        }
-    }
-
     void VRGUILayer::updatePose()
     {
 
@@ -555,24 +545,10 @@ namespace MWVR
         VRGUIManager* mManager;
     };
 
-    struct SessionListener : public VR::Session::Listener
-    {
-        SessionListener(VRGUIManager* parent)
-            : mParent(parent)
-        {
-        }
-
-        void onRecenter() override { mParent->resetStationaryPose(); }
-        void onEyeLevelReset() override { mParent->resetStationaryPoseHeight(); }
-
-        VRGUIManager* mParent;
-    };
-
     VRGUIManager::VRGUIManager(Resource::ResourceSystem* resourceSystem, osg::Group* rootNode)
         : mResourceSystem(resourceSystem)
         , mRootNode(rootNode)
         , mUiTracking(new VRGUITracking())
-        , mSessionListener(std::make_shared<SessionListener>(this))
     {
         if (!sManager)
             sManager = this;
@@ -580,7 +556,6 @@ namespace MWVR
             throw std::logic_error("Duplicated MWVR::VRGUIManager singleton");
 
         Paths::init();
-        VR::Session::instance().addListener(mSessionListener);
 
         mGeometries->setName("VR GUI Geometry Root");
         mGeometries->setCullCallback(new LayerUpdateCallback(this));
@@ -597,7 +572,6 @@ namespace MWVR
 
     VRGUIManager::~VRGUIManager(void)
     {
-        VR::Session::instance().removeListener(mSessionListener);
         sManager = nullptr;
     }
 
@@ -930,14 +904,14 @@ namespace MWVR
             removeWidget(widget);
     }
 
-    void VRGUIManager::resetStationaryPose()
+    void VRGUIManager::onRecenter()
     {
-        mUiTracking->resetStationaryPose();
+        mUiTracking->onRecenter();
     }
 
-    void VRGUIManager::resetStationaryPoseHeight()
+    void VRGUIManager::onEyeLevelReset()
     {
-        mUiTracking->resetStationaryPoseHeight();
+        mUiTracking->onEyeLevelReset();
     }
 
     void VRGUIManager::updateFocus(osg::Node* focusNode, osg::Vec3f hitPoint)
@@ -1138,170 +1112,169 @@ namespace MWVR
     }
 
     VRGUITracking::VRGUITracking()
-        : VR::TrackingSource(VR::stringToVRPath("/ui"))
     {
     }
 
     VRGUITracking::~VRGUITracking() {}
 
-    VR::TrackingPose VRGUITracking::locate(VR::VRPath path)
-    {
-        updateTracking();
+    //VR::TrackingPose VRGUITracking::locate(VR::VRPath path)
+    //{
+    //    updateTracking();
 
-        if (path == Paths::sMenuQuad)
-            return mStationaryPose;
-        if (path == Paths::sHUDTopLeft)
-            return mHUDTopLeftPose;
-        if (path == Paths::sHUDTopRight)
-            return mHUDTopRightPose;
-        if (path == Paths::sHUDBottomLeft)
-            return mHUDBottomLeftPose;
-        if (path == Paths::sHUDBottomRight)
-            return mHUDBottomRightPose;
-        if (path == Paths::sHUDMessage)
-            return mHUDMessagePose;
-        if (path == Paths::sHUDKeyboard)
-            return mHUDKeyboardPose;
-        if (path == Paths::sWristInnerLeft)
-            return mWristInnerLeftPose;
-        if (path == Paths::sWristInnerRight)
-            return mWristInnerRightPose;
-        if (path == Paths::sWristTopLeft)
-            return mWristTopLeftPose;
-        if (path == Paths::sWristTopRight)
-            return mWristTopRightPose;
+    //    if (path == Paths::sMenuQuad)
+    //        return mStationaryPose;
+    //    if (path == Paths::sHUDTopLeft)
+    //        return mHUDTopLeftPose;
+    //    if (path == Paths::sHUDTopRight)
+    //        return mHUDTopRightPose;
+    //    if (path == Paths::sHUDBottomLeft)
+    //        return mHUDBottomLeftPose;
+    //    if (path == Paths::sHUDBottomRight)
+    //        return mHUDBottomRightPose;
+    //    if (path == Paths::sHUDMessage)
+    //        return mHUDMessagePose;
+    //    if (path == Paths::sHUDKeyboard)
+    //        return mHUDKeyboardPose;
+    //    if (path == Paths::sWristInnerLeft)
+    //        return mWristInnerLeftPose;
+    //    if (path == Paths::sWristInnerRight)
+    //        return mWristInnerRightPose;
+    //    if (path == Paths::sWristTopLeft)
+    //        return mWristTopLeftPose;
+    //    if (path == Paths::sWristTopRight)
+    //        return mWristTopRightPose;
 
-        Log(Debug::Error) << "Tried to locate invalid path " << path
-                          << ". This is a developer error. Please locate using TrackingManager::locate() only.";
-        throw std::logic_error("Invalid Argument");
-    }
+    //    Log(Debug::Error) << "Tried to locate invalid path " << path
+    //                      << ". This is a developer error. Please locate using TrackingManager::locate() only.";
+    //    throw std::logic_error("Invalid Argument");
+    //}
 
-    std::vector<VR::VRPath> VRGUITracking::listSupportedPaths() const
-    {
-        return { Paths::sMenuQuad, Paths::sHUDTopLeft, Paths::sHUDTopRight, Paths::sHUDBottomLeft,
-            Paths::sHUDBottomRight, Paths::sHUDMessage, Paths::sHUDKeyboard, Paths::sWristInnerLeft,
-            Paths::sWristInnerRight, Paths::sWristTopLeft, Paths::sWristTopRight };
-    }
+    //std::vector<VR::VRPath> VRGUITracking::listSupportedPaths() const
+    //{
+    //    return { Paths::sMenuQuad, Paths::sHUDTopLeft, Paths::sHUDTopRight, Paths::sHUDBottomLeft,
+    //        Paths::sHUDBottomRight, Paths::sHUDMessage, Paths::sHUDKeyboard, Paths::sWristInnerLeft,
+    //        Paths::sWristInnerRight, Paths::sWristTopLeft, Paths::sWristTopRight };
+    //}
 
-    void VRGUITracking::updateTracking()
-    {
-        if (VR::getPredictedDisplayTime()  == mLastTime)
-            return;
+    //void VRGUITracking::updateTracking()
+    //{
+    //    if (VR::getPredictedDisplayTime()  == mLastTime)
+    //        return;
 
-        VR::VRPath leftWrist = VR::stringToVRPath("/world/user/hand/left/input/aim/pose");
-        VR::VRPath rightWrist = VR::stringToVRPath("/world/user/hand/right/input/aim/pose");
-        VR::VRPath headPath = VR::stringToVRPath("/world/user/head/input/pose");
-        auto tp = VR::TrackingManager::instance().locate(headPath);
+    //    VR::VRPath leftWrist = VR::stringToVRPath("/world/user/hand/left/input/aim/pose");
+    //    VR::VRPath rightWrist = VR::stringToVRPath("/world/user/hand/right/input/aim/pose");
+    //    VR::VRPath headPath = VR::stringToVRPath("/world/user/head/input/pose");
+    //    auto tp = VR::TrackingManager::instance().locate(headPath);
 
-        if (mTimedPoseRefresh)
-        {
-            if (std::chrono::steady_clock::now() > mTimedPoseRefreshTime)
-            {
-                mTimedPoseRefresh = false;
-                mShouldUpdateStationaryPose = true;
-            }
-        }
+    //    if (mTimedPoseRefresh)
+    //    {
+    //        if (std::chrono::steady_clock::now() > mTimedPoseRefreshTime)
+    //        {
+    //            mTimedPoseRefresh = false;
+    //            mShouldUpdateStationaryPose = true;
+    //        }
+    //    }
 
-        if (!!tp.status)
-        {
-            mHUDTopLeftPose = tp;
-            mHUDTopLeftPose.pose.position
-                += mHUDTopLeftPose.pose.orientation * Stereo::Position::fromMWUnits(osg::Vec3f(-12, 30, 6));
+    //    if (!!tp.status)
+    //    {
+    //        mHUDTopLeftPose = tp;
+    //        mHUDTopLeftPose.pose.position
+    //            += mHUDTopLeftPose.pose.orientation * Stereo::Position::fromMWUnits(osg::Vec3f(-12, 30, 6));
 
-            mHUDTopRightPose = tp;
-            mHUDTopRightPose.pose.position
-                += mHUDTopRightPose.pose.orientation * Stereo::Position::fromMWUnits(osg::Vec3f(12, 30, 6));
+    //        mHUDTopRightPose = tp;
+    //        mHUDTopRightPose.pose.position
+    //            += mHUDTopRightPose.pose.orientation * Stereo::Position::fromMWUnits(osg::Vec3f(12, 30, 6));
 
-            mHUDBottomLeftPose = tp;
-            mHUDBottomLeftPose.pose.position
-                += mHUDBottomLeftPose.pose.orientation * Stereo::Position::fromMWUnits(osg::Vec3f(-12, 30, -18));
+    //        mHUDBottomLeftPose = tp;
+    //        mHUDBottomLeftPose.pose.position
+    //            += mHUDBottomLeftPose.pose.orientation * Stereo::Position::fromMWUnits(osg::Vec3f(-12, 30, -18));
 
-            mHUDBottomRightPose = tp;
-            mHUDBottomRightPose.pose.position
-                += mHUDBottomRightPose.pose.orientation * Stereo::Position::fromMWUnits(osg::Vec3f(12, 30, -18));
+    //        mHUDBottomRightPose = tp;
+    //        mHUDBottomRightPose.pose.position
+    //            += mHUDBottomRightPose.pose.orientation * Stereo::Position::fromMWUnits(osg::Vec3f(12, 30, -18));
 
-            mHUDMessagePose = tp;
-            mHUDMessagePose.pose.position
-                += mHUDMessagePose.pose.orientation * Stereo::Position::fromMWUnits(osg::Vec3f(0, 30, -3));
+    //        mHUDMessagePose = tp;
+    //        mHUDMessagePose.pose.position
+    //            += mHUDMessagePose.pose.orientation * Stereo::Position::fromMWUnits(osg::Vec3f(0, 30, -3));
 
-            if (mShouldUpdateStationaryPose || mShouldUpdateStationaryPoseHeight)
-            {
-                if (!mHasInitialPose)
-                {
-                    // Some runtimes initially report success while not actually returning a pose.
-                    // So i implement an automatic refresh 2 seconds after startup, when they will
-                    // hopefully have begun returning real poses.
-                    mHasInitialPose = true;
-                    mTimedPoseRefresh = true;
-                    mTimedPoseRefreshTime = std::chrono::steady_clock::now() + std::chrono::seconds(2);
-                }
+    //        if (mShouldUpdateStationaryPose || mShouldUpdateStationaryPoseHeight)
+    //        {
+    //            if (!mHasInitialPose)
+    //            {
+    //                // Some runtimes initially report success while not actually returning a pose.
+    //                // So i implement an automatic refresh 2 seconds after startup, when they will
+    //                // hopefully have begun returning real poses.
+    //                mHasInitialPose = true;
+    //                mTimedPoseRefresh = true;
+    //                mTimedPoseRefreshTime = std::chrono::steady_clock::now() + std::chrono::seconds(2);
+    //            }
 
-                // UI elements should always be vertical
-                auto axis = osg::Z_AXIS;
-                osg::Quat vertical;
-                auto local = tp.pose.orientation * axis;
-                vertical.makeRotate(local, axis);
-                tp.pose.orientation = tp.pose.orientation * vertical;
+    //            // UI elements should always be vertical
+    //            auto axis = osg::Z_AXIS;
+    //            osg::Quat vertical;
+    //            auto local = tp.pose.orientation * axis;
+    //            vertical.makeRotate(local, axis);
+    //            tp.pose.orientation = tp.pose.orientation * vertical;
 
-                if (mShouldUpdateStationaryPose)
-                {
-                    mStationaryPose = tp;
-                    mHUDKeyboardPose = tp;
-                    mHUDKeyboardPose.pose.position
-                        += mHUDKeyboardPose.pose.orientation * Stereo::Position::fromMWUnits(osg::Vec3(0, 35, -40));
-                    // Tilt the keyboard slightly for easier typing.
-                    mHUDKeyboardPose.pose.orientation
-                        = osg::Quat(osg::PI_4 / 2.f, osg::Vec3(-1, 0, 0)) * mHUDKeyboardPose.pose.orientation;
-                }
-                else if (mShouldUpdateStationaryPoseHeight)
-                {
-                    mStationaryPose.pose.position.mZ = tp.pose.position.mZ;
-                    mHUDKeyboardPose.pose.position.mZ = tp.pose.position.mZ
-                        + (mHUDKeyboardPose.pose.orientation * Stereo::Position::fromMWUnits(osg::Vec3(0, 35, -40))).mZ;
-                }
+    //            if (mShouldUpdateStationaryPose)
+    //            {
+    //                mStationaryPose = tp;
+    //                mHUDKeyboardPose = tp;
+    //                mHUDKeyboardPose.pose.position
+    //                    += mHUDKeyboardPose.pose.orientation * Stereo::Position::fromMWUnits(osg::Vec3(0, 35, -40));
+    //                // Tilt the keyboard slightly for easier typing.
+    //                mHUDKeyboardPose.pose.orientation
+    //                    = osg::Quat(osg::PI_4 / 2.f, osg::Vec3(-1, 0, 0)) * mHUDKeyboardPose.pose.orientation;
+    //            }
+    //            else if (mShouldUpdateStationaryPoseHeight)
+    //            {
+    //                mStationaryPose.pose.position.mZ = tp.pose.position.mZ;
+    //                mHUDKeyboardPose.pose.position.mZ = tp.pose.position.mZ
+    //                    + (mHUDKeyboardPose.pose.orientation * Stereo::Position::fromMWUnits(osg::Vec3(0, 35, -40))).mZ;
+    //            }
 
-                mShouldUpdateStationaryPose = false;
-                mShouldUpdateStationaryPoseHeight = false;
-            }
-        }
+    //            mShouldUpdateStationaryPose = false;
+    //            mShouldUpdateStationaryPoseHeight = false;
+    //        }
+    //    }
 
-        tp = VR::TrackingManager::instance().locate(leftWrist);
-        if (!!tp.status)
-        {
-            mWristInnerLeftPose = tp;
-            mWristInnerLeftPose.pose.position
-                += mWristInnerLeftPose.pose.orientation * Stereo::Position::fromMeters(.09f, -0.200f, -.033f);
-            mWristInnerLeftPose.pose.orientation
-                = osg::Quat(osg::PI_2, osg::Vec3(0, 0, 1)) * mWristInnerLeftPose.pose.orientation;
-            mWristTopLeftPose = tp;
-            mWristTopLeftPose.pose.position
-                += mWristTopLeftPose.pose.orientation * Stereo::Position::fromMeters(.0f, -0.200f, .066f);
-        }
+    //    tp = VR::TrackingManager::instance().locate(leftWrist);
+    //    if (!!tp.status)
+    //    {
+    //        mWristInnerLeftPose = tp;
+    //        mWristInnerLeftPose.pose.position
+    //            += mWristInnerLeftPose.pose.orientation * Stereo::Position::fromMeters(.09f, -0.200f, -.033f);
+    //        mWristInnerLeftPose.pose.orientation
+    //            = osg::Quat(osg::PI_2, osg::Vec3(0, 0, 1)) * mWristInnerLeftPose.pose.orientation;
+    //        mWristTopLeftPose = tp;
+    //        mWristTopLeftPose.pose.position
+    //            += mWristTopLeftPose.pose.orientation * Stereo::Position::fromMeters(.0f, -0.200f, .066f);
+    //    }
 
-        tp = VR::TrackingManager::instance().locate(rightWrist);
-        if (!!tp.status)
-        {
-            mWristInnerRightPose = tp;
-            mWristInnerRightPose.pose.position
-                += mWristInnerRightPose.pose.orientation * Stereo::Position::fromMeters(-.09f, -0.200f, -.033f);
-            mWristInnerRightPose.pose.orientation
-                = osg::Quat(-osg::PI_2, osg::Vec3(0, 0, 1)) * mWristInnerRightPose.pose.orientation;
-            mWristTopRightPose = tp;
-            mWristTopRightPose.pose.position
-                += mWristTopRightPose.pose.orientation * Stereo::Position::fromMeters(.0f, -0.200f, .066f);
-        }
+    //    tp = VR::TrackingManager::instance().locate(rightWrist);
+    //    if (!!tp.status)
+    //    {
+    //        mWristInnerRightPose = tp;
+    //        mWristInnerRightPose.pose.position
+    //            += mWristInnerRightPose.pose.orientation * Stereo::Position::fromMeters(-.09f, -0.200f, -.033f);
+    //        mWristInnerRightPose.pose.orientation
+    //            = osg::Quat(-osg::PI_2, osg::Vec3(0, 0, 1)) * mWristInnerRightPose.pose.orientation;
+    //        mWristTopRightPose = tp;
+    //        mWristTopRightPose.pose.position
+    //            += mWristTopRightPose.pose.orientation * Stereo::Position::fromMeters(.0f, -0.200f, .066f);
+    //    }
 
-        mLastTime = VR::getPredictedDisplayTime();
-    }
+    //    mLastTime = VR::getPredictedDisplayTime();
+    //}
 
-    void VRGUITracking::resetStationaryPose()
-    {
-        mShouldUpdateStationaryPose = true;
-    }
+    //void VRGUITracking::resetStationaryPose()
+    //{
+    //    mShouldUpdateStationaryPose = true;
+    //}
 
-    void VRGUITracking::resetStationaryPoseHeight() 
-    {
-        mShouldUpdateStationaryPoseHeight = true;
-    }
+    //void VRGUITracking::resetStationaryPoseHeight() 
+    //{
+    //    mShouldUpdateStationaryPoseHeight = true;
+    //}
 
 }

@@ -293,6 +293,7 @@ namespace OMW
 //## VR_PATCH BEGIN
     public:
         void configureVRGraphics(osg::GraphicsContext* gc);
+        void configureVRInputProfiles();
         void configureVRPreScene(const std::filesystem::path& userFile, bool userFileExists,
             const std::filesystem::path& userControllerBindingsFile,
             const std::filesystem::path& controllerBindingsFile);

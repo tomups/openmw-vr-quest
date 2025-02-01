@@ -78,7 +78,7 @@ namespace XR
     void Debugging::setName(uint64_t handle, XrObjectType type, const std::string& name)
     {
 
-        if (EXT_debug_utils.enabled())
+        if (XR::Extensions::instance().extensionEnabled(XR_EXT_DEBUG_UTILS_EXTENSION_NAME))
         {
             XrDebugUtilsObjectNameInfoEXT nameInfo{};
             nameInfo.type = XR_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT;

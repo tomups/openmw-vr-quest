@@ -362,6 +362,15 @@ namespace LuaUtil
         for (const T& t : v)
             out.add(t);
     }
+
+    template <class T>
+    sol::table tableFromVector(lua_State* L, const std::vector<T>& v)
+    {
+        sol::table res(L, sol::create);
+        for (const T& t : v)
+            res.add(t);
+        return res;
+    }
 }
 
 #endif // COMPONENTS_LUA_LUASTATE_H

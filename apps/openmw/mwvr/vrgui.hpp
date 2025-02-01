@@ -81,50 +81,44 @@ namespace MWVR
         bool operator<(const LayerConfig& rhs) const { return priority < rhs.priority; }
     };
 
-    //! TODO: Update description
-    //! Old description: Extends the tracking source with /ui/input/stationary/pose
-    class VRGUITracking : public VR::TrackingSource
-    {
-    public:
-        VRGUITracking();
-        ~VRGUITracking();
+    //class VRGUITracking
+    //{
+    //public:
+    //    VRGUITracking();
+    //    ~VRGUITracking();
 
-        std::vector<VR::VRPath> listSupportedPaths() const override;
-        void updateTracking() override;
-        void resetStationaryPose();
-        void resetStationaryPoseHeight();
 
-    protected:
-        virtual VR::TrackingPose locate(VR::VRPath path) override;
+    //    void onRecenter();
+    //    void onEyeLevelReset();
 
-    private:
-        VR::TrackingPose mStationaryPose = VR::TrackingPose();
-        VR::TrackingPose mHUDTopLeftPose = VR::TrackingPose();
-        VR::TrackingPose mHUDTopRightPose = VR::TrackingPose();
-        VR::TrackingPose mHUDBottomLeftPose = VR::TrackingPose();
-        VR::TrackingPose mHUDBottomRightPose = VR::TrackingPose();
-        VR::TrackingPose mHUDMessagePose = VR::TrackingPose();
-        VR::TrackingPose mHUDKeyboardPose = VR::TrackingPose();
-        VR::TrackingPose mWristInnerLeftPose = VR::TrackingPose();
-        VR::TrackingPose mWristInnerRightPose = VR::TrackingPose();
-        VR::TrackingPose mWristTopLeftPose = VR::TrackingPose();
-        VR::TrackingPose mWristTopRightPose = VR::TrackingPose();
+    //private:
+    //    VR::TrackingPose mStationaryPose = VR::TrackingPose();
+    //    VR::TrackingPose mHUDTopLeftPose = VR::TrackingPose();
+    //    VR::TrackingPose mHUDTopRightPose = VR::TrackingPose();
+    //    VR::TrackingPose mHUDBottomLeftPose = VR::TrackingPose();
+    //    VR::TrackingPose mHUDBottomRightPose = VR::TrackingPose();
+    //    VR::TrackingPose mHUDMessagePose = VR::TrackingPose();
+    //    VR::TrackingPose mHUDKeyboardPose = VR::TrackingPose();
+    //    VR::TrackingPose mWristInnerLeftPose = VR::TrackingPose();
+    //    VR::TrackingPose mWristInnerRightPose = VR::TrackingPose();
+    //    VR::TrackingPose mWristTopLeftPose = VR::TrackingPose();
+    //    VR::TrackingPose mWristTopRightPose = VR::TrackingPose();
 
-        bool mShouldUpdateStationaryPose = true;
-        bool mShouldUpdateStationaryPoseHeight = false;
-        bool mHasInitialPose = false;
-        bool mTimedPoseRefresh = false;
-        std::chrono::steady_clock::time_point mTimedPoseRefreshTime;
+    //    bool mShouldUpdateStationaryPose = true;
+    //    bool mShouldUpdateStationaryPoseHeight = false;
+    //    bool mHasInitialPose = false;
+    //    bool mTimedPoseRefresh = false;
+    //    std::chrono::steady_clock::time_point mTimedPoseRefreshTime;
 
-        VR::DisplayTime mLastTime = 0;
-    };
+    //    VR::DisplayTime mLastTime = 0;
+    //};
 
     /// \brief A single VR GUI Quad.
     ///
     /// In VR menus are shown as quads within the game world.
     /// The behaviour of that quad is defined by the MWVR::LayerConfig struct
     /// Each instance of VRGUILayer is used to show one MYGUI layer.
-    class VRGUILayer : public VR::TrackingListener, public osg::Referenced
+    class VRGUILayer : public osg::Referenced
     {
     public:
         VRGUILayer(osg::ref_ptr<osg::Group> geometryRoot, osg::ref_ptr<osg::Group> cameraRoot, std::string layerName,
@@ -148,7 +142,7 @@ namespace MWVR
         void addToSceneGraph();
 
         /// Update layer quads based on current tracking information
-        void onTrackingUpdated(VR::TrackingManager& manager) override;
+        //void onTrackingUpdated(VR::TrackingManager& manager) override;
 
     public:
         VR::VRPath mTrackingPath = 0;
@@ -178,7 +172,7 @@ namespace MWVR
     /// Constructs and destructs VRGUILayer objects in response to MWGui::Layout::setVisible calls.
     /// Layers can also be made visible directly by calling insertLayer() directly, e.g. to show
     /// the video player.
-    class VRGUIManager
+    class VRGUIManager : VR::Session::Listener
     {
     public:
         static VRGUIManager& instance();
@@ -212,8 +206,8 @@ namespace MWVR
         void update(osg::NodeVisitor* nv);
 
         /// Update traversal
-        void resetStationaryPose();
-        void resetStationaryPoseHeight();
+        void onRecenter() override;
+        void onEyeLevelReset() override;
 
         /// Gui cursor coordinates to use to simulate a mouse press/move if the player is currently pointing at a vr gui
         /// layer

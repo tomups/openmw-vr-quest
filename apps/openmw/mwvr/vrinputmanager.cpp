@@ -45,28 +45,6 @@
 
 namespace MWVR
 {
-    XR::ActionSet& VRInputManager::activeActionSet()
-    {
-        auto& actionSetGui = mXRInput->getActionSet(MWActionSet::GUI);
-        auto& actionSetGameplay = mXRInput->getActionSet(MWActionSet::Gameplay);
-
-        bool guiMode = MWBase::Environment::get().getWindowManager()->isGuiMode();
-        guiMode = guiMode
-            || (MWBase::Environment::get().getStateManager()->getState() == MWBase::StateManager::State_NoGame);
-        if (guiMode)
-        {
-            actionSetGui.updateControls(true);
-            actionSetGameplay.updateControls(false);
-            return mXRInput->getActionSet(MWActionSet::GUI);
-        }
-        else
-        {
-            actionSetGui.updateControls(false);
-            actionSetGameplay.updateControls(true);
-            return mXRInput->getActionSet(MWActionSet::Gameplay);
-        }
-    }
-
     void VRInputManager::updateVRPointer(bool disableControls)
     {
         auto source = mHeadWorldPath;
@@ -151,46 +129,28 @@ namespace MWVR
         MWBase::Environment::get().getWorld()->setWeaponPosePath(0);
     }
 
-    void VRInputManager::pointActivation(bool onPress)
+    void VRInputManager::pointActivation(bool onPress, bool injectMousePress)
     {
         if (controlsDisabled() || MWVR::VRGUIManager::instance().hasFocus())
         {
-            injectMousePress(SDL_BUTTON_LEFT, onPress);
-            return;
+            if (!MWVR::VRGUIManager::instance().injectMouseClick(onPress) && injectMousePress)
+            {
+                SDL_MouseButtonEvent arg;
+                if (onPress)
+                    mMouseManager->mousePressed(arg, SDL_BUTTON_LEFT);
+                else
+                    mMouseManager->mouseReleased(arg, SDL_BUTTON_LEFT);
+            }
         }
 
         if (mVRPointer && !onPress)
             mVRPointer->activate();
     }
 
-    void VRInputManager::injectMousePress(int sdlButton, bool onPress)
-    {
-        if (MWVR::VRGUIManager::instance().injectMouseClick(onPress))
-            return;
-
-        SDL_MouseButtonEvent arg;
-        if (onPress)
-            mMouseManager->mousePressed(arg, sdlButton);
-        else
-            mMouseManager->mouseReleased(arg, sdlButton);
-    }
-
     void VRInputManager::injectChannelValue(MWInput::Actions action, float value)
     {
         auto channel = mBindingsManager->ics().getChannel(MWInput::A_MoveLeftRight); // ->setValue(value);
         channel->setEnabled(true);
-    }
-
-    void VRInputManager::applyHapticsLeftHand(float intensity)
-    {
-        if (mHapticsEnabled)
-            mXRInput->getActionSet(MWActionSet::Haptics).applyHaptics(VR::SubAction::HandLeft, intensity);
-    }
-
-    void VRInputManager::applyHapticsRightHand(float intensity)
-    {
-        if (mHapticsEnabled)
-            mXRInput->getActionSet(MWActionSet::Haptics).applyHaptics(VR::SubAction::HandRight, intensity);
     }
 
     void VRInputManager::processChangedSettings(const std::set<std::pair<std::string, std::string>>& changed)
@@ -407,11 +367,8 @@ namespace MWVR
 
         if (!VR::getKBMouseModeActive())
         {
-            auto& actionSet = activeActionSet();
-            while (auto* action = actionSet.nextAction())
-            {
-                processAction(action, dt, disableControls);
-            }
+            auto& actionSet = mXRInput->getActionSet(MWActionSet::Actions);
+            actionSet.update();
         }
 
         MWInput::InputManager::update(dt, disableControls, disableEvents);

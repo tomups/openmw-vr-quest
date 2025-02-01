@@ -127,17 +127,24 @@ namespace XR
     bool Platform::selectDirectX()
     {
 #ifdef XR_USE_GRAPHICS_API_D3D11
+
+        if (Settings::Manager::getBool(std::string() + "disable " + XR_KHR_D3D11_ENABLE_EXTENSION_NAME, "VR Debug"))
+        {
+            Log(Debug::Verbose) << "  " << XR_KHR_D3D11_ENABLE_EXTENSION_NAME << ": disabled (by config)";
+            return false;
+        }
+
         if (mPrivate->mWGL_NV_DX_interop2)
         {
-            if (KHR_D3D11_enable.supported())
+            if (Extensions::instance().extensionSupported(XR_KHR_D3D11_ENABLE_EXTENSION_NAME))
             {
-                Extensions::instance().selectGraphicsAPIExtension(&KHR_D3D11_enable);
+                Extensions::instance().selectGraphicsAPIExtension(XR_KHR_D3D11_ENABLE_EXTENSION_NAME);
                 return true;
             }
             else
                 Log(Debug::Warning) << "Warning: Failed to select DirectX swapchains: OpenXR runtime does not support "
                                        "essential extension '"
-                                    << KHR_D3D11_enable.name() << "'";
+                                    << XR_KHR_D3D11_ENABLE_EXTENSION_NAME << "'";
         }
         else
             Log(Debug::Warning) << "Warning: Failed to select DirectX swapchains: Essential WGL extension "
@@ -149,15 +156,22 @@ namespace XR
     bool Platform::selectOpenGL()
     {
 #ifdef XR_USE_GRAPHICS_API_OPENGL
-        if (KHR_opengl_enable.supported())
+
+        if (Settings::Manager::getBool(std::string() + "disable " + XR_KHR_OPENGL_ENABLE_EXTENSION_NAME, "VR Debug"))
         {
-            Extensions::instance().selectGraphicsAPIExtension(&KHR_opengl_enable);
+            Log(Debug::Verbose) << "  " << XR_KHR_OPENGL_ENABLE_EXTENSION_NAME << ": disabled (by config)";
+            return false;
+        }
+
+        if (XR::Extensions::instance().extensionSupported(XR_KHR_OPENGL_ENABLE_EXTENSION_NAME))
+        {
+            Extensions::instance().selectGraphicsAPIExtension(XR_KHR_OPENGL_ENABLE_EXTENSION_NAME);
             return true;
         }
         else
             Log(Debug::Warning)
                 << "Warning: Failed to select OpenGL swapchains: OpenXR runtime does not support essential extension '"
-                << KHR_opengl_enable.name() << "'";
+                << XR_KHR_OPENGL_ENABLE_EXTENSION_NAME << "'";
 #endif
         return false;
     }
@@ -224,7 +238,7 @@ namespace XR
         XrResult res = XR_SUCCESS;
         std::string apiName = "";
 #ifdef _WIN32
-        if (KHR_opengl_enable.enabled())
+        if (XR::Extensions::instance().extensionEnabled(XR_KHR_OPENGL_ENABLE_EXTENSION_NAME))
         {
             apiName = "OpenGL";
             // Get system requirements
@@ -269,7 +283,7 @@ namespace XR
             res = CHECK_XRCMD(xrCreateSession(instance, &createInfo, &session));
         }
 #ifdef XR_USE_GRAPHICS_API_D3D11
-        else if (KHR_D3D11_enable.enabled())
+        else if (XR::Extensions::instance().extensionEnabled(XR_KHR_D3D11_ENABLE_EXTENSION_NAME))
         {
             apiName = "D3D11";
             mDxInterop = std::make_shared<VR::DirectXWGLInterop>();
@@ -366,7 +380,7 @@ namespace XR
 #ifdef XR_USE_GRAPHICS_API_D3D11
         // Need to translate DXGI formats to GL equivalents for texture sharing to work.
         // This discards any DXGI formats that do not have exact GL equivalents.
-        if (KHR_D3D11_enable.enabled())
+        if (XR::Extensions::instance().extensionEnabled(XR_KHR_D3D11_ENABLE_EXTENSION_NAME))
         {
             std::stringstream ss;
             ss << "Available GL convertible Swapchain formats: " << std::endl;
@@ -469,7 +483,7 @@ namespace XR
 
 #ifdef XR_USE_GRAPHICS_API_D3D11
         // Need to translate GL format to DXGI
-        if (KHR_D3D11_enable.enabled())
+        if (XR::Extensions::instance().extensionEnabled(XR_KHR_D3D11_ENABLE_EXTENSION_NAME))
         {
             auto dxFormat = VR::GLFormatToDXGIFormat(glFormat);
             Log(Debug::Verbose) << "Translated format to DXGI format: " << std::dec << dxFormat << " (" << std::hex
@@ -530,12 +544,12 @@ namespace XR
     std::vector<std::unique_ptr<VR::SwapchainImage>> Platform::enumerateSwapchainImages(
         XrSwapchain swapchain, uint32_t textureTarget, uint64_t swapchainFormat)
     {
-        if (KHR_opengl_enable.enabled())
+        if (XR::Extensions::instance().extensionEnabled(XR_KHR_OPENGL_ENABLE_EXTENSION_NAME))
         {
             return enumerateSwapchainImagesOpenGL(swapchain);
         }
 #ifdef _WIN32
-        else if (KHR_D3D11_enable.enabled())
+        else if (XR::Extensions::instance().extensionEnabled(XR_KHR_D3D11_ENABLE_EXTENSION_NAME))
         {
             return enumerateSwapchainImagesDirectX(swapchain, textureTarget, swapchainFormat, mDxInterop);
         }

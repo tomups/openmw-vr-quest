@@ -1,4 +1,5 @@
 #include "realisticcombat.hpp"
+#include "openxrinput.hpp"
 
 #include "../mwbase/environment.hpp"
 #include "../mwbase/soundmanager.hpp"
@@ -12,6 +13,7 @@
 #include <components/debug/debuglog.hpp>
 #include <components/settings/settings.hpp>
 #include <components/vr/trackingmanager.hpp>
+#include <components/xr/session.hpp>
 #include <components/esm3/loadweap.hpp>
 #include <components/esm3/loadsoun.hpp>
 
@@ -54,11 +56,11 @@ namespace MWVR
             }
         }
 
-        StateMachine::StateMachine(MWWorld::Ptr ptr, VR::VRPath trackingPath)
+        StateMachine::StateMachine(MWWorld::Ptr ptr, std::string_view trackingAction)
             : mPtr(ptr)
             , mMinVelocity(Settings::Manager::getFloat("realistic combat minimum swing velocity", "VR"))
             , mMaxVelocity(Settings::Manager::getFloat("realistic combat maximum swing velocity", "VR"))
-            , mTrackingPath(trackingPath)
+            , mTrackingAction(trackingAction)
         {
             Log(Debug::Verbose) << "realistic combat minimum swing velocity: " << mMinVelocity;
             Log(Debug::Verbose) << "realistic combat maximum swing velocity: " << mMaxVelocity;
@@ -66,7 +68,8 @@ namespace MWVR
 
         void StateMachine::onTrackingUpdated(VR::TrackingManager& manager)
         {
-            mTrackingInput = manager.locate(mTrackingPath);
+            XrSpace space = OpenXRInput::instance().getActionSet(MWActionSet::Pose).xrActionSpace(mTrackingAction);
+            mTrackingInput = XR::Session::instance().locateSpace(space, XR_REFERENCE_SPACE_TYPE_LOCAL);
         }
 
         bool StateMachine::canSwing()

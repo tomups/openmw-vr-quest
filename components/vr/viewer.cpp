@@ -531,9 +531,9 @@ namespace VR
 
         VR::TrackingManager::instance().updateTracking();
 
-        auto stageViews
-            = VR::Session::instance().getPredictedViews(frame.predictedDisplayTime, VR::ReferenceSpace::Stage);
-        auto views = VR::Session::instance().getPredictedViews(frame.predictedDisplayTime, VR::ReferenceSpace::View);
+        auto localViews
+            = VR::Session::instance().locateViews(frame.predictedDisplayTime, XR_REFERENCE_SPACE_TYPE_LOCAL);
+        auto views = VR::Session::instance().locateViews(frame.predictedDisplayTime, XR_REFERENCE_SPACE_TYPE_VIEW);
 
         if (frame.shouldRender && frame.shouldSyncFrameLoop)
         {
@@ -554,7 +554,7 @@ namespace VR
 
             for (uint32_t i = 0; i < 2; i++)
             {
-                projectionLayer->views[i].view = stageViews[i];
+                projectionLayer->views[i].view = localViews[i];
             }
             frame.layers.push_back(projectionLayer);
             if (!mLayers.empty())

@@ -118,10 +118,8 @@ namespace XR
     //! Magnitude above which an axis action is considered active
     static float gAxisEpsilon{ 0.01f };
 
-    HapticsAction::HapticsAction(std::shared_ptr<Action> action, VR::SubAction subAction)
+    HapticsAction::HapticsAction(std::unique_ptr<Action> action)
         : mAction{ std::move(action) }
-        , mSubAction(subAction)
-        , mSubActionPath(subActionPath(subAction))
     {
     }
 
@@ -131,195 +129,97 @@ namespace XR
         mAction->applyHaptics(XR_NULL_PATH, mAmplitude);
     }
 
-    PoseAction::PoseAction(std::shared_ptr<Action> action, VR::SubAction subAction)
-        : mAction(std::move(action))
-        , mSubAction(subAction)
-        , mSubActionPath(subActionPath(subAction))
+    PoseAction::PoseAction(std::unique_ptr<Action> action)
+        : InputAction(std::move(action))
         , mXRSpace{ XR_NULL_HANDLE }
     {
         XrActionSpaceCreateInfo createInfo{};
         createInfo.type = XR_TYPE_ACTION_SPACE_CREATE_INFO;
         createInfo.action = mAction->xrAction();
         createInfo.poseInActionSpace.orientation.w = 1.f;
-        createInfo.subactionPath = mSubActionPath;
+        createInfo.subactionPath = XR_NULL_PATH;
         CHECK_XRCMD(xrCreateActionSpace(XR::Session::instance().xrSession(), &createInfo, &mXRSpace));
         XR::Debugging::setName(mXRSpace, "OpenMW XR Action Space " + mAction->mName);
     }
 
-    InputAction::InputAction(int openMWAction, std::shared_ptr<Action> action, VR::SubAction subAction)
+    void PoseAction::update()
+    {
+        if (mAction->getPoseIsActive(XR_NULL_PATH))
+            mValue = true;
+        else
+            mValue = std::nullopt;
+    }
+
+    InputAction::InputAction(std::unique_ptr<Action> action)
         : mAction(std::move(action))
-        , mOpenMWAction(openMWAction)
-        , mSubAction(subAction)
-        , mSubActionPath(subActionPath(subAction))
     {
     }
 
-    void InputAction::updateAndQueue(std::deque<const InputAction*>& queue)
+    void BoolAction::update()
     {
-        bool old = mActive;
-        mPrevious = mValue;
-        mPrevious2d = mValue2d;
-        update();
-        bool changed = old != mActive;
-        mOnActivate = changed && mActive;
-        mOnDeactivate = changed && !mActive;
-
-        if (shouldQueue())
-        {
-            queue.push_back(this);
-        }
-    }
-
-    void ButtonPressAction::update()
-    {
-        mActive = false;
-        bool old = mPressed;
-        mAction->getBool(mSubActionPath, mPressed);
-        bool changed = old != mPressed;
-        if (changed && mPressed)
-        {
-            mPressTime = std::chrono::steady_clock::now();
-            mTimeout = mPressTime + gActionTime;
-        }
-        if (changed && !mPressed)
-        {
-            if (std::chrono::steady_clock::now() < mTimeout)
-            {
-                mActive = true;
-            }
-        }
-
-        mValue = mPressed ? 1.f : 0.f;
-        mValue2d.x() = mValue2d.y() = mValue;
-    }
-
-    void ButtonLongPressAction::update()
-    {
-        mActive = false;
-        bool old = mPressed;
-        mAction->getBool(mSubActionPath, mPressed);
-        bool changed = old != mPressed;
-        if (changed && mPressed)
-        {
-            mPressTime = std::chrono::steady_clock::now();
-            mTimein = mPressTime + gActionTime;
-            mActivated = false;
-        }
-        if (mPressed && !mActivated)
-        {
-            if (std::chrono::steady_clock::now() >= mTimein)
-            {
-                mActive = mActivated = true;
-                mValue = 1.f;
-            }
-        }
-        if (changed && !mPressed)
-        {
-            mValue = 0.f;
-        }
-        mValue2d.x() = mValue2d.y() = mValue;
-    }
-
-    void ButtonHoldAction::update()
-    {
-        mAction->getBool(mSubActionPath, mPressed);
-        mActive = mPressed;
-
-        mValue = mPressed ? 1.f : 0.f;
-        mValue2d.x() = mValue2d.y() = mValue;
-    }
-
-    Axis1DAction::Axis1DAction(int openMWAction, std::shared_ptr<XR::Action> action, VR::SubAction subAction,
-        std::shared_ptr<AxisDeadzone> deadzone)
-        : InputAction(openMWAction, std::move(action), subAction)
-        , mDeadzone(deadzone)
-    {
-    }
-
-    void Axis1DAction::update()
-    {
-        mActive = false;
-        mAction->getFloat(mSubActionPath, mValue);
-        mDeadzone->applyDeadzone(mValue);
-
-        if (std::fabs(mValue) > gAxisEpsilon)
-            mActive = true;
+        bool value = false;
+        bool active = mAction->getBool(XR_NULL_PATH, value);
+        if (active)
+            mValue = value;
         else
-            mValue = 0.f;
-
-        mValue2d.x() = mValue2d.y() = mValue;
+            mValue = std::nullopt;
     }
 
-    void AxisDeadzone::applyDeadzone(float& value)
+    void FloatAction::update()
     {
-        float sign = std::copysignf(1.f, value);
-        float magnitude = std::fabs(value);
-        magnitude = std::min(mActiveRadiusOuter, magnitude);
-        magnitude = std::max(0.f, magnitude - mActiveRadiusInner);
-        value = sign * magnitude * mActiveScale;
-    }
-
-    void AxisDeadzone::setDeadzoneRadius(float deadzoneRadius)
-    {
-        deadzoneRadius = std::min(std::max(deadzoneRadius, 0.0f), 0.5f - 1e-5f);
-        mActiveRadiusInner = deadzoneRadius;
-        mActiveRadiusOuter = 1.f - deadzoneRadius;
-        float activeRadius = mActiveRadiusOuter - mActiveRadiusInner;
-        assert(activeRadius > 0.f);
-        mActiveScale = 1.f / activeRadius;
-    }
-
-    XrPath subActionPath(VR::SubAction subAction)
-    {
-        const char* cpath = nullptr;
-        switch (subAction)
-        {
-            case VR::SubAction::Gamepad:
-                cpath = "/user/gamepad";
-                break;
-            case VR::SubAction::Head:
-                cpath = "user/head";
-                break;
-            case VR::SubAction::HandLeft:
-                cpath = "/user/hand/left";
-                break;
-            case VR::SubAction::HandRight:
-                cpath = "/user/hand/right";
-                break;
-            default:
-                return XR_NULL_PATH;
-        }
-        XrPath xrpath = 0;
-        CHECK_XRCMD(xrStringToPath(XR::Instance::instance().xrInstance(), cpath, &xrpath));
-        return xrpath;
-    }
-
-    Axis2DAction::Axis2DAction(int openMWAction, std::shared_ptr<Action> xrAction, VR::SubAction subAction,
-        std::shared_ptr<AxisDeadzone> deadzone)
-        : InputAction(openMWAction, std::move(xrAction), subAction)
-        , mDeadzone(deadzone)
-    {
-    }
-
-    void Axis2DAction::update()
-    {
-        mActive = false;
-        mAction->getFloat2d(mSubActionPath, mValue2d);
-        mDeadzone->applyDeadzone(mValue2d.x());
-        mDeadzone->applyDeadzone(mValue2d.y());
-
-        float primary = mValue2d.x();
-        if (std::fabs(primary) < std::fabs(mValue2d.y()))
-            primary = mValue2d.y();
-
-        if (std::fabs(primary) > gAxisEpsilon)
-        {
-            mActive = true;
-            mValue = primary;
-        }
+        float value = 0.f;
+        bool active = mAction->getFloat(XR_NULL_PATH, value);
+        if (active)
+            mValue = value;
         else
-        {
-            mValue2d.x() = mValue2d.y() = mValue = 0.f;
-        }
+            mValue = std::nullopt;
     }
+
+    //void AxisDeadzone::applyDeadzone(float& value)
+    //{
+    //    float sign = std::copysignf(1.f, value);
+    //    float magnitude = std::fabs(value);
+    //    magnitude = std::min(mActiveRadiusOuter, magnitude);
+    //    magnitude = std::max(0.f, magnitude - mActiveRadiusInner);
+    //    value = sign * magnitude * mActiveScale;
+    //}
+
+    //void AxisDeadzone::setDeadzoneRadius(float deadzoneRadius)
+    //{
+    //    deadzoneRadius = std::min(std::max(deadzoneRadius, 0.0f), 0.5f - 1e-5f);
+    //    mActiveRadiusInner = deadzoneRadius;
+    //    mActiveRadiusOuter = 1.f - deadzoneRadius;
+    //    float activeRadius = mActiveRadiusOuter - mActiveRadiusInner;
+    //    assert(activeRadius > 0.f);
+    //    mActiveScale = 1.f / activeRadius;
+    //}
+
+    //Axis2DAction::Axis2DAction(int openMWAction, std::shared_ptr<Action> xrAction,
+    //    std::shared_ptr<AxisDeadzone> deadzone)
+    //    : InputAction(openMWAction, std::move(xrAction))
+    //    , mDeadzone(deadzone)
+    //{
+    //}
+
+    //void Axis2DAction::update()
+    //{
+    //    mActive = false;
+    //    mAction->getFloat2d(XR_NULL_PATH, mValue2d);
+    //    mDeadzone->applyDeadzone(mValue2d.x());
+    //    mDeadzone->applyDeadzone(mValue2d.y());
+
+    //    float primary = mValue2d.x();
+    //    if (std::fabs(primary) < std::fabs(mValue2d.y()))
+    //        primary = mValue2d.y();
+
+    //    if (std::fabs(primary) > gAxisEpsilon)
+    //    {
+    //        mActive = true;
+    //        mValue = primary;
+    //    }
+    //    else
+    //    {
+    //        mValue2d.x() = mValue2d.y() = mValue = 0.f;
+    //    }
+    //}
 }

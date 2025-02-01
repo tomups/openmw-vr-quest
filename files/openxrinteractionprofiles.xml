@@ -1,0 +1,556 @@
+<InteractionProfileDatabase>
+	<Entry>
+		<InteractionProfiles>
+			<InteractionProfile path="/interaction_profiles/khr/simple_controller" />
+		</InteractionProfiles>
+		<InteractionsMap>
+			<Controller path="/user/hand/*">
+				<Interaction type="BOOLEAN" path="/input/select/click" />
+				<Interaction type="BOOLEAN" path="/input/menu/click" />
+				<Interaction type="POSE" path="/input/grip/pose" />
+				<Interaction type="POSE" path="/input/aim/pose" />
+				<Interaction type="POSE" path="/input/palm_ext/pose" requiredExtension="XR_EXT_palm_pose" />
+				<Interaction type="POSE" path="/input/pinch_ext/pose" requiredExtension="XR_EXT_hand_interaction" />
+				<Interaction type="POSE" path="/input/poke_ext/pose" requiredExtension="XR_EXT_hand_interaction" />
+				<Interaction type="FLOAT" path="/output/haptic" />
+			</Controller>
+		</InteractionsMap>
+	</Entry>
+	<Entry>
+		<InteractionProfiles>
+			<InteractionProfile path="/interaction_profiles/microsoft/motion_controller" />
+			<InteractionProfile path="/interaction_profiles/samsung/odyssey_controller" requiredExtension="XR_EXT_samsung_odyssey_controller" />
+		</InteractionProfiles>
+		<InteractionsMap>
+			<Controller path="/user/hand/*">
+				<Interaction type="POSE" path="/input/grip/pose" />
+				<Interaction type="POSE" path="/input/aim/pose" />
+				<Interaction type="POSE" path="/input/palm_ext/pose" requiredExtension="XR_EXT_palm_pose" />
+				<Interaction type="POSE" path="/input/pinch_ext/pose" requiredExtension="XR_EXT_hand_interaction" />
+				<Interaction type="POSE" path="/input/poke_ext/pose" requiredExtension="XR_EXT_hand_interaction" />
+				<Interaction type="BOOLEAN" path="/input/menu/click" />
+				<Interaction type="BOOLEAN" path="/input/squeeze/click" />
+				<Interaction type="FLOAT" path="/input/trigger/value" />
+				<Interaction type="AXIS" path="/input/thumbstick/x" />
+				<Interaction type="AXIS" path="/input/thumbstick/y" />
+				<Interaction type="BOOLEAN" path="/input/thumbstick/click" />
+				<Interaction type="AXIS" path="/input/trackpad/x" />
+				<Interaction type="AXIS" path="/input/trackpad/y" />
+				<Interaction type="BOOLEAN" path="/input/trackpad/click" />
+				<Interaction type="BOOLEAN" path="/input/trackpad/touch" />
+				<Interaction type="FLOAT" path="/input/trackpad/force" />
+				<Interaction type="FLOAT" path="/output/haptic" />
+			</Controller>
+		</InteractionsMap>
+	</Entry>
+	<Entry>
+		<InteractionProfiles>
+			<InteractionProfile path="/interaction_profiles/microsoft/xbox_controller" />
+		</InteractionProfiles>
+		<InteractionsMap>
+			<Controller path="/user/gamepad">
+				<Interaction type="BOOLEAN" path="/input/menu/click" />
+				<Interaction type="BOOLEAN" path="/input/view/click" />
+				<Interaction type="BOOLEAN" path="/input/a/click" />
+				<Interaction type="BOOLEAN" path="/input/b/click" />
+				<Interaction type="BOOLEAN" path="/input/x/click" />
+				<Interaction type="BOOLEAN" path="/input/y/click" />
+				<Interaction type="BOOLEAN" path="/input/dpad_left/click" />
+				<Interaction type="BOOLEAN" path="/input/dpad_right/click" />
+				<Interaction type="BOOLEAN" path="/input/dpad_up/click" />
+				<Interaction type="BOOLEAN" path="/input/dpad_down/click" />
+				<Interaction type="BOOLEAN" path="/input/shoulder_left/click" />
+				<Interaction type="BOOLEAN" path="/input/shoulder_right/click" />
+				<Interaction type="FLOAT" path="/input/trigger_left/value" />
+				<Interaction type="FLOAT" path="/input/trigger_right/value" />
+				<Interaction type="AXIS" path="/input/thumbstick_left/x" />
+				<Interaction type="AXIS" path="/input/thumbstick_left/y" />
+				<Interaction type="BOOLEAN" path="/input/thumbstick_left/click" />
+				<Interaction type="AXIS" path="/input/thumbstick_right/x" />
+				<Interaction type="AXIS" path="/input/thumbstick_right/y" />
+				<Interaction type="BOOLEAN" path="/input/thumbstick_right/click" />
+				<Interaction type="FLOAT" path="/output/haptic_left" />
+				<Interaction type="FLOAT" path="/output/haptic_right" />
+				<Interaction type="FLOAT" path="/output/haptic_left_trigger" />
+				<Interaction type="FLOAT" path="/output/haptic_right_trigger" />
+			</Controller>
+		</InteractionsMap>
+	</Entry>
+	<Entry>
+		<InteractionProfiles>
+			<InteractionProfile path="/interaction_profiles/oculus/go_controller" />
+		</InteractionProfiles>
+		<InteractionsMap>
+			<Controller path="/user/hand/*">
+				<Interaction type="POSE" path="/input/grip/pose" />
+				<Interaction type="POSE" path="/input/aim/pose" />
+				<Interaction type="POSE" path="/input/palm_ext/pose" requiredExtension="XR_EXT_palm_pose" />
+				<Interaction type="POSE" path="/input/pinch_ext/pose" requiredExtension="XR_EXT_hand_interaction" />
+				<Interaction type="POSE" path="/input/poke_ext/pose" requiredExtension="XR_EXT_hand_interaction" />
+				<Interaction type="BOOLEAN" path="/input/back/click" />
+				<Interaction type="BOOLEAN" path="/input/trigger/click" />
+				<Interaction type="AXIS" path="/input/trackpad/x" />
+				<Interaction type="AXIS" path="/input/trackpad/y" />
+				<Interaction type="BOOLEAN" path="/input/trackpad/click" />
+				<Interaction type="BOOLEAN" path="/input/trackpad/touch" />
+			</Controller>
+		</InteractionsMap>
+	</Entry>
+	<Entry>
+		<InteractionProfiles>
+			<InteractionProfile path="/interaction_profiles/oculus/touch_controller" />
+		</InteractionProfiles>
+		<InteractionsMap>
+			<Controller path="/user/hand/*">
+				<Interaction type="POSE" path="/input/grip/pose" />
+				<Interaction type="POSE" path="/input/aim/pose" />
+				<Interaction type="POSE" path="/input/palm_ext/pose" requiredExtension="XR_EXT_palm_pose" />
+				<Interaction type="POSE" path="/input/pinch_ext/pose" requiredExtension="XR_EXT_hand_interaction" />
+				<Interaction type="POSE" path="/input/poke_ext/pose" requiredExtension="XR_EXT_hand_interaction" />
+				<Interaction type="FLOAT" path="/input/squeeze/value" />
+				<Interaction type="FLOAT" path="/input/trigger/value" />
+				<Interaction type="BOOLEAN" path="/input/trigger/touch" />
+				<Interaction type="AXIS" path="/input/thumbstick/x" />
+				<Interaction type="AXIS" path="/input/thumbstick/y" />
+				<Interaction type="BOOLEAN" path="/input/thumbstick/click" />
+				<Interaction type="BOOLEAN" path="/input/thumbstick/touch" />
+				<Interaction type="BOOLEAN" path="/input/thumbrest/touch" />
+				<Interaction type="FLOAT" path="/output/haptic" />
+			</Controller>
+			<Controller path="/user/hand/left">
+				<Interaction type="BOOLEAN" path="/input/x/click" />
+				<Interaction type="BOOLEAN" path="/input/x/touch" />
+				<Interaction type="BOOLEAN" path="/input/y/click" />
+				<Interaction type="BOOLEAN" path="/input/y/touch" />
+				<Interaction type="BOOLEAN" path="/input/menu/click" />
+			</Controller>
+			<Controller path="/user/hand/right">
+				<Interaction type="BOOLEAN" path="/input/a/click" />
+				<Interaction type="BOOLEAN" path="/input/a/touch" />
+				<Interaction type="BOOLEAN" path="/input/b/click" />
+				<Interaction type="BOOLEAN" path="/input/b/touch" />
+			</Controller>
+		</InteractionsMap>
+	</Entry>
+	<Entry>
+		<InteractionProfiles>
+			<InteractionProfile path="/interaction_profiles/valve/index_controller" />
+		</InteractionProfiles>
+		<InteractionsMap>
+			<Controller path="/user/hand/*">
+				<Interaction type="POSE" path="/input/grip/pose" />
+				<Interaction type="POSE" path="/input/aim/pose" />
+				<Interaction type="POSE" path="/input/palm_ext/pose" requiredExtension="XR_EXT_palm_pose" />
+				<Interaction type="POSE" path="/input/pinch_ext/pose" requiredExtension="XR_EXT_hand_interaction" />
+				<Interaction type="POSE" path="/input/poke_ext/pose" requiredExtension="XR_EXT_hand_interaction" />
+				<Interaction type="BOOLEAN" path="/input/a/click" />
+				<Interaction type="BOOLEAN" path="/input/a/touch" />
+				<Interaction type="BOOLEAN" path="/input/b/click" />
+				<Interaction type="BOOLEAN" path="/input/b/touch" />
+				<Interaction type="FLOAT" path="/input/squeeze/value" />
+				<Interaction type="FLOAT" path="/input/squeeze/force" />
+				<Interaction type="FLOAT" path="/input/trigger/value" />
+				<Interaction type="BOOLEAN" path="/input/trigger/click" />
+				<Interaction type="BOOLEAN" path="/input/trigger/touch" />
+				<Interaction type="AXIS" path="/input/thumbstick/x" />
+				<Interaction type="AXIS" path="/input/thumbstick/y" />
+				<Interaction type="BOOLEAN" path="/input/thumbstick/click" />
+				<Interaction type="BOOLEAN" path="/input/thumbstick/touch" />
+				<Interaction type="AXIS" path="/input/trackpad/x" />
+				<Interaction type="AXIS" path="/input/trackpad/y" />
+				<Interaction type="FLOAT" path="/input/trackpad/force" />
+				<Interaction type="BOOLEAN" path="/input/trackpad/touch" />
+			</Controller>
+		</InteractionsMap>
+	</Entry>
+	<Entry>
+		<InteractionProfiles>
+			<InteractionProfile path="/interaction_profiles/htc/vive_controller" />
+		</InteractionProfiles>
+		<InteractionsMap>
+			<Controller path="/user/hand/*">
+				<Interaction type="POSE" path="/input/grip/pose" />
+				<Interaction type="POSE" path="/input/aim/pose" />
+				<Interaction type="POSE" path="/input/palm_ext/pose" requiredExtension="XR_EXT_palm_pose" />
+				<Interaction type="POSE" path="/input/pinch_ext/pose" requiredExtension="XR_EXT_hand_interaction" />
+				<Interaction type="POSE" path="/input/poke_ext/pose" requiredExtension="XR_EXT_hand_interaction" />
+				<Interaction type="BOOLEAN" path="/input/squeeze/click" />
+				<Interaction type="BOOLEAN" path="/input/menu/click" />
+				<Interaction type="BOOLEAN" path="/input/trigger/click" />
+				<Interaction type="FLOAT" path="/input/trigger/value" />
+				<Interaction type="AXIS" path="/input/trackpad/x" />
+				<Interaction type="AXIS" path="/input/trackpad/y" />
+				<Interaction type="BOOLEAN" path="/input/trackpad/click" />
+				<Interaction type="BOOLEAN" path="/input/trackpad/touch" />
+				<Interaction type="FLOAT" path="/output/haptic" />
+			</Controller>
+		</InteractionsMap>
+	</Entry>
+	<Entry>
+		<InteractionProfiles>
+			<InteractionProfile path="/interaction_profiles/htc/cosmos_controller" requiredExtension="XR_HTC_vive_cosmos_controller_interaction" />
+		</InteractionProfiles>
+		<InteractionsMap>
+			<Controller path="/user/hand/*">
+				<Interaction type="POSE" path="/input/grip/pose" />
+				<Interaction type="POSE" path="/input/aim/pose" />
+				<Interaction type="POSE" path="/input/palm_ext/pose" requiredExtension="XR_EXT_palm_pose" />
+				<Interaction type="POSE" path="/input/pinch_ext/pose" requiredExtension="XR_EXT_hand_interaction" />
+				<Interaction type="POSE" path="/input/poke_ext/pose" requiredExtension="XR_EXT_hand_interaction" />
+				<Interaction type="BOOLEAN" path="/input/shoulder/click" />
+				<Interaction type="BOOLEAN" path="/input/squeeze/click" />
+				<Interaction type="BOOLEAN" path="/input/trigger/click" />
+				<Interaction type="FLOAT" path="/input/trigger/value" />
+				<Interaction type="AXIS" path="/input/thumbstick/x" />
+				<Interaction type="AXIS" path="/input/thumbstick/y" />
+				<Interaction type="BOOLEAN" path="/input/thumbstick/click" />
+				<Interaction type="BOOLEAN" path="/input/thumbstick/touch" />
+				<Interaction type="FLOAT" path="/output/haptic" />
+			</Controller>
+			<Controller path="/user/hand/left">
+				<Interaction type="BOOLEAN" path="/input/x/click" />
+				<Interaction type="BOOLEAN" path="/input/y/click" />
+				<Interaction type="BOOLEAN" path="/input/menu/click" />
+			</Controller>
+			<Controller path="/user/hand/right">
+				<Interaction type="BOOLEAN" path="/input/a/click" />
+				<Interaction type="BOOLEAN" path="/input/b/click" />
+			</Controller>
+		</InteractionsMap>
+	</Entry>
+	<Entry>
+		<InteractionProfiles>
+			<InteractionProfile path="/interaction_profiles/htc/vive_focus3_controller" requiredExtension="XR_HTC_vive_focus3_controller_interaction" />
+		</InteractionProfiles>
+		<InteractionsMap>
+			<Controller path="/user/hand/*">
+				<Interaction type="POSE" path="/input/grip/pose" />
+				<Interaction type="POSE" path="/input/aim/pose" />
+				<Interaction type="POSE" path="/input/palm_ext/pose" requiredExtension="XR_EXT_palm_pose" />
+				<Interaction type="POSE" path="/input/pinch_ext/pose" requiredExtension="XR_EXT_hand_interaction" />
+				<Interaction type="POSE" path="/input/poke_ext/pose" requiredExtension="XR_EXT_hand_interaction" />
+				<Interaction type="BOOLEAN" path="/input/squeeze/click" />
+				<Interaction type="BOOLEAN" path="/input/squeeze/touch" />
+				<Interaction type="FLOAT" path="/input/squeeze/value" />
+				<Interaction type="BOOLEAN" path="/input/trigger/click" />
+				<Interaction type="BOOLEAN" path="/input/trigger/touch" />
+				<Interaction type="FLOAT" path="/input/trigger/value" />
+				<Interaction type="AXIS" path="/input/thumbstick/x" />
+				<Interaction type="AXIS" path="/input/thumbstick/y" />
+				<Interaction type="BOOLEAN" path="/input/thumbstick/click" />
+				<Interaction type="BOOLEAN" path="/input/thumbstick/touch" />
+				<Interaction type="BOOLEAN" path="/input/thumbrest/touch" />
+				<Interaction type="FLOAT" path="/output/haptic" />
+			</Controller>
+			<Controller path="/user/hand/left">
+				<Interaction type="BOOLEAN" path="/input/x/click" />
+				<Interaction type="BOOLEAN" path="/input/y/click" />
+				<Interaction type="BOOLEAN" path="/input/menu/click" />
+			</Controller>
+			<Controller path="/user/hand/right">
+				<Interaction type="BOOLEAN" path="/input/a/click" />
+				<Interaction type="BOOLEAN" path="/input/b/click" />
+			</Controller>
+		</InteractionsMap>
+	</Entry>
+	<Entry>
+		<InteractionProfiles>
+			<InteractionProfile path="/interaction_profiles/huawei/controller" requiredExtension="XR_HUAWEI_controller_interaction" />
+		</InteractionProfiles>
+		<InteractionsMap>
+			<Controller path="/user/hand/*">
+				<Interaction type="POSE" path="/input/grip/pose" />
+				<Interaction type="POSE" path="/input/aim/pose" />
+				<Interaction type="POSE" path="/input/palm_ext/pose" requiredExtension="XR_EXT_palm_pose" />
+				<Interaction type="POSE" path="/input/pinch_ext/pose" requiredExtension="XR_EXT_hand_interaction" />
+				<Interaction type="POSE" path="/input/poke_ext/pose" requiredExtension="XR_EXT_hand_interaction" />
+				<Interaction type="BOOLEAN" path="/input/back/click" />
+				<Interaction type="BOOLEAN" path="/input/home/click" />
+				<Interaction type="BOOLEAN" path="/input/volume_up/click" />
+				<Interaction type="BOOLEAN" path="/input/volume_down/click" />
+				<Interaction type="BOOLEAN" path="/input/trigger/click" />
+				<Interaction type="FLOAT" path="/input/trigger/value" />
+				<Interaction type="AXIS" path="/input/trackpad/x" />
+				<Interaction type="AXIS" path="/input/trackpad/y" />
+				<Interaction type="BOOLEAN" path="/input/trackpad/click" />
+				<Interaction type="BOOLEAN" path="/input/trackpad/touch" />
+				<Interaction type="FLOAT" path="/output/haptic" />
+			</Controller>
+		</InteractionsMap>
+	</Entry>
+	<Entry>
+		<InteractionProfiles>
+			<InteractionProfile path="/interaction_profiles/ml/ml2_controller" requiredExtension="XR_ML_ml2_controller_interaction" />
+		</InteractionProfiles>
+		<InteractionsMap>
+			<Controller path="/user/hand/*">
+				<Interaction type="POSE" path="/input/grip/pose" />
+				<Interaction type="POSE" path="/input/aim/pose" />
+				<Interaction type="BOOLEAN" path="/input/menu/click" />
+				<Interaction type="BOOLEAN" path="/input/shoulder/click" />
+				<Interaction type="BOOLEAN" path="/input/trigger/click" />
+				<Interaction type="FLOAT" path="/input/trigger/value" />
+				<Interaction type="AXIS" path="/input/trackpad/x" />
+				<Interaction type="AXIS" path="/input/trackpad/y" />
+				<Interaction type="BOOLEAN" path="/input/trackpad/click" />
+				<Interaction type="FLOAT" path="/input/trackpad/force" />
+				<Interaction type="BOOLEAN" path="/input/trackpad/touch" />
+				<Interaction type="FLOAT" path="/output/haptic" />
+			</Controller>
+		</InteractionsMap>
+	</Entry>
+	<Entry>
+		<InteractionProfiles>
+			<InteractionProfile path="/interaction_profiles/oppo/mr_controller_oppo" requiredExtension="XR_OPPO_controller_interaction" />
+		</InteractionProfiles>
+		<InteractionsMap>
+			<Controller path="/user/hand/*">
+				<Interaction type="POSE" path="/input/grip/pose" />
+				<Interaction type="POSE" path="/input/aim/pose" />
+				<Interaction type="BOOLEAN" path="/input/trigger/touch" />
+				<Interaction type="FLOAT" path="/input/trigger/value" />
+				<Interaction type="FLOAT" path="/input/squeeze/value" />
+				<Interaction type="AXIS" path="/input/thumbstick/x" />
+				<Interaction type="AXIS" path="/input/thumbstick/y" />
+				<Interaction type="BOOLEAN" path="/input/thumbstick/click" />
+				<Interaction type="BOOLEAN" path="/input/thumbstick/touch" />
+				<Interaction type="FLOAT" path="/output/haptic" />
+			</Controller>
+			<Controller path="/user/hand/left">
+				<Interaction type="BOOLEAN" path="/input/x/click" />
+				<Interaction type="BOOLEAN" path="/input/x/touch" />
+				<Interaction type="BOOLEAN" path="/input/y/click" />
+				<Interaction type="BOOLEAN" path="/input/y/touch" />
+				<Interaction type="BOOLEAN" path="/input/menu/click" />
+				<Interaction type="FLOAT" path="/input/heartrate_oppo/value" />
+			</Controller>
+			<Controller path="/user/hand/right">
+				<Interaction type="BOOLEAN" path="/input/a/click" />
+				<Interaction type="BOOLEAN" path="/input/a/touch" />
+				<Interaction type="BOOLEAN" path="/input/b/click" />
+				<Interaction type="BOOLEAN" path="/input/b/touch" />
+			</Controller>
+		</InteractionsMap>
+	</Entry>
+	<Entry>
+		<InteractionProfiles>
+			<InteractionProfile path="/interaction_profiles/varjo/xr-4_controller" requiredExtension="XR_VARJO_xr4_controller_interaction" />
+		</InteractionProfiles>
+		<InteractionsMap>
+			<Controller path="/user/hand/*">
+				<Interaction type="POSE" path="/input/grip/pose" />
+				<Interaction type="POSE" path="/input/aim/pose" />
+				<Interaction type="BOOLEAN" path="/input/a/click" />
+				<Interaction type="BOOLEAN" path="/input/a/touch" />
+				<Interaction type="BOOLEAN" path="/input/b/click" />
+				<Interaction type="BOOLEAN" path="/input/b/touch" />
+				<Interaction type="BOOLEAN" path="/input/squeeze/click" />
+				<Interaction type="BOOLEAN" path="/input/squeeze/touch" />
+				<Interaction type="BOOLEAN" path="/input/menu/click" />
+				<Interaction type="BOOLEAN" path="/input/trigger/touch" />
+				<Interaction type="FLOAT" path="/input/trigger/value" />
+				<Interaction type="AXIS" path="/input/trackpad/x" />
+				<Interaction type="AXIS" path="/input/trackpad/y" />
+				<Interaction type="BOOLEAN" path="/input/trackpad/click" />
+				<Interaction type="BOOLEAN" path="/input/trackpad/touch" />
+				<Interaction type="FLOAT" path="/output/haptic" />
+			</Controller>
+			<Controller path="/user/hand/left">
+				<Interaction type="BOOLEAN" path="/input/menu/click" />
+			</Controller>
+		</InteractionsMap>
+	</Entry>
+	<Entry>
+		<InteractionProfiles>
+			<InteractionProfile path="/interaction_profiles/yvr/touch_controller_yvr" requiredExtension="XR_YVR_controller_interaction" />
+		</InteractionProfiles>
+		<InteractionsMap>
+			<Controller path="/user/hand/*">
+				<Interaction type="POSE" path="/input/grip/pose" />
+				<Interaction type="POSE" path="/input/aim/pose" />
+				<Interaction type="BOOLEAN" path="/input/trigger/touch" />
+				<Interaction type="FLOAT" path="/input/trigger/value" />
+				<Interaction type="BOOLEAN" path="/input/squeeze/click" />
+				<Interaction type="AXIS" path="/input/thumbstick/x" />
+				<Interaction type="AXIS" path="/input/thumbstick/y" />
+				<Interaction type="BOOLEAN" path="/input/thumbstick/click" />
+				<Interaction type="BOOLEAN" path="/input/thumbstick/touch" />
+				<Interaction type="FLOAT" path="/output/haptic" />
+			</Controller>
+			<Controller path="/user/hand/left">
+				<Interaction type="BOOLEAN" path="/input/x/click" />
+				<Interaction type="BOOLEAN" path="/input/x/touch" />
+				<Interaction type="BOOLEAN" path="/input/y/click" />
+				<Interaction type="BOOLEAN" path="/input/y/touch" />
+				<Interaction type="BOOLEAN" path="/input/menu/click" />
+			</Controller>
+			<Controller path="/user/hand/right">
+				<Interaction type="BOOLEAN" path="/input/a/click" />
+				<Interaction type="BOOLEAN" path="/input/a/touch" />
+				<Interaction type="BOOLEAN" path="/input/b/click" />
+				<Interaction type="BOOLEAN" path="/input/b/touch" />
+			</Controller>
+		</InteractionsMap>
+	</Entry>
+	<Entry>
+		<InteractionProfiles>
+			<InteractionProfile path="/interaction_profiles/yvr/touch_controller_yvr" requiredExtension="XR_YVR_controller_interaction" />
+		</InteractionProfiles>
+		<InteractionsMap>
+			<Controller path="/user/hand/*">
+				<Interaction type="POSE" path="/input/grip/pose" />
+				<Interaction type="POSE" path="/input/aim/pose" />
+				<Interaction type="BOOLEAN" path="/input/menu/click" />
+				<Interaction type="BOOLEAN" path="/input/trigger/click" />
+				<Interaction type="BOOLEAN" path="/input/trigger/touch" />
+				<Interaction type="FLOAT" path="/input/trigger/value" />
+				<Interaction type="BOOLEAN" path="/input/squeeze/click" />
+				<Interaction type="FLOAT" path="/input/squeeze/value" />
+				<Interaction type="AXIS" path="/input/thumbstick/x" />
+				<Interaction type="AXIS" path="/input/thumbstick/y" />
+				<Interaction type="BOOLEAN" path="/input/thumbstick/click" />
+				<Interaction type="BOOLEAN" path="/input/thumbstick/touch" />
+				<Interaction type="FLOAT" path="/output/haptic" />
+			</Controller>
+			<Controller path="/user/hand/left">
+				<Interaction type="BOOLEAN" path="/input/x/click" />
+				<Interaction type="BOOLEAN" path="/input/x/touch" />
+				<Interaction type="BOOLEAN" path="/input/y/click" />
+				<Interaction type="BOOLEAN" path="/input/y/touch" />
+			</Controller>
+			<Controller path="/user/hand/right">
+				<Interaction type="BOOLEAN" path="/input/a/click" />
+				<Interaction type="BOOLEAN" path="/input/a/touch" />
+				<Interaction type="BOOLEAN" path="/input/b/click" />
+				<Interaction type="BOOLEAN" path="/input/b/touch" />
+			</Controller>
+		</InteractionsMap>
+	</Entry>
+	<Entry>
+		<InteractionProfiles>
+			<InteractionProfile path="/interaction_profiles/google/daydream_controller" />
+		</InteractionProfiles>
+		<InteractionsMap>
+			<Controller path="/user/hand/*">
+				<Interaction type="POSE" path="/input/grip/pose" />
+				<Interaction type="POSE" path="/input/aim/pose" />
+				<Interaction type="POSE" path="/input/palm_ext/pose" requiredExtension="XR_EXT_palm_pose" />
+				<Interaction type="POSE" path="/input/pinch_ext/pose" requiredExtension="XR_EXT_hand_interaction" />
+				<Interaction type="POSE" path="/input/poke_ext/pose" requiredExtension="XR_EXT_hand_interaction" />
+				<Interaction type="BOOLEAN" path="/input/select/click" />
+				<Interaction type="AXIS" path="/input/trackpad/x" />
+				<Interaction type="AXIS" path="/input/trackpad/y" />
+				<Interaction type="BOOLEAN" path="/input/trackpad/click" />
+				<Interaction type="BOOLEAN" path="/input/trackpad/touch" />
+			</Controller>
+		</InteractionsMap>
+	</Entry>
+	<Entry>
+		<InteractionProfiles>
+			<InteractionProfile path="/interaction_profiles/hp/mixed_reality_controller" requiredExtension="XR_EXT_hp_mixed_reality_controller" />
+		</InteractionProfiles>
+		<InteractionsMap>
+			<Controller path="/user/hand/*">
+				<Interaction type="POSE" path="/input/grip/pose" />
+				<Interaction type="POSE" path="/input/aim/pose" />
+				<Interaction type="POSE" path="/input/palm_ext/pose" requiredExtension="XR_EXT_palm_pose" />
+				<Interaction type="POSE" path="/input/pinch_ext/pose" requiredExtension="XR_EXT_hand_interaction" />
+				<Interaction type="POSE" path="/input/poke_ext/pose" requiredExtension="XR_EXT_hand_interaction" />
+				<Interaction type="BOOLEAN" path="/input/menu/click" />
+				<Interaction type="FLOAT" path="/input/trigger/value" />
+				<Interaction type="FLOAT" path="/input/squeeze/value" />
+				<Interaction type="AXIS" path="/input/thumbstick/x" />
+				<Interaction type="AXIS" path="/input/thumbstick/y" />
+				<Interaction type="BOOLEAN" path="/input/thumbstick/click" />
+				<Interaction type="FLOAT" path="/output/haptic" />
+			</Controller>
+			<Controller path="/user/hand/left">
+				<Interaction type="BOOLEAN" path="/input/x/click" />
+				<Interaction type="BOOLEAN" path="/input/y/click" />
+			</Controller>
+			<Controller path="/user/hand/right">
+				<Interaction type="BOOLEAN" path="/input/a/click" />
+				<Interaction type="BOOLEAN" path="/input/b/click" />
+			</Controller>
+		</InteractionsMap>
+	</Entry>
+	<Entry>
+		<InteractionProfiles>
+			<InteractionProfile path="/interaction_profiles/meta/touch_controller_plus" requiredExtension="XR_META_touch_controller_plus" />
+		</InteractionProfiles>
+		<InteractionsMap>
+			<Controller path="/user/hand/*">
+				<Interaction type="POSE" path="/input/grip/pose" />
+				<Interaction type="POSE" path="/input/aim/pose" />
+				<Interaction type="FLOAT" path="/input/squeeze/value" />
+				<Interaction type="FLOAT" path="/input/trigger/value" />
+				<Interaction type="BOOLEAN" path="/input/trigger/touch" />
+				<Interaction type="FLOAT" path="/input/trigger/curl_meta" />
+				<Interaction type="FLOAT" path="/input/trigger/slide_meta" />
+				<Interaction type="FLOAT" path="/input/trigger/force" />
+				<Interaction type="BOOLEAN" path="/input/trigger/proximity_meta" />
+				<Interaction type="BOOLEAN" path="/input/thumb_meta/proximity_meta" />
+				<Interaction type="AXIS" path="/input/thumbstick/x" />
+				<Interaction type="AXIS" path="/input/thumbstick/y" />
+				<Interaction type="BOOLEAN" path="/input/thumbstick/click" />
+				<Interaction type="BOOLEAN" path="/input/thumbstick/touch" />
+				<Interaction type="BOOLEAN" path="/input/thumbrest/touch" />
+				<Interaction type="FLOAT" path="/output/haptic" />
+			</Controller>
+			<Controller path="/user/hand/left">
+				<Interaction type="BOOLEAN" path="/input/x/click" />
+				<Interaction type="BOOLEAN" path="/input/x/touch" />
+				<Interaction type="BOOLEAN" path="/input/y/click" />
+				<Interaction type="BOOLEAN" path="/input/y/touch" />
+				<Interaction type="BOOLEAN" path="/input/menu/click" />
+			</Controller>
+			<Controller path="/user/hand/right">
+				<Interaction type="BOOLEAN" path="/input/a/click" />
+				<Interaction type="BOOLEAN" path="/input/a/touch" />
+				<Interaction type="BOOLEAN" path="/input/b/click" />
+				<Interaction type="BOOLEAN" path="/input/b/touch" />
+			</Controller>
+		</InteractionsMap>
+	</Entry>
+	<Entry>
+		<InteractionProfiles>
+			<InteractionProfile path="/interaction_profiles/facebook/touch_controller_pro" requiredExtension="XR_FB_touch_controller_pro" />
+		</InteractionProfiles>
+		<InteractionsMap>
+			<Controller path="/user/hand/*">
+				<Interaction type="POSE" path="/input/grip/pose" />
+				<Interaction type="POSE" path="/input/aim/pose" />
+				<Interaction type="FLOAT" path="/input/squeeze/value" />
+				<Interaction type="FLOAT" path="/input/trigger/value" />
+				<Interaction type="BOOLEAN" path="/input/trigger/touch" />
+				<Interaction type="FLOAT" path="/input/trigger/curl_fb" />
+				<Interaction type="FLOAT" path="/input/trigger/slide_fb" />
+				<Interaction type="BOOLEAN" path="/input/trigger/proximity_fb" />
+				<Interaction type="BOOLEAN" path="/input/thumb_fb/proximity_fb" />
+				<Interaction type="AXIS" path="/input/thumbstick/x" />
+				<Interaction type="AXIS" path="/input/thumbstick/y" />
+				<Interaction type="BOOLEAN" path="/input/thumbstick/click" />
+				<Interaction type="BOOLEAN" path="/input/thumbstick/touch" />
+				<Interaction type="BOOLEAN" path="/input/thumbrest/touch" />
+				<Interaction type="FLOAT" path="/input/thumbrest/force" />
+				<Interaction type="FLOAT" path="/input/stylus_fb/force" />
+				<Interaction type="FLOAT" path="/output/haptic" />
+				<Interaction type="FLOAT" path="/output/haptic_trigger_fb" />
+				<Interaction type="FLOAT" path="/output/haptic_thumb_fb" />
+			</Controller>
+			<Controller path="/user/hand/left">
+				<Interaction type="BOOLEAN" path="/input/x/click" />
+				<Interaction type="BOOLEAN" path="/input/x/touch" />
+				<Interaction type="BOOLEAN" path="/input/y/click" />
+				<Interaction type="BOOLEAN" path="/input/y/touch" />
+				<Interaction type="BOOLEAN" path="/input/menu/click" />
+			</Controller>
+			<Controller path="/user/hand/right">
+				<Interaction type="BOOLEAN" path="/input/a/click" />
+				<Interaction type="BOOLEAN" path="/input/a/touch" />
+				<Interaction type="BOOLEAN" path="/input/b/click" />
+				<Interaction type="BOOLEAN" path="/input/b/touch" />
+			</Controller>
+		</InteractionsMap>
+	</Entry>
+</InteractionProfileDatabase>
