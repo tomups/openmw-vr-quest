@@ -239,8 +239,8 @@ namespace XR
 
                         auto pose = quadLayer->pose;
                         quadLayers.back().pose = toXR(pose);
-                        quadLayers.back().size.width = quadLayer->extent.x() / Constants::UnitsPerMeter;
-                        quadLayers.back().size.height = quadLayer->extent.y() / Constants::UnitsPerMeter;
+                        quadLayers.back().size.width = quadLayer->extent.x();
+                        quadLayers.back().size.height = quadLayer->extent.y();
                         quadLayers.back().space = quadLayer->space;
 
                         if (quadLayer->subImage)

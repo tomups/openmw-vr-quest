@@ -6,6 +6,7 @@
 #include <chrono>
 #include <map>
 #include <set>
+#include <mutex>
 
 #include <osg/Camera>
 #include <osg/Geometry>
@@ -122,7 +123,7 @@ namespace MWVR
     {
     public:
         VRGUILayer(osg::ref_ptr<osg::Group> geometryRoot, osg::ref_ptr<osg::Group> cameraRoot, std::string layerName,
-            LayerConfig config, VRGUIManager* parent);
+            LayerConfig config, VRGUIManager* parent, std::shared_ptr<VR::QuadLayer> mVrLayer);
         ~VRGUILayer();
 
         void update(osg::NodeVisitor* nv);
@@ -143,6 +144,14 @@ namespace MWVR
 
         /// Update layer quads based on current tracking information
         //void onTrackingUpdated(VR::TrackingManager& manager) override;
+
+        osg::Texture2D* colorTexture() const;
+        std::shared_ptr<VR::QuadLayer> vrLayer() { return mVrLayer; } 
+
+        void updateLayer();
+        void blitLayer(osg::RenderInfo& info);
+
+        bool visible() const { return mVisible; }
 
     public:
         VR::VRPath mTrackingPath = 0;
@@ -208,6 +217,8 @@ namespace MWVR
         /// Update traversal
         void onRecenter() override;
         void onEyeLevelReset() override;
+        void onFrameBegin(VR::Frame& frame);
+        void onFrameEnd(osg::RenderInfo& info);
 
         /// Gui cursor coordinates to use to simulate a mouse press/move if the player is currently pointing at a vr gui
         /// layer
@@ -252,6 +263,7 @@ namespace MWVR
         std::map<std::string, LayerConfig> mLayerConfigs{};
 
         std::shared_ptr<VR::Session::Listener> mSessionListener;
+        std::mutex mMutex;
     };
 }
 

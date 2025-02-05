@@ -484,7 +484,7 @@ namespace Stereo
 
 //## VR_PATCH BEGIN
     osg::FrameBufferAttachment createLayerAttachmentFromHandle(osg::State* state, uint32_t handle, uint32_t target,
-        uint32_t width, uint32_t height, [[maybe_unused]] uint32_t layer)
+        uint32_t width, uint32_t height, uint32_t layer)
     {
         // Wrap subimage textures in texture objects, and attach them to a framebuffer object
         if (target == GL_TEXTURE_2D)

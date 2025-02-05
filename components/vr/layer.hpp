@@ -73,7 +73,7 @@ namespace VR
         QuadLayer();
         ~QuadLayer();
 
-        std::shared_ptr<Swapchain> colorSwapchain = nullptr;
+        std::shared_ptr<Swapchain> colorSwapchain;
         bool blendAlpha = false;
         bool premultipliedAlpha = false;
         // Optional subimage. If not set, full swapchain image is used

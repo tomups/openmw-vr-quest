@@ -221,11 +221,12 @@ namespace MWVR
     };
 
     VRGUILayer::VRGUILayer(osg::ref_ptr<osg::Group> geometryRoot, osg::ref_ptr<osg::Group> cameraRoot,
-        std::string layerName, LayerConfig config, VRGUIManager* parent)
+        std::string layerName, LayerConfig config, VRGUIManager* parent, std::shared_ptr<VR::QuadLayer> vrLayer)
         : mConfig(config)
         , mLayerName(layerName)
         , mGeometryRoot(geometryRoot)
         , mCameraRoot(cameraRoot)
+        , mVrLayer(vrLayer)
     {
         auto extent_units = config.extent * Constants::UnitsPerMeter;
 
@@ -272,6 +273,11 @@ namespace MWVR
         mTransform->setCullingActive(false);
         if (mConfig.intersectable == Intersectable::No)
             mTransform->setNodeMask(MWRender::Mask_Effect);
+
+        mVrLayer->colorSwapchain = VR::Session::instance().createSwapchain(mConfig.pixelResolution.x(),
+            mConfig.pixelResolution.y(), 1, 1, VR::Swapchain::Attachment::Color, layerName + "Swapchain");
+        mVrLayer->extent = config.extent;
+        mVrLayer->space = VR::ReferenceSpace::Stage;
     }
 
     VRGUILayer::~VRGUILayer()
@@ -283,6 +289,43 @@ namespace MWVR
     {
         mRotation = osg::Quat{ angle, osg::Z_AXIS };
         updatePose();
+    }
+
+    osg::Texture2D* VRGUILayer::colorTexture() const
+    {
+        return static_cast<osg::Texture2D*>(static_cast<GUIRTT*>(mGUIRTT.get())->getColorTexture(nullptr));
+    }
+
+    void VRGUILayer::updateLayer() {
+
+    }
+
+    void VRGUILayer::blitLayer(osg::RenderInfo& info)
+    {
+        auto* state= info.getState();
+        auto texture = colorTexture();
+        mVrLayer->colorSwapchain->beginFrame(state->getGraphicsContext());
+        auto glImage = mVrLayer->colorSwapchain->image()->glImage();
+
+        int width = mConfig.pixelResolution.x();
+        int height = mConfig.pixelResolution.y();
+
+        // TODO: Definitely cache fbos when we're done checking that it WORKS
+        osg::ref_ptr<osg::FrameBufferObject> targetFbo = new osg::FrameBufferObject();
+        auto colorAttachment = Stereo::createLayerAttachmentFromHandle(
+            state, glImage, GL_TEXTURE_2D, width, height, 0);
+        targetFbo->setAttachment(osg::FrameBufferObject::BufferComponent::COLOR_BUFFER, colorAttachment);
+        targetFbo->apply(*state, osg::FrameBufferObject::DRAW_FRAMEBUFFER);
+
+        osg::ref_ptr<osg::FrameBufferObject> sourceFbo = new osg::FrameBufferObject();
+        sourceFbo->setAttachment(
+            osg::FrameBufferObject::BufferComponent::COLOR_BUFFER, osg::FrameBufferAttachment(texture));
+        sourceFbo->apply(*state, osg::FrameBufferObject::READ_FRAMEBUFFER);
+
+        auto* gl = osg::GLExtensions::Get(state->getContextID(), false);
+        gl->glBlitFramebuffer(0, 0, width, height, 0, 0, width, height, GL_COLOR_BUFFER_BIT, GL_NEAREST);
+        gl->glBindFramebuffer(GL_FRAMEBUFFER_EXT, 0);
+        mVrLayer->colorSwapchain->endFrame(state->getGraphicsContext());
     }
 
     void VRGUILayer::updatePose()
@@ -393,7 +436,7 @@ namespace MWVR
         if (mConfig.sizingMode == SizingMode::Auto)
         {
             if (mVrLayer)
-                mVrLayer->extent = osg::Vec2f(w / res, h / res);
+                mVrLayer->extent = osg::Vec2f(w / res, h / res) / Constants::UnitsPerMeter;
             else
                 mTransform->setScale(osg::Vec3(w / res, 1.f, h / res));
         }
@@ -402,7 +445,7 @@ namespace MWVR
             auto viewSize = MyGUI::RenderManager::getInstance().getViewSize();
             h = (1.f - mRealRect.top) * static_cast<float>(viewSize.height);
             if (mVrLayer)
-                mVrLayer->extent = osg::Vec2f(w / res, h / res);
+                mVrLayer->extent = osg::Vec2f(w / res, h / res) / Constants::UnitsPerMeter;
             else
                 mTransform->setScale(osg::Vec3(w / res, 1.f, h / res));
         }
@@ -545,6 +588,10 @@ namespace MWVR
         VRGUIManager* mManager;
     };
 
+        void onFrameBeginUpdate(VR::Frame& frame) override
+        {
+            mParent->onFrameBegin(frame);
+        }
     VRGUIManager::VRGUIManager(Resource::ResourceSystem* resourceSystem, osg::Group* rootNode)
         : mResourceSystem(resourceSystem)
         , mRootNode(rootNode)
@@ -554,6 +601,8 @@ namespace MWVR
             sManager = this;
         else
             throw std::logic_error("Duplicated MWVR::VRGUIManager singleton");
+
+        VR::Viewer::instance().setFinalDrawCallback([this](osg::RenderInfo& info) { onFrameEnd(info); });
 
         Paths::init();
 
@@ -768,6 +817,7 @@ namespace MWVR
 
     void VRGUIManager::insertLayer(const std::string& name)
     {
+        std::scoped_lock lock(mMutex);
         LayerConfig config{};
         auto configIt = mLayerConfigs.find(name);
         if (configIt != mLayerConfigs.end())
@@ -780,7 +830,9 @@ namespace MWVR
             config = mLayerConfigs["DefaultConfig"];
         }
 
-        auto layer = osg::ref_ptr<VRGUILayer>(new VRGUILayer(mGeometries, mGUICameras, name, config, this));
+        std::shared_ptr<VR::QuadLayer> vrLayer = std::make_shared<VR::QuadLayer>();
+
+        auto layer = osg::ref_ptr<VRGUILayer>(new VRGUILayer(mGeometries, mGUICameras, name, config, this, vrLayer));
         mLayers[name] = layer;
 
         if (layer->mStateset)
@@ -912,6 +964,25 @@ namespace MWVR
     void VRGUIManager::onEyeLevelReset()
     {
         mUiTracking->onEyeLevelReset();
+    }
+
+    void VRGUIManager::onFrameEnd(osg::RenderInfo& info)
+    {
+        std::scoped_lock lock(mMutex);
+        for (auto& it : mLayers)
+        {
+            if (it.second->visible())
+                it.second->blitLayer(info);
+        }
+    }
+
+    void VRGUIManager::onFrameBegin(VR::Frame& frame)
+    {
+        std::scoped_lock lock(mMutex);
+        for (auto& it : mLayers)
+        {
+            it.second->updateLayer();
+        }
     }
 
     void VRGUIManager::updateFocus(osg::Node* focusNode, osg::Vec3f hitPoint)

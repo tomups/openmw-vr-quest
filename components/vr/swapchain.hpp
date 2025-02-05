@@ -112,22 +112,22 @@ namespace VR
     //! Once an instance of SwapchainToFrameBufferObjectMapper has been created for a swapchain,
     //! beginFrame() and endFrame() should be called on the SwapchainToFrameBufferObjectMapper rather
     //! than on the swapchain itself.
-    // class SwapchainToFrameBufferObjectMapper
-    //{
-    // public:
-    //     SwapchainToFrameBufferObjectMapper(std::shared_ptr<Swapchain> colorSwapchain, std::shared_ptr<Swapchain>
-    //     depthSwapchain); ~SwapchainToFrameBufferObjectMapper();
+     class SwapchainToFrameBufferObjectMapper
+    {
+     public:
+         SwapchainToFrameBufferObjectMapper(std::shared_ptr<Swapchain> colorSwapchain, std::shared_ptr<Swapchain>
+         depthSwapchain); ~SwapchainToFrameBufferObjectMapper();
 
-    //    osg::FrameBufferObject* beginFrame(osg::RenderInfo& renderInfo);
-    //    void endFrame(osg::RenderInfo& renderInfo);
+        osg::FrameBufferObject* beginFrame(osg::RenderInfo& renderInfo);
+        void endFrame(osg::RenderInfo& renderInfo);
 
-    // private:
-    //     std::shared_ptr<Swapchain> mColorSwapchain = nullptr;
-    //     std::shared_ptr<Swapchain> mDepthSwapchain = nullptr;
+     private:
+         std::shared_ptr<Swapchain> mColorSwapchain = nullptr;
+         std::shared_ptr<Swapchain> mDepthSwapchain = nullptr;
 
-    //    using ColorDepthTexturePair = std::pair<uint32_t, uint32_t>;
-    //    std::map<ColorDepthTexturePair, osg::ref_ptr< osg::FrameBufferObject >> mFramebuffers;
-    //};
+        using ColorDepthTexturePair = std::pair<uint32_t, uint32_t>;
+        std::map<ColorDepthTexturePair, osg::ref_ptr< osg::FrameBufferObject >> mFramebuffers;
+    };
 }
 
 #endif

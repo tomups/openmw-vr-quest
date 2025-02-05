@@ -1268,7 +1268,6 @@ void OMW::Engine::configureVRPreScene(const std::filesystem::path& userFile, boo
     const std::filesystem::path& userControllerBindingsFile, const std::filesystem::path& controllerBindingsFile)
 {
     // Set up enough of VR to view the intro cinematic/loading screen
-    mVrGUIManager = std::make_unique<MWVR::VRGUIManager>(mResourceSystem.get(), mViewer->getSceneData()->asGroup());
     mVrViewer = std::make_unique<VR::Viewer>(mXrSession, mViewer);
     mVrViewer->configureCallbacks();
     auto cullMask = ~(MWRender::VisMask::Mask_UpdateVisitor | MWRender::VisMask::Mask_SimpleWater);
@@ -1277,6 +1276,7 @@ void OMW::Engine::configureVRPreScene(const std::filesystem::path& userFile, boo
     mViewer->getCamera()->setCullMask(cullMask);
     mViewer->getCamera()->setCullMaskLeft(cullMask);
     mViewer->getCamera()->setCullMaskRight(cullMask);
+    mVrGUIManager = std::make_unique<MWVR::VRGUIManager>(mResourceSystem.get(), mViewer->getSceneData()->asGroup());
 
     const std::string xrinputuserdefault = mCfgMgr.getUserConfigPath().string() + "/xrcontrollersuggestions.xml";
     const std::string xrinputlocaldefault = mCfgMgr.getLocalPath().string() + "/xrcontrollersuggestions.xml";

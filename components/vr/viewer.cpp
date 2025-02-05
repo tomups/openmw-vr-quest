@@ -346,6 +346,10 @@ namespace VR
         return mReadyFrames.back();
     }
 
+    void Viewer::setFinalDrawCallback(std::function<void(osg::RenderInfo& info)> cb) {
+        mFinalDrawCallback = cb;
+    }
+
     osg::ref_ptr<osg::FrameBufferObject> Viewer::getXrFramebuffer(uint32_t view, osg::State* state)
     {
         uint64_t colorImage = mColorSwapchain[view]->image()->glImage();
@@ -504,6 +508,8 @@ namespace VR
         if (view == Misc::CallbackManager::View::Left)
             return;
         VR::Session::instance().frameEnd(info, mDrawFrame);
+        if (mFinalDrawCallback)
+            mFinalDrawCallback(info);
         if (mDrawFrame.shouldRender)
         {
             blit(info);
