@@ -4,15 +4,10 @@
 #include <components/stereo/types.hpp>
 #include <components/vr/constants.hpp>
 #include <stdint.h>
+#include <openxr/openxr.h>
 
 namespace VR
 {
-
-    //! @brief An identifier representing an path, with 0 representing no path.
-    //! A VRPath can be optained from the string representation of a path using VRTrackingManager::stringToVRPath()
-    //! \note Support is determined by each VRTrackingSource. ALL strings are convertible to VRPaths but won't be useful
-    //! unless they match a supported string. \sa VRTrackingManager::getTrackingPath()
-    using VRPath = uint32_t;
 
     //! Display time as a 64bit integer. Units and reference are undefined, value is as provided by the VR runtime.
     using DisplayTime = int64_t;
@@ -26,28 +21,27 @@ namespace VR
     };
 
     //! Converts a string representation of a path to a VRTrackerPath identifier
-    VRPath stringToVRPath(std::string_view path);
+    XrPath stringToXrPath(const std::string& path);
 
     //! Converts a path identifier back to string. Returns an empty string if no such identifier exists.
-    std::string_view VRPathToString(VRPath path);
+    std::string xrPathToString(XrPath path);
 
     bool getVR();
     bool getKBMouseModeActive();
     bool getSteamVR();
     bool getSeatedPlay();
     bool getStandingPlay();
-    bool getControllerActive(VRPath controllerPath);
-    VRPath getControllerInteractionProfile(VRPath controllerPath);
+    bool getControllerActive(XrPath controllerPath);
+    XrPath getControllerInteractionProfile(XrPath controllerPath);
     bool getLeftControllerActive();
     bool getRightControllerActive();
-    TrackingPose getTrackedPose(VRPath path);
     Stereo::Unit getPlayerHeight();
     DisplayTime getPredictedDisplayTime();
     DisplayTime getPredictedDisplayPeriod();
     std::string getRuntimeName();
 
     void setVR(bool VR);
-    void setControllerActive(VRPath controllerPath, VRPath interactionProfilePath, bool active);
+    void setControllerActive(XrPath controllerPath, XrPath interactionProfilePath, bool active);
     void setSteamVR(bool steamVR);
     void setSeatedPlay(bool seated);
     void setSneakOffsetEnabled(bool enabled);

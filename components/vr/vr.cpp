@@ -5,6 +5,8 @@
 
 #include <components/debug/debuglog.hpp>
 #include <components/misc/strings/algorithm.hpp>
+#include <components/xr/debug.hpp>
+#include <components/xr/instance.hpp>
 
 #include <map>
 #include <optional>
@@ -18,17 +20,33 @@ namespace VR
         bool sSeatedPlay = false;
         DisplayTime sPredictedDisplayTime = 0;
         DisplayTime sPredictedDisplayPeriod = 0;
-        std::map<VRPath, VRPath> sActiveControllers = {};
+        std::map<XrPath, XrPath> sActiveControllers = {};
         std::string sRuntimeName = "UNINITIALIZED";
-
-        std::map<std::string, VRPath, std::less<>> sPathIdentifiers;
 
         namespace Paths
         {
             // Cache recurring path values for this source file
-            static const VRPath lctrl = stringToVRPath("/user/hand/left");
-            static const VRPath rctrl = stringToVRPath("/user/hand/right");
+            static const XrPath lctrl = stringToXrPath("/user/hand/left");
+            static const XrPath rctrl = stringToXrPath("/user/hand/right");
         }
+    }
+
+    XrPath stringToXrPath(const std::string& path)
+    {
+        XrPath xrPath = XR_NULL_PATH;
+        CHECK_XRCMD(::xrStringToPath(XR::Instance::instance().xrInstance(), path.c_str(), &xrPath));
+        return xrPath;
+    }
+
+    std::string xrPathToString(XrPath path)
+    {
+        std::vector<char> output;
+        uint32_t size = 0;
+        ::xrPathToString(XR::Instance::instance().xrInstance(), path, 0, &size, nullptr);
+        output.resize(size + 1, 0);
+        ::xrPathToString(XR::Instance::instance().xrInstance(), path, output.size(), &size, output.data());
+
+        return std::string(output.data());
     }
 
     bool getVR()
@@ -56,12 +74,12 @@ namespace VR
         return !sSeatedPlay;
     }
 
-    bool getControllerActive(VRPath path)
+    bool getControllerActive(XrPath path)
     {
         return sActiveControllers.contains(path);
     }
 
-    VRPath getControllerInteractionProfile(VRPath controllerPath)
+    XrPath getControllerInteractionProfile(XrPath controllerPath)
     {
         auto it = sActiveControllers.find(controllerPath);
         if (it != sActiveControllers.end())
@@ -79,20 +97,12 @@ namespace VR
         return getControllerActive(Paths::rctrl);
     }
 
-    void setControllerActive(
-        VRPath controllerPath, VRPath interactionProfilePath, bool active)
+    void setControllerActive(XrPath controllerPath, XrPath interactionProfilePath, bool active)
     {
         if (active)
             sActiveControllers[controllerPath] = interactionProfilePath;
         else
             sActiveControllers.erase(controllerPath);
-    }
-
-    TrackingPose getTrackedPose(VRPath path)
-    {
-        if (sVRMode)
-            return TrackingManager::instance().locate(path);
-        return TrackingPose();
     }
 
     Stereo::Unit getPlayerHeight()
@@ -161,44 +171,6 @@ namespace VR
     {
         if (sVRMode)
             Session::instance().resetEyeLevel();
-    }
-
-
-    VRPath newPath(std::string_view path)
-    {
-        VRPath vrPath = sPathIdentifiers.size() + 1;
-        auto res = sPathIdentifiers.emplace(path, vrPath);
-        return res.first->second;
-    }
-
-    VRPath stringToVRPath(std::string_view path)
-    {
-        // Empty path is invalid
-        if (path.empty())
-        {
-            Log(Debug::Error) << "VR::stringToVRPath: Empty path";
-            return VRPath();
-        }
-
-        // Return path immediately if it already exists
-        auto it = sPathIdentifiers.find(path);
-        if (it != sPathIdentifiers.end())
-            return it->second;
-
-        // Add new path and return it
-        return newPath(path);
-    }
-
-    std::string_view VRPathToString(VRPath path)
-    {
-        // Find the identifier in the map and return the corresponding string.
-        for (auto& e : sPathIdentifiers)
-            if (e.second == path)
-                return e.first;
-
-        // No path found, return empty string
-        Log(Debug::Warning) << "VR::VRPathToString: No such path identifier (" << path << ")";
-        return "";
     }
 
     struct Interaction

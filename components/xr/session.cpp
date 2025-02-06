@@ -65,7 +65,6 @@ namespace XR
     Session::Session(XrSession session, XrViewConfigurationType viewConfigType)
         : mXrSession(session)
         , mViewConfigType(viewConfigType)
-        , mTracker(nullptr)
     {
         if (!sSession)
             sSession = this;
@@ -242,8 +241,7 @@ namespace XR
                         quadLayers.back().pose = toXR(pose);
                         quadLayers.back().size.width = quadLayer->extent.x() / Constants::UnitsPerMeter;
                         quadLayers.back().size.height = quadLayer->extent.y() / Constants::UnitsPerMeter;
-                        quadLayers.back().space = quadLayer->space == VR::ReferenceSpace::Stage ? mReferenceSpaceStage
-                                                                                                : mReferenceSpaceView;
+                        quadLayers.back().space = quadLayer->space;
 
                         if (quadLayer->subImage)
                         {
@@ -425,9 +423,7 @@ namespace XR
 
         for (auto& userPath : topLevelUserPaths)
         {
-            XrPath xrPath = 0;
-            CHECK_XRCMD(xrStringToPath(XR::Instance::instance().xrInstance(), userPath.c_str(), &xrPath));
-            VR::VRPath vrPath = VR::stringToVRPath(userPath);
+            XrPath xrPath = VR::stringToXrPath(userPath);
 
             XrInteractionProfileState interactionProfileState{};
             interactionProfileState.type = XR_TYPE_INTERACTION_PROFILE_STATE;
@@ -442,12 +438,12 @@ namespace XR
                 xrPathToString(XR::Instance::instance().xrInstance(), interactionProfileState.interactionProfile, size,
                     &size, profile.data());
                 Log(Debug::Verbose) << userPath << ": Interaction profile changed to '" << profile.data() << "'";
-                setInteractionProfileActive(vrPath, VR::stringToVRPath(profile), true);
+                setInteractionProfileActive(xrPath, VR::stringToXrPath(profile), true);
             }
             else
             {
                 Log(Debug::Verbose) << userPath << ": Interaction profile lost";
-                setInteractionProfileActive(vrPath, 0, false);
+                setInteractionProfileActive(xrPath, 0, false);
             }
         }
     }
@@ -455,7 +451,6 @@ namespace XR
     void Session::init()
     {
         createXrReferenceSpaces();
-        createXrTracker();
         initCompositionLayerDepth();
         initMSFTReprojection();
     }
@@ -692,7 +687,7 @@ namespace XR
             // Call failed, exit.
             CHECK_XRRESULT(res, "xrLocateSpace");
             pose.status = VR::TrackingStatus::RuntimeFailure;
-            return;
+            return pose;
         }
 
         // Check that everything is being tracked
@@ -709,7 +704,7 @@ namespace XR
         {
             // It's not, we've lost tracking
             pose.status = VR::TrackingStatus::Lost;
-            return;
+            return pose;
         }
 
         pose.pose = fromXR(location.pose);

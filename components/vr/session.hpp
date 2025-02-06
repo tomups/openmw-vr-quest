@@ -43,14 +43,15 @@ namespace VR
             Listener();
             virtual ~Listener();
 
+            virtual void onInstantTransition(){}
             virtual void onRecenter(){}
             virtual void onEyeLevelReset(){}
             virtual void onSeatedModeChanged(){}
-            virtual void onFrameUpdate(){}
-            virtual void onFrameRender(){}
+            virtual void onFrameUpdate(VR::Frame&){}
+            virtual void onFrameRender(VR::Frame&){}
             //! \note onFrameEnd() is called from the draw thread.
-            virtual void onFrameEnd(osg::GraphicsContext* gc, VR::Frame& frame){}
-            virtual void onInteractionProfileActiveChanged(VRPath topLevelPath, bool isActive){}
+            virtual void onFrameEnd(osg::RenderInfo& info, VR::Frame& frame) {}
+            virtual void onInteractionProfileActiveChanged(XrPath topLevelPath, bool isActive){}
         };
 
     public:
@@ -69,7 +70,8 @@ namespace VR
         VR::Frame newFrame();
         void frameBeginUpdate(VR::Frame& frame);
         void frameBeginRender(VR::Frame& frame);
-        void frameEnd(osg::GraphicsContext* gc, VR::Frame& frame);
+        void frameEnd(osg::RenderInfo& info, VR::Frame& frame);
+        void swapBuffers(osg::GraphicsContext* gc, VR::Frame& frame);
 
         bool appShouldShareDepthInfo() const { return mAppShouldShareDepthBuffer; }
 
@@ -93,8 +95,8 @@ namespace VR
 
         VR::StageToWorldBinding& stageToWorldBinding();
 
-        void setInteractionProfileActive(VRPath topLevelPath, VRPath profile, bool active);
-        bool getInteractionProfileActive(VRPath topLevelPath) const;
+        void setInteractionProfileActive(XrPath topLevelPath, XrPath profile, bool active);
+        bool getInteractionProfileActive(XrPath topLevelPath) const;
 
         osg::Vec3 getHandsOffset() const { return mHandsOffset; }
 
@@ -133,14 +135,6 @@ namespace VR
         //! This is where OpenXR implementations must call xrEndFrame()
         virtual void syncFrameEnd(VR::Frame& frame) = 0;
 
-        void onRecenter();
-        void onEyeLevelReset();
-        void onSeatedModeChanged();
-        void onFrameUpdate();
-        void onFrameRender();
-        void onFrameEnd(osg::GraphicsContext* gc);
-        void onInteractionProfileActiveChanged(VRPath topLevelPath, bool isActive);
-
     private:
         bool mAppShouldShareDepthBuffer = false;
         bool mHandDirectedMovement = false;
@@ -150,9 +144,7 @@ namespace VR
         Stereo::Unit mSneakOffset = {};
         Stereo::Unit mPlayerHeight = {};
 
-        std::set<VRPath> mActiveInteractionProfiles;
-
-        std::unique_ptr<VR::StageToWorldBinding> mTrackerToWorldBinding;
+        std::set<XrPath> mActiveInteractionProfiles;
 
         osg::Vec3 mHandsOffset;
         osg::Vec3 mMovementAnglesOffset;

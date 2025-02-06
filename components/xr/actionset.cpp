@@ -117,33 +117,32 @@ namespace XR
     void ActionSet::createBoolAction(const std::string& actionName, const std::string& localName, const std::string& id)
     {
         mBoolActions.emplace(id, createXRAction(BoolAction::ActionType, actionName, localName));
-        mAllInputActions.emplace(id, &mBoolActions[id]);
+        mAllInputActions.emplace(id, &mBoolActions.at(id));
     }
 
     void ActionSet::createAxisAction(const std::string& actionName, const std::string& localName, const std::string& id)
     {
         mAxisActions.emplace(id, createXRAction(AxisAction::ActionType, actionName, localName));
-        mAllInputActions.emplace(id, &mAxisActions[id]);
+        mAllInputActions.emplace(id, &mAxisActions.at(id));
     }
 
     void ActionSet::createFloatAction(
         const std::string& actionName, const std::string& localName, const std::string& id)
     {
         mFloatActions.emplace(id, createXRAction(FloatAction::ActionType, actionName, localName));
-        mAllInputActions.emplace(id, &mFloatActions[id]);
+        mAllInputActions.emplace(id, &mFloatActions.at(id));
     }
 
     void ActionSet::createPoseAction(const std::string& actionName, const std::string& localName, const std::string& id)
     {
         mPoseActions.emplace(id, createXRAction(BoolAction::ActionType, actionName, localName));
-        mAllInputActions.emplace(id, &mPoseActions[id]);
+        mAllInputActions.emplace(id, &mPoseActions.at(id));
     }
 
     void ActionSet::createHapticsAction(
         const std::string& actionName, const std::string& localName, const std::string& id)
     {
         mHapticsActions.emplace(id, createXRAction(HapticsAction::ActionType, actionName, localName));
-        mAllInputActions.emplace(id, &mHapticsActions[id]);
     }
 
     std::optional<InputAction::Value> ActionSet::getValue(const std::string& id) const
@@ -158,7 +157,10 @@ namespace XR
 
     XrAction ActionSet::findXrAction(const std::string& id) const
     {
-        return mAllInputActions.at(id)->xrAction();
+        auto it = mAllInputActions.find(id);
+        if (it != mAllInputActions.end())
+            return it->second->xrAction();
+        return mHapticsActions.at(id).xrAction();
     }
 
     XrActionSet ActionSet::createActionSet(const std::string& name)

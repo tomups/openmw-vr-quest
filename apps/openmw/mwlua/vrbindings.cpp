@@ -1,6 +1,7 @@
 #include "vrbindings.hpp"
 #include "../mwbase/environment.hpp"
 #include "../mwbase/world.hpp"
+#include "../mwvr/vrgui.hpp"
 #include "../mwvr/openxrinput.hpp"
 #include "../mwvr/vranimation.hpp"
 #include "../mwvr/vrutil.hpp"
@@ -140,6 +141,21 @@ namespace MWLua
         // If there is ever a reason to support more, we can expand this with overloads (or use sol::object).
         api["setOutputValue"] = [&actionSet = MWVR::OpenXRInput::instance().getActionSet(MWVR::MWActionSet::Haptics)](
                                     const std::string& path, float value) { actionSet.applyHaptics(path, value); };
+
+        api["_setGuiPose"] = [&guiManager = MWVR::VRGUIManager::instance()](const std::string& id,
+                                 const osg::Vec3f& position, const LuaUtil::TransformQ& transform) {
+            guiManager.setLayerPose(id, { Stereo::Position::fromMWUnits(position), transform.mQ });
+        };
+
+        api["_setGuiSpace"] = sol::overload([&guiManager = MWVR::VRGUIManager::instance()](const std::string& id, XrReferenceSpaceType space) {
+            guiManager.setLayerRef(id, XR::Session::instance().getReferenceSpace(space));
+            },
+            [&guiManager = MWVR::VRGUIManager::instance(),
+                &actionSet = MWVR::OpenXRInput::instance().getActionSet(MWVR::MWActionSet::Pose)](
+                const std::string& id, const std::string& name) {
+                guiManager.setLayerRef(id, actionSet.xrActionSpace(name));
+            }
+            );
 
         //api[]
 

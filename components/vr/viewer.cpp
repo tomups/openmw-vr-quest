@@ -503,6 +503,7 @@ namespace VR
         // Should only activate on the last callback
         if (view == Misc::CallbackManager::View::Left)
             return;
+        VR::Session::instance().frameEnd(info, mDrawFrame);
         if (mDrawFrame.shouldRender)
         {
             blit(info);
@@ -511,7 +512,7 @@ namespace VR
 
     void Viewer::swapBuffersCallback(osg::GraphicsContext* gc)
     {
-        VR::Session::instance().frameEnd(gc, mDrawFrame);
+        VR::Session::instance().swapBuffers(gc, mDrawFrame);
     }
 
     void Viewer::newFrame()
@@ -528,8 +529,6 @@ namespace VR
 
         std::unique_lock<std::mutex> lock(mMutex);
         auto& frame = mReadyFrames.back();
-
-        VR::TrackingManager::instance().updateTracking();
 
         auto localViews
             = VR::Session::instance().locateViews(frame.predictedDisplayTime, XR_REFERENCE_SPACE_TYPE_LOCAL);

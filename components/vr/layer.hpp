@@ -8,6 +8,8 @@
 #include <components/stereo/stereomanager.hpp>
 #include <components/vr/constants.hpp>
 
+#include <openxr/openxr.h>
+
 namespace VR
 {
     class Swapchain;
@@ -79,7 +81,7 @@ namespace VR
         Stereo::Pose pose = {};
         osg::Vec2f extent = {};
         EyeVisibility eyeVisibility = EyeVisibility::Both;
-        ReferenceSpace space = ReferenceSpace::View;
+        XrSpace space = XR_NULL_HANDLE;
 
         Type getType() const override { return Type::QuadLayer; }
     };

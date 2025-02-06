@@ -35,12 +35,6 @@ namespace VR
             throw std::logic_error("Duplicated VR::Session singleton");
 
         readSettings();
-
-        auto stageUserHeadPath = VR::stringToVRPath("/stage/user/head/input/pose");
-        auto worldUserPath = VR::stringToVRPath("/world/user");
-        auto worldUserHeadPath = VR::stringToVRPath("/world/user/head/input/pose");
-        mTrackerToWorldBinding = std::make_unique<VR::StageToWorldBinding>(worldUserPath, stageUserHeadPath);
-        mTrackerToWorldBinding->bindPaths(worldUserHeadPath, stageUserHeadPath);
     }
 
     Session::~Session() {}
@@ -69,22 +63,30 @@ namespace VR
             VR::setPredictedDisplayTime(frame.predictedDisplayTime);
             VR::setPredictedDisplayPeriod(frame.predictedDisplayPeriod);
         }
-        onFrameUpdate(frame);
+        for (auto& listener : mListeners)
+            listener->onFrameUpdate(frame);
     }
 
     void Session::frameBeginRender(VR::Frame& frame)
     {
         if (frame.shouldSyncFrameLoop)
             syncFrameRender(frame);
-        onFrameRender(frame);
+        for (auto& listener : mListeners)
+            listener->onFrameRender(frame);
     }
 
-    void Session::frameEnd(osg::GraphicsContext* gc, VR::Frame& frame)
+    void Session::frameEnd(osg::RenderInfo& info, VR::Frame& frame)
     {
-        gc->swapBuffersImplementation();
         if (frame.shouldSyncFrameLoop)
             syncFrameEnd(frame);
-        onFrameEnd(gc, frame);
+        for (auto& listener : mListeners)
+            listener->onFrameEnd(info, frame);
+    }
+
+    void Session::swapBuffers(osg::GraphicsContext* gc, VR::Frame& frame)
+    {
+        gc->swapBuffersImplementation();
+        syncFrameEnd(frame);
     }
 
     void Session::addListener(Listener* listener) 
@@ -94,7 +96,7 @@ namespace VR
 
     void Session::removeListener(Listener* listener)
     {
-        std::erase_if(mListeners, listener);
+        std::erase_if(mListeners, [&](Listener* lhs) { return lhs == listener; });
     }
 
     void Session::readSettings()
@@ -103,7 +105,8 @@ namespace VR
         if (VR::getSeatedPlay() != seatedPlay)
         {
             VR::setSeatedPlay(seatedPlay);
-            onSeatedModeChanged();
+            for (auto& listener : mListeners)
+                listener->onSeatedModeChanged();
             resetEyeLevel();
         }
 
@@ -132,47 +135,23 @@ namespace VR
 
     void Session::recenter()
     {
-        if (mTrackerToWorldBinding)
-        {
-            Log(Debug::Verbose) << "Recentering";
-            mTrackerToWorldBinding->recenter();
-        }
-        else
-            Log(Debug::Warning) << "Recenter was requested, but session was not ready";
-
-        onRecenter();
+        for (auto& listener : mListeners)
+            listener->onRecenter();
     }
 
     void Session::resetEyeLevel()
     {
-        if (mTrackerToWorldBinding)
-        {
-            Log(Debug::Verbose) << "Resetting eye level";
-            mTrackerToWorldBinding->setEyeLevel(charHeight());
-        }
-        else
-            Log(Debug::Warning) << "Recenter was requested, but session was not ready";
-
-        onEyeLevelReset();
+        for (auto& listener : mListeners)
+            listener->onEyeLevelReset();
     }
 
     void Session::instantTransition()
     {
-        if (mTrackerToWorldBinding)
-        {
-            mTrackerToWorldBinding->instantTransition();
-            mTrackerToWorldBinding->recenter();
-        }
-        else
-            Log(Debug::Warning) << "Instant transition was requested, but session was not ready";
+        for (auto& listener : mListeners)
+            listener->onInstantTransition();
     }
 
-    VR::StageToWorldBinding& Session::stageToWorldBinding()
-    {
-        return *mTrackerToWorldBinding;
-    }
-
-    void Session::setInteractionProfileActive(VRPath topLevelPath, VRPath profile, bool active)
+    void Session::setInteractionProfileActive(XrPath topLevelPath, XrPath profile, bool active)
     {
         VR::setControllerActive(topLevelPath, profile, active);
 
@@ -181,10 +160,11 @@ namespace VR
         else
             mActiveInteractionProfiles.erase(topLevelPath);
 
-        onInteractionProfileActiveChanged(topLevelPath, active);
+        for (auto& listener : mListeners)
+            listener->onInteractionProfileActiveChanged(topLevelPath, active);
     }
 
-    bool Session::getInteractionProfileActive(VRPath topLevelPath) const
+    bool Session::getInteractionProfileActive(XrPath topLevelPath) const
     {
         return !!mActiveInteractionProfiles.count(topLevelPath);
     }
@@ -195,50 +175,6 @@ namespace VR
             mSneakOffset = Stereo::Unit::fromMWUnits(-20.f);
         else
             mSneakOffset = {};
-    }
-
-
-
-    void Session::onRecenter()
-    {
-        for (auto& listener : mListeners)
-            listener->onRecenter();
-    }
-
-    void Session::onEyeLevelReset()
-    {
-        for (auto& listener : mListeners)
-            listener->onEyeLevelReset();
-    }
-
-    void Session::onSeatedModeChanged()
-    {
-        for (auto& listener : mListeners)
-            listener->onSeatedModeChanged();
-    }
-
-    void Session::onFrameUpdate()
-    {
-        for (auto& listener : mListeners)
-            listener->onFrameUpdate();
-    }
-
-    void Session::onFrameRender()
-    {
-        for (auto& listener : mListeners)
-            listener->onFrameRender();
-    }
-
-    void Session::onFrameEnd(osg::GraphicsContext* gc)
-    {
-        for (auto& listener : mListeners)
-            listener->onFrameEnd(gc);
-    }
-
-    void Session::onInteractionProfileActiveChanged(VRPath topLevelPath, bool isActive)
-    {
-        for (auto& listener : mListeners)
-            listener->onInteractionProfileActiveChanged(topLevelPath, isActive);
     }
 
     Session::Listener::Listener()
