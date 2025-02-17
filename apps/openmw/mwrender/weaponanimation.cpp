@@ -24,6 +24,7 @@
 
 //## VR_PATCH BEGIN
 #include <components/vr/vr.hpp>
+#include "../mwvr/vrinputmanager.hpp"
 
 //## VR_PATCH END
 
@@ -125,8 +126,12 @@ namespace MWRender
         if (VR::getVR() && !VR::getKBMouseModeActive() && actor == MWMechanics::getPlayer())
         {
             // In VR weapon aim is taken from the real orientation of the weapon.
-            Stereo::Pose weaponPose = MWBase::Environment::get().getWorld()->getVRWeaponPose();
-            orient = weaponPose.orientation;
+            auto* node = MWVR::VRInputManager::instance().vrAimNode();
+            if (node)
+            {
+                auto worldMatrix = osg::computeLocalToWorld(node->getParentalNodePaths()[0]);
+                orient = worldMatrix.getRotate();
+            }
         }
 
 //## VR_PATCH END

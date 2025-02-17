@@ -7,6 +7,7 @@
 #include <map>
 #include <set>
 #include <mutex>
+#include <variant>
 
 #include <osg/Camera>
 #include <osg/Geometry>
@@ -15,10 +16,9 @@
 #include <osg/Texture2D>
 
 #include <components/vr/session.hpp>
+#include <components/vr/space.hpp>
 #include <components/vr/layer.hpp>
-#include <components/vr/trackinglistener.hpp>
 #include <components/vr/vr.hpp>
-#include <components/vr/trackingsource.hpp>
 
 namespace MyGUI
 {
@@ -42,31 +42,12 @@ namespace MWVR
 {
     class VRGUIManager;
 
-    // Some UI elements should occupy predefined geometries
-    // Others should grow/shrink freely
-    enum class SizingMode
-    {
-        Auto,
-        Fixed
-    };
-
-    // Applies to the user pointer only. Any other intersection context
-    // will always ignore UI elements.
-    enum class Intersectable
-    {
-        No,
-        Yes
-    };
-
     /// Configuration of a VRGUILayer
     struct LayerConfig
     {
         int priority; //!< Higher priority shows over lower priority windows by moving higher priority layers slightly
                       //!< closer to the player.
-        bool sideBySide; //!< All layers with this config will show up side by side in a partial circle around the
-                         //!< player, and will all be resized to a predefined size.
         float opacity; //!< Background color of layer
-        Stereo::Position offset; //!< Offset from tracked node in meters
         osg::Vec2 center; //!< Model space centerpoint of menu geometry. All menu geometries have model space lengths of
                           //!< 1 in each dimension. Use this to affect how geometries grow with changing size.
         osg::Vec2 extent; //!< Spatial extent of the layer in meters when using Fixed sizing mode
@@ -74,10 +55,10 @@ namespace MWVR
                                //!< not the RTT texture.
         osg::Vec2i pixelResolution; //!< Pixel resolution of the RTT texture
         osg::Vec2 myGUIViewSize; //!< Resizable elements are resized to this (fraction of full view)
-        SizingMode sizingMode; //!< How to size the layer
-        std::string trackingPath; //!< The path that will be used to read tracking data
+        bool autoSize; //!< How to size the layer
+        std::string space;
         std::string extraLayers; //!< Additional layers to draw (list separated by any non-alphabetic)
-        Intersectable intersectable;
+        bool intersectable;
 
         bool operator<(const LayerConfig& rhs) const { return priority < rhs.priority; }
     };
@@ -122,21 +103,20 @@ namespace MWVR
     class VRGUILayer : public osg::Referenced
     {
     public:
-        VRGUILayer(osg::ref_ptr<osg::Group> geometryRoot, osg::ref_ptr<osg::Group> cameraRoot, std::string layerName,
-            LayerConfig config, VRGUIManager* parent, std::shared_ptr<VR::QuadLayer> mVrLayer);
+        VRGUILayer(osg::ref_ptr<osg::Group> geometryRoot, osg::ref_ptr<osg::Group> cameraRoot, std::string layerName, VRGUIManager* parent);
         ~VRGUILayer();
 
         void update(osg::NodeVisitor* nv);
 
     public:
         osg::ref_ptr<osg::Geometry> createLayerGeometry(osg::ref_ptr<osg::StateSet> stateset);
-        void setAngle(float angle);
+        //void setAngle(float angle);
         void updatePose();
         void updateRect();
         void insertWidget(MWGui::Layout* widget);
         void removeWidget(MWGui::Layout* widget);
         int widgetCount() { return mWidgets.size(); }
-        bool operator<(const VRGUILayer& rhs) const { return mConfig.priority < rhs.mConfig.priority; }
+        bool operator<(const VRGUILayer& rhs) const { return mConfig->priority < rhs.mConfig->priority; }
         void cull(osgUtil::CullVisitor* cv);
         void setVisible(bool visible);
         void removeFromSceneGraph();
@@ -148,32 +128,37 @@ namespace MWVR
         osg::Texture2D* colorTexture() const;
         std::shared_ptr<VR::QuadLayer> vrLayer() { return mVrLayer; } 
 
-        void updateLayer();
+        bool updateLayer();
         void blitLayer(osg::RenderInfo& info);
 
         bool visible() const { return mVisible; }
 
-    public:
-        VR::VRPath mTrackingPath = 0;
-        Stereo::Pose mTrackingPose = Stereo::Pose();
+        void setConfig(const LayerConfig& config);
 
-        Stereo::Pose mTrackedPose{};
-        LayerConfig mConfig;
+        void clear();
+
+    public:
+        //Stereo::Pose mTrackingPose = Stereo::Pose();
+        //Stereo::Pose mTrackedPose{};
+        //osg::Quat mRotation{ 0, 0, 0, 1 };
+
+        std::optional<LayerConfig> mConfig;
         std::string mLayerName;
         std::vector<MWGui::Layout*> mWidgets;
         osg::ref_ptr<osg::Group> mGeometryRoot;
         std::array<osg::ref_ptr<osg::Geometry>, 2> mGeometries;
         osg::ref_ptr<osg::PositionAttitudeTransform> mTransform{ new osg::PositionAttitudeTransform };
-        osg::ref_ptr<osg::Group> mCameraRoot;
-        osg::ref_ptr<osg::Node> mGUIRTT;
-        osg::ref_ptr<osg::Camera> mMyGUICamera{ nullptr };
         osg::ref_ptr<osg::StateSet> mStateset;
         MyGUI::IntRect mRect{};
         MyGUI::FloatRect mRealRect{};
-        osg::Quat mRotation{ 0, 0, 0, 1 };
+        osg::ref_ptr<osg::Group> mCameraRoot;
+        osg::ref_ptr<osg::Node> mGUIRTT;
+        osg::ref_ptr<osg::Camera> mMyGUICamera{ nullptr };
         bool mVisible = false;
-
+        bool mDirty = false;
         std::shared_ptr<VR::QuadLayer> mVrLayer;
+        std::shared_ptr<VR::Space> mSpace;
+        Stereo::Pose mPose;
     };
 
     /// \brief Manager of VRGUILayer objects.
@@ -184,6 +169,9 @@ namespace MWVR
     class VRGUIManager : VR::Session::Listener
     {
     public:
+        static constexpr const char* DefaultUiSpace = "/default/ui/menu";
+        static constexpr const char* DefaultVKeyboardSpace = "/default/ui/virtualkeyboard";
+
         static VRGUIManager& instance();
 
         VRGUIManager(Resource::ResourceSystem* resourceSystem, osg::Group* rootNode);
@@ -215,10 +203,8 @@ namespace MWVR
         void update(osg::NodeVisitor* nv);
 
         /// Update traversal
-        void onRecenter() override;
-        void onEyeLevelReset() override;
-        void onFrameBegin(VR::Frame& frame);
-        void onFrameEnd(osg::RenderInfo& info);
+        void onFrameUpdate(VR::Frame& frame) override;
+        void onFrameEnd(osg::RenderInfo& info, VR::Frame& frame) override;
 
         /// Gui cursor coordinates to use to simulate a mouse press/move if the player is currently pointing at a vr gui
         /// layer
@@ -234,16 +220,19 @@ namespace MWVR
 
         static void setPick(MWGui::Layout* widget, bool pick);
 
+        void setLayerPose(const std::string& layer, const Stereo::Pose& pose);
+        void setLayerSpace(const std::string& layer, std::shared_ptr<VR::Space> space);
+        void setLayerConfig(const std::string& layer, const LayerConfig& config);
+
     private:
-        void insertLayer(const std::string& name);
         // Not used: void removeLayer(const std::string& name);
         void computeGuiCursor(osg::Vec3 hitPoint);
-        void updateSideBySideLayers();
+        //void updateSideBySideLayers();
         void insertWidget(MWGui::Layout* widget);
         void removeWidget(MWGui::Layout* widget);
         void setFocusLayer(osg::ref_ptr<VRGUILayer> layer);
         void setFocusWidget(MyGUI::Widget* widget);
-        void configUpdated(const std::string& layer);
+        VRGUILayer& getLayer(const std::string& layer);
 
         osg::ref_ptr<osgViewer::Viewer> mOsgViewer;
         Resource::ResourceSystem* mResourceSystem;
@@ -252,15 +241,13 @@ namespace MWVR
         osg::ref_ptr<osg::Group> mGeometries = new osg::Group;
         osg::ref_ptr<osg::Group> mGUICameras = new osg::Group;
 
-        std::unique_ptr<VRGUITracking> mUiTracking = nullptr;
-
         std::map<std::string, osg::ref_ptr<VRGUILayer>> mLayers{};
         std::vector<osg::ref_ptr<VRGUILayer>> mSideBySideLayers{};
 
         osg::Vec2i mGuiCursor = osg::Vec2i();
         osg::ref_ptr<VRGUILayer> mFocusLayer = nullptr;
         MyGUI::Widget* mFocusWidget = nullptr;
-        std::map<std::string, LayerConfig> mLayerConfigs{};
+        std::map<std::string, LayerConfig> mDefaultLayerConfigs{};
 
         std::shared_ptr<VR::Session::Listener> mSessionListener;
         std::mutex mMutex;

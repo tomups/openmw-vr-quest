@@ -58,20 +58,20 @@ namespace MWVR
         osg::Node* vrAimNode() { return mVRAimNode; }
         const osg::Node* vrAimNode() const { return mVRAimNode; }
 
-        void mouseMove(float x);
-        void turnLeftRight(float value, float previousValue, float dt);
+        // void mouseMove(float x);
+        // void turnLeftRight(float value, float previousValue, float dt);
 
-        void processUtilityStickX(float value, bool disableControls);
-        void processUtilityStickY(float value, bool disableControls);
+        // void processUtilityStickX(float value, bool disableControls);
+        // void processUtilityStickY(float value, bool disableControls);
         void pointActivation(bool onPress, bool injectMousePress = true);
 
     protected:
-        void processAction(const class XR::InputAction* action, float dt, bool disableControls);
-        void processMovementStick(const class XR::InputAction* action, float dt, bool disableControls);
-        void toggleUtilityDown(bool disableControls);
-        void toggleUtilityUp(bool disableControls);
-        void onActivateAction(int actionId, bool disableControls);
-        void onDeactivateAction(int actionId, bool disableControls);
+        //void processAction(const class XR::InputAction* action, float dt, bool disableControls);
+        //void processMovementStick(const class XR::InputAction* action, float dt, bool disableControls);
+        //void toggleUtilityDown(bool disableControls);
+        //void toggleUtilityUp(bool disableControls);
+        //void onActivateAction(int actionId, bool disableControls);
+        //void onDeactivateAction(int actionId, bool disableControls);
 
         void updateVRPointer(bool disableControls);
         void updateCombat(float dt);
@@ -79,16 +79,16 @@ namespace MWVR
 
         void injectChannelValue(MWInput::Actions action, float value);
 
-        void applyHapticsLeftHand(float intensity) override;
-        void applyHapticsRightHand(float intensity) override;
+        //void applyHapticsLeftHand(float intensity) override;
+        //void applyHapticsRightHand(float intensity) override;
         void processChangedSettings(const std::set<std::pair<std::string, std::string>>& changed) override;
 
-        void setThumbstickDeadzone(float deadzoneRadius);
+        //void setThumbstickDeadzone(float deadzoneRadius);
 
-        float smoothTurnRate(float dt) const;
+        //float smoothTurnRate(float dt) const;
 
         int interactiveMessageBox(const std::string& message, const std::vector<std::string>& buttons);
-        void updatePhysicalSneak(Stereo::Unit headsetHeight);
+        //void updatePhysicalSneak(Stereo::Unit headsetHeight);
 
     private:
         osg::observer_ptr<osgViewer::Viewer> mOSGViewer;
@@ -97,32 +97,8 @@ namespace MWVR
         std::unique_ptr<RealisticCombat::StateMachine> mRealisticCombat;
         bool mPointerLeft = false;
         bool mPointerRight = false;
-        bool mHapticsEnabled = true;
-        bool mSmoothTurning = true;
-        float mSnapAngle = 30.f;
-        float mSmoothTurnRate = 1.0f;
-        Stereo::Unit mPhysicalSneakHeightOffset;
-        bool mPhysicalSneakEnabled = true;
-        bool mUtilityDownActive = false;
-        bool mUtilityUpActive = false;
-        bool mIsPhysicalSneak = false;
 
         osg::ref_ptr<osg::Node> mVRAimNode;
-
-        VR::VRPath mLeftHandPath;
-        VR::VRPath mLeftHandWorldPath;
-        VR::VRPath mRightHandPath;
-        VR::VRPath mRightHandWorldPath;
-        VR::VRPath mHeadWorldPath;
-
-        class HeightUpdateListener : public VR::TrackingListener
-        {
-            VR::VRPath mHeadPath = VR::stringToVRPath("/stage/user/head/input/pose");
-
-            void onTrackingUpdated(VR::TrackingManager& manager) override;
-        };
-
-        HeightUpdateListener mHeightUpdateListener;
     };
 }
 

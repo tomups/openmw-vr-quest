@@ -30,6 +30,7 @@ namespace VR
 {
     class Swapchain;
     class StageToWorldBinding;
+    class Space;
 
     /// \brief Manages VR logic, such as managing frames, predicting their poses, and handling frame synchronization
     /// with the VR runtime. Should not be confused with the openxr session object.
@@ -79,7 +80,8 @@ namespace VR
             uint32_t arraySize, Swapchain::Attachment attachment, const std::string& name)
             = 0;
 
-        virtual std::array<Stereo::View, 2> locateViews(int64_t predictedDisplayTime, XrReferenceSpaceType referenceSpace)
+        virtual std::array<Stereo::View, 2> locateViews(
+            int64_t predictedDisplayTime, Space& reference)
             = 0;
 
         virtual std::array<SwapchainConfig, 2> getRecommendedSwapchainConfig() const = 0;
@@ -92,8 +94,6 @@ namespace VR
         void resetEyeLevel();
 
         void instantTransition();
-
-        VR::StageToWorldBinding& stageToWorldBinding();
 
         void setInteractionProfileActive(XrPath topLevelPath, XrPath profile, bool active);
         bool getInteractionProfileActive(XrPath topLevelPath) const;
@@ -111,6 +111,10 @@ namespace VR
 
         void addListener(Listener* listener);
         void removeListener(Listener* listener);
+
+        virtual std::shared_ptr<Space> createReferenceSpace(VR::ReferenceSpace reference, Stereo::Pose pose) = 0;
+        virtual std::vector<ReferenceSpace> getSupportedReferenceSpaceTypes() const = 0;
+        virtual void setReferenceWorldPose(Stereo::Pose pose, std::shared_ptr<VR::Space> reference) = 0;
 
     protected:
         void readSettings();
@@ -135,7 +139,7 @@ namespace VR
         //! This is where OpenXR implementations must call xrEndFrame()
         virtual void syncFrameEnd(VR::Frame& frame) = 0;
 
-    private:
+    protected:
         bool mAppShouldShareDepthBuffer = false;
         bool mHandDirectedMovement = false;
 

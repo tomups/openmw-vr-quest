@@ -3,6 +3,7 @@
 #include <cmath>
 
 #include "vrpointer.hpp"
+#include "openxrinput.hpp"
 
 #include <osg/BlendFunc>
 #include <osg/ClipNode>
@@ -29,6 +30,7 @@
 #include <components/vr/rendertoswapchain.hpp>
 #include <components/vr/trackingmanager.hpp>
 #include <components/vr/viewer.hpp>
+#include <components/vr/session.hpp>
 
 #include "../mwrender/camera.hpp"
 #include "../mwrender/renderingmanager.hpp"
@@ -54,43 +56,43 @@ namespace MWVR
 {
     namespace Paths
     {
-        const char* sMenuQuadStr = "/ui/menu_quad/pose";
-        const char* sHUDTopLeftStr = "/ui/HUD/topleft";
-        const char* sHUDTopRightStr = "/ui/HUD/topright";
-        const char* sHUDBottomLeftStr = "/ui/HUD/bottomleft";
-        const char* sHUDBottomRightStr = "/ui/HUD/bottomright";
-        const char* sHUDMessageStr = "/ui/HUD/message";
-        const char* sHUDKeyboardStr = "/ui/HUD/keyboard";
-        const char* sWristTopLeftStr = "/ui/wrist_top/left/pose";
-        const char* sWristTopRightStr = "/ui/wrist_top/right/pose";
-        const char* sWristInnerLeftStr = "/ui/wrist_inner/left/pose";
-        const char* sWristInnerRightStr = "/ui/wrist_inner/right/pose";
-        VR::VRPath sMenuQuad;
-        VR::VRPath sHUDTopLeft;
-        VR::VRPath sHUDTopRight;
-        VR::VRPath sHUDBottomLeft;
-        VR::VRPath sHUDBottomRight;
-        VR::VRPath sHUDMessage;
-        VR::VRPath sHUDKeyboard;
-        VR::VRPath sWristTopLeft;
-        VR::VRPath sWristTopRight;
-        VR::VRPath sWristInnerLeft;
-        VR::VRPath sWristInnerRight;
+        // const char* sMenuQuadStr = "/ui/menu_quad/pose";
+        // const char* sHUDTopLeftStr = "/ui/HUD/topleft";
+        // const char* sHUDTopRightStr = "/ui/HUD/topright";
+        // const char* sHUDBottomLeftStr = "/ui/HUD/bottomleft";
+        // const char* sHUDBottomRightStr = "/ui/HUD/bottomright";
+        // const char* sHUDMessageStr = "/ui/HUD/message";
+        // const char* sHUDKeyboardStr = "/ui/HUD/keyboard";
+        // const char* sWristTopLeftStr = "/ui/wrist_top/left/pose";
+        // const char* sWristTopRightStr = "/ui/wrist_top/right/pose";
+        // const char* sWristInnerLeftStr = "/ui/wrist_inner/left/pose";
+        // const char* sWristInnerRightStr = "/ui/wrist_inner/right/pose";
+        // VR::VRPath sMenuQuad;
+        // VR::VRPath sHUDTopLeft;
+        // VR::VRPath sHUDTopRight;
+        // VR::VRPath sHUDBottomLeft;
+        // VR::VRPath sHUDBottomRight;
+        // VR::VRPath sHUDMessage;
+        // VR::VRPath sHUDKeyboard;
+        // VR::VRPath sWristTopLeft;
+        // VR::VRPath sWristTopRight;
+        // VR::VRPath sWristInnerLeft;
+        // VR::VRPath sWristInnerRight;
 
-        void init()
-        {
-            sMenuQuad = VR::stringToVRPath(sMenuQuadStr);
-            sHUDTopLeft = VR::stringToVRPath(sHUDTopLeftStr);
-            sHUDTopRight = VR::stringToVRPath(sHUDTopRightStr);
-            sHUDBottomLeft = VR::stringToVRPath(sHUDBottomLeftStr);
-            sHUDBottomRight = VR::stringToVRPath(sHUDBottomRightStr);
-            sHUDKeyboard = VR::stringToVRPath(sHUDKeyboardStr);
-            sHUDMessage = VR::stringToVRPath(sHUDMessageStr);
-            sWristTopLeft = VR::stringToVRPath(sWristTopLeftStr);
-            sWristTopRight = VR::stringToVRPath(sWristTopRightStr);
-            sWristInnerLeft = VR::stringToVRPath(sWristInnerLeftStr);
-            sWristInnerRight = VR::stringToVRPath(sWristInnerRightStr);
-        }
+        // void init()
+        //{
+        //     sMenuQuad = VR::stringToVRPath(sMenuQuadStr);
+        //     sHUDTopLeft = VR::stringToVRPath(sHUDTopLeftStr);
+        //     sHUDTopRight = VR::stringToVRPath(sHUDTopRightStr);
+        //     sHUDBottomLeft = VR::stringToVRPath(sHUDBottomLeftStr);
+        //     sHUDBottomRight = VR::stringToVRPath(sHUDBottomRightStr);
+        //     sHUDKeyboard = VR::stringToVRPath(sHUDKeyboardStr);
+        //     sHUDMessage = VR::stringToVRPath(sHUDMessageStr);
+        //     sWristTopLeft = VR::stringToVRPath(sWristTopLeftStr);
+        //     sWristTopRight = VR::stringToVRPath(sWristTopRightStr);
+        //     sWristInnerLeft = VR::stringToVRPath(sWristInnerLeftStr);
+        //     sWristInnerRight = VR::stringToVRPath(sWristInnerRightStr);
+        // }
     }
 
     // When making a circle of a given radius of equally wide planes separated by a given angle, what is the width
@@ -139,7 +141,7 @@ namespace MWVR
             auto* stateset = camera->getOrCreateStateSet();
             // Do not want to waste time on shadows when generating the GUI texture
             // TODO: We may be here before the shadow manager has been instantiated
-            //SceneUtil::ShadowManager::instance().disableShadowsForStateSet(*stateset);
+            // SceneUtil::ShadowManager::instance().disableShadowsForStateSet(*stateset);
 
             // Put rendering as early as possible
             stateset->setRenderBinDetails(-1, "RenderBin");
@@ -151,9 +153,9 @@ namespace MWVR
 
     osg::ref_ptr<osg::Geometry> VRGUILayer::createLayerGeometry(osg::ref_ptr<osg::StateSet> stateset)
     {
-        float left = mConfig.center.x() - 0.5;
+        float left = mConfig->center.x() - 0.5;
         float right = left + 1.f;
-        float top = 0.5f + mConfig.center.y();
+        float top = 0.5f + mConfig->center.y();
         float bottom = top - 1.f;
 
         osg::ref_ptr<osg::Geometry> geometry = new osg::Geometry();
@@ -197,7 +199,9 @@ namespace MWVR
     {
     public:
         VRGUILayerUserData(VRGUILayer* layer)
-            : mLayer(layer){}
+            : mLayer(layer)
+        {
+        }
 
         VRGUILayer* mLayer;
     };
@@ -221,131 +225,117 @@ namespace MWVR
     };
 
     VRGUILayer::VRGUILayer(osg::ref_ptr<osg::Group> geometryRoot, osg::ref_ptr<osg::Group> cameraRoot,
-        std::string layerName, LayerConfig config, VRGUIManager* parent, std::shared_ptr<VR::QuadLayer> vrLayer)
-        : mConfig(config)
-        , mLayerName(layerName)
+        std::string layerName, VRGUIManager* parent)
+        : mLayerName(layerName)
         , mGeometryRoot(geometryRoot)
         , mCameraRoot(cameraRoot)
-        , mVrLayer(vrLayer)
+        , mVrLayer()
     {
-        auto extent_units = config.extent * Constants::UnitsPerMeter;
-
-        // Create the camera that will render the menu texture
-        std::string filter = mLayerName;
-        if (!mConfig.extraLayers.empty())
-            filter = filter + ";" + mConfig.extraLayers;
-        osgMyGUI::RenderManager& renderManager
-            = static_cast<osgMyGUI::RenderManager&>(MyGUI::RenderManager::getInstance());
-        mMyGUICamera = renderManager.createGUICamera(osg::Camera::NESTED_RENDER, filter);
 
         // Edit offset to account for priority
-        if (!mConfig.sideBySide)
-        {
-            mConfig.offset.mY -= Stereo::Unit::fromMeters(0.001f) * static_cast<float>(mConfig.priority);
-        }
-
-        mTrackingPath = VR::stringToVRPath(mConfig.trackingPath);
-
-        auto* rttNode = new GUIRTT(config.pixelResolution.x(), config.pixelResolution.y(),
-            osg::Vec4(0, 0, 0, config.opacity), mMyGUICamera);
-        mGUIRTT = rttNode;
-        mStateset = new osg::StateSet;
 
         // Define state set that allows rendering with transparency
-        auto texture = rttNode->getColorTexture(nullptr);
-        texture->setName("diffuseMap");
-        mStateset->setTextureAttributeAndModes(0, texture, osg::StateAttribute::ON);
-
-        osg::ref_ptr<osg::Material> mat = new osg::Material;
-        mat->setColorMode(osg::Material::AMBIENT_AND_DIFFUSE);
-        mStateset->setAttribute(mat);
-
-        mStateset->setMode(GL_ALPHA_TEST, osg::StateAttribute::OFF);
-
-        mGeometries[0] = createLayerGeometry(mStateset);
-        mGeometries[0]->setUserData(new VRGUILayerUserData(this));
-        mGeometries[1] = createLayerGeometry(mStateset);
-        mGeometries[1]->setUserData(mGeometries[0]->getUserData());
-
-        // Position in the game world
-        mTransform->setScale(osg::Vec3(extent_units.x(), 1.f, extent_units.y()));
-        mTransform->setCullCallback(new CullVRGUILayerCallback(this));
-        mTransform->setCullingActive(false);
-        if (mConfig.intersectable == Intersectable::No)
-            mTransform->setNodeMask(MWRender::Mask_Effect);
-
-        mVrLayer->colorSwapchain = VR::Session::instance().createSwapchain(mConfig.pixelResolution.x(),
-            mConfig.pixelResolution.y(), 1, 1, VR::Swapchain::Attachment::Color, layerName + "Swapchain");
-        mVrLayer->extent = config.extent;
-        mVrLayer->space = VR::ReferenceSpace::Stage;
     }
 
-    VRGUILayer::~VRGUILayer()
+    void VRGUILayer::setConfig(const LayerConfig& config)
+    {
+        mConfig = config;
+        mDirty = true;
+    }
+
+    void VRGUILayer::clear()
     {
         removeFromSceneGraph();
     }
 
-    void VRGUILayer::setAngle(float angle)
+    VRGUILayer::~VRGUILayer()
     {
-        mRotation = osg::Quat{ angle, osg::Z_AXIS };
-        updatePose();
+        clear();
     }
+
+    //void VRGUILayer::setAngle(float angle)
+    //{
+    //    // mRotation = osg::Quat{ angle, osg::Z_AXIS };
+    //    updatePose();
+    //}
 
     osg::Texture2D* VRGUILayer::colorTexture() const
     {
+        if (!mGUIRTT)
+            return nullptr;
         return static_cast<osg::Texture2D*>(static_cast<GUIRTT*>(mGUIRTT.get())->getColorTexture(nullptr));
     }
 
-    void VRGUILayer::updateLayer() {
-
+    bool VRGUILayer::updateLayer()
+    {
+        // TODO: Do i actually need to do anything here?
+        return mVisible && mVrLayer;
     }
 
     void VRGUILayer::blitLayer(osg::RenderInfo& info)
     {
-        auto* state= info.getState();
-        auto texture = colorTexture();
-        mVrLayer->colorSwapchain->beginFrame(state->getGraphicsContext());
-        auto glImage = mVrLayer->colorSwapchain->image()->glImage();
+        if (mVrLayer && mConfig)
+        {
+            auto* state = info.getState();
+            auto texture = colorTexture();
+            mVrLayer->colorSwapchain->beginFrame(state->getGraphicsContext());
+            auto glImage = mVrLayer->colorSwapchain->image()->glImage();
 
-        int width = mConfig.pixelResolution.x();
-        int height = mConfig.pixelResolution.y();
+            int width = mConfig->pixelResolution.x();
+            int height = mConfig->pixelResolution.y();
 
-        // TODO: Definitely cache fbos when we're done checking that it WORKS
-        osg::ref_ptr<osg::FrameBufferObject> targetFbo = new osg::FrameBufferObject();
-        auto colorAttachment = Stereo::createLayerAttachmentFromHandle(
-            state, glImage, GL_TEXTURE_2D, width, height, 0);
-        targetFbo->setAttachment(osg::FrameBufferObject::BufferComponent::COLOR_BUFFER, colorAttachment);
-        targetFbo->apply(*state, osg::FrameBufferObject::DRAW_FRAMEBUFFER);
+            // TODO: Definitely cache fbos when we're done checking that it WORKS
+            osg::ref_ptr<osg::FrameBufferObject> targetFbo = new osg::FrameBufferObject();
+            auto colorAttachment
+                = Stereo::createLayerAttachmentFromHandle(state, glImage, GL_TEXTURE_2D, width, height, 0);
+            targetFbo->setAttachment(osg::FrameBufferObject::BufferComponent::COLOR_BUFFER, colorAttachment);
+            targetFbo->apply(*state, osg::FrameBufferObject::DRAW_FRAMEBUFFER);
 
-        osg::ref_ptr<osg::FrameBufferObject> sourceFbo = new osg::FrameBufferObject();
-        sourceFbo->setAttachment(
-            osg::FrameBufferObject::BufferComponent::COLOR_BUFFER, osg::FrameBufferAttachment(texture));
-        sourceFbo->apply(*state, osg::FrameBufferObject::READ_FRAMEBUFFER);
+            osg::ref_ptr<osg::FrameBufferObject> sourceFbo = new osg::FrameBufferObject();
+            sourceFbo->setAttachment(
+                osg::FrameBufferObject::BufferComponent::COLOR_BUFFER, osg::FrameBufferAttachment(texture));
+            sourceFbo->apply(*state, osg::FrameBufferObject::READ_FRAMEBUFFER);
 
-        auto* gl = osg::GLExtensions::Get(state->getContextID(), false);
-        gl->glBlitFramebuffer(0, 0, width, height, 0, 0, width, height, GL_COLOR_BUFFER_BIT, GL_NEAREST);
-        gl->glBindFramebuffer(GL_FRAMEBUFFER_EXT, 0);
-        mVrLayer->colorSwapchain->endFrame(state->getGraphicsContext());
+            auto* gl = osg::GLExtensions::Get(state->getContextID(), false);
+            gl->glBlitFramebuffer(0, 0, width, height, 0, 0, width, height, GL_COLOR_BUFFER_BIT, GL_NEAREST);
+            gl->glBindFramebuffer(GL_FRAMEBUFFER_EXT, 0);
+            mVrLayer->colorSwapchain->endFrame(state->getGraphicsContext());
+        }
     }
 
     void VRGUILayer::updatePose()
     {
-
-        auto orientation = mRotation * mTrackedPose.orientation;
-
-        // Orient the offset and move the layer
-        auto position = mTrackedPose.position + orientation * mConfig.offset;
-
-        if (mVrLayer)
+        if (!mSpace)
+            return;
+        auto tp = mSpace->locateInWorld();
+        if (!tp.status)
+            return;
+        auto pose = tp.pose + mPose;
+         if (mVrLayer)
         {
-            mVrLayer->pose.position = position;
-            mVrLayer->pose.orientation = orientation;
-        }
-        else
+             mVrLayer->pose = pose;
+         }
+         else
         {
-            mTransform->setAttitude(orientation);
-            mTransform->setPosition(position.asMWUnits());
-        }
+             mTransform->setAttitude(pose.orientation);
+             mTransform->setPosition(pose.position.asMWUnits());
+         }
+        
+        //auto orientation = mRotation * mTrackedPose.orientation;
+
+        //// Orient the offset and move the layer
+        //auto position = mTrackedPose.position + orientation * mConfig.offset;
+
+        //if (mVrLayer)
+        //{
+        //    mVrLayer->pose.position = position;
+        //    mVrLayer->pose.orientation = orientation;
+        //}
+        //else
+        //{
+        //    mTransform->setAttitude(orientation);
+        //    mTransform->setPosition(position.asMWUnits());
+        //}
     }
 
     void VRGUILayer::updateRect()
@@ -398,6 +388,83 @@ namespace MWVR
 
     void VRGUILayer::update(osg::NodeVisitor* nv)
     {
+        if (mDirty && mConfig && OpenXRInput::instance().getSpace(mConfig->space))
+        {
+            clear();
+
+            auto extent_units = mConfig->extent * Constants::UnitsPerMeter;
+
+            // Create the camera that will render the menu texture
+            std::string filter = mLayerName;
+            if (!mConfig->extraLayers.empty())
+                filter = filter + ";" + mConfig->extraLayers;
+            osgMyGUI::RenderManager& renderManager
+                = static_cast<osgMyGUI::RenderManager&>(MyGUI::RenderManager::getInstance());
+            mMyGUICamera = renderManager.createGUICamera(osg::Camera::NESTED_RENDER, filter);
+
+            auto* rttNode = new GUIRTT(mConfig->pixelResolution.x(), mConfig->pixelResolution.y(),
+                osg::Vec4(0, 0, 0, mConfig->opacity), mMyGUICamera);
+            mGUIRTT = rttNode;
+
+            mSpace = OpenXRInput::instance().getSpace(mConfig->space);
+
+            if (mVrLayer)
+            {
+                mVrLayer->colorSwapchain = VR::Session::instance().createSwapchain(mConfig->pixelResolution.x(),
+                    mConfig->pixelResolution.y(), 1, 1, VR::Swapchain::Attachment::Color, mLayerName + "Swapchain");
+                mVrLayer->extent = mConfig->extent;
+                mVrLayer->space = XR_NULL_HANDLE;
+            }
+            else
+            {
+                mStateset = new osg::StateSet;
+
+                Shader::ShaderManager::DefineMap defineMap;
+                Stereo::shaderStereoDefines(defineMap);
+                auto& shaderManager
+                    = MWBase::Environment::get().getResourceSystem()->getSceneManager()->getShaderManager();
+
+                osg::ref_ptr<osg::Shader> vertexShader
+                    = shaderManager.getShader("3dgui_vertex.glsl", defineMap, osg::Shader::VERTEX);
+                osg::ref_ptr<osg::Shader> fragmentShader
+                    = shaderManager.getShader("3dgui_fragment.glsl", defineMap, osg::Shader::FRAGMENT);
+
+                if (vertexShader && fragmentShader)
+                {
+                    mStateset->setAttributeAndModes(shaderManager.getProgram(vertexShader, fragmentShader));
+                }
+
+                auto texture = rttNode->getColorTexture(nullptr);
+                texture->setName("diffuseMap");
+                mStateset->setTextureAttributeAndModes(0, texture, osg::StateAttribute::ON);
+
+                osg::ref_ptr<osg::Material> mat = new osg::Material;
+                mat->setColorMode(osg::Material::AMBIENT_AND_DIFFUSE);
+                mStateset->setAttribute(mat);
+
+                mStateset->setMode(GL_ALPHA_TEST, osg::StateAttribute::OFF);
+
+                mGeometries[0] = createLayerGeometry(mStateset);
+                mGeometries[0]->setUserData(new VRGUILayerUserData(this));
+                mGeometries[1] = createLayerGeometry(mStateset);
+                mGeometries[1]->setUserData(mGeometries[0]->getUserData());
+
+                // Position in the game world
+                mTransform->setScale(osg::Vec3(extent_units.x(), 1.f, extent_units.y()));
+                mTransform->setCullCallback(new CullVRGUILayerCallback(this));
+                mTransform->setCullingActive(false);
+                if (!mConfig->intersectable)
+                    mTransform->setNodeMask(MWRender::Mask_Effect);
+                // configureGeometry();
+            }
+            mDirty = false;
+            if (mVisible)
+                addToSceneGraph();
+        }
+
+        if (!mConfig)
+            return;
+
         if (!mVrLayer)
         {
             if (mTransform->getNumChildren() > 0)
@@ -410,30 +477,30 @@ namespace MWVR
                 mTransform->addChild(geometry);
         }
 
-        if (mConfig.sideBySide && !mWidgets.empty())
-        {
-            // The side-by-side windows are also the resizable windows.
-            // Stretch according to config
-            // This genre of layer should only ever have 1 widget as it will cover the full layer
-            auto* widget = mWidgets.front();
-            auto* myGUIWindow = dynamic_cast<MyGUI::Window*>(widget->mMainWidget);
-            auto* windowBase = dynamic_cast<MWGui::WindowBase*>(widget);
-            if (windowBase && myGUIWindow)
-            {
-                auto w = mConfig.myGUIViewSize.x();
-                auto h = mConfig.myGUIViewSize.y();
-                windowBase->setCoordf(0.f, 0.f, w, h);
-                windowBase->onWindowResize(myGUIWindow);
-            }
-        }
+        //if (mConfig->sideBySide && !mWidgets.empty())
+        //{
+        //    // The side-by-side windows are also the resizable windows.
+        //    // Stretch according to config
+        //    // This genre of layer should only ever have 1 widget as it will cover the full layer
+        //    auto* widget = mWidgets.front();
+        //    auto* myGUIWindow = dynamic_cast<MyGUI::Window*>(widget->mMainWidget);
+        //    auto* windowBase = dynamic_cast<MWGui::WindowBase*>(widget);
+        //    if (windowBase && myGUIWindow)
+        //    {
+        //        auto w = mConfig.myGUIViewSize.x();
+        //        auto h = mConfig.myGUIViewSize.y();
+        //        windowBase->setCoordf(0.f, 0.f, w, h);
+        //        windowBase->onWindowResize(myGUIWindow);
+        //    }
+        //}
         updateRect();
 
         //// Pixels per unit
-        float res = static_cast<float>(mConfig.spatialResolution) / Constants::UnitsPerMeter;
+        float res = static_cast<float>(mConfig->spatialResolution) / Constants::UnitsPerMeter;
         float w = static_cast<float>(mRect.right - mRect.left);
         float h = static_cast<float>(mRect.bottom - mRect.top);
 
-        if (mConfig.sizingMode == SizingMode::Auto)
+        if (mConfig->autoSize)
         {
             if (mVrLayer)
                 mVrLayer->extent = osg::Vec2f(w / res, h / res) / Constants::UnitsPerMeter;
@@ -535,33 +602,32 @@ namespace MWVR
             mGeometryRoot->addChild(mTransform);
     }
 
-    static const LayerConfig createDefaultConfig(int priority, Intersectable intersectable = Intersectable::Yes,
-        bool background = true,
-        SizingMode sizingMode = SizingMode::Auto, std::string extraLayers = "Popup")
+    static const LayerConfig createDefaultConfig(int priority, bool intersectable = true,
+        bool background = true, bool autoSize = true, std::string extraLayers = "Popup")
     {
         return LayerConfig{ priority,
-            false, // side-by-side
             background ? 0.75f : 0.f, // background
-            Stereo::Position::fromMeters(0.f, 0.66f, -.25f), // offset
+            //Stereo::Position::fromMeters(0.f, 0.66f, -.25f), // offset
             osg::Vec2(0.f, 0.f), // center (model space)
             osg::Vec2(1.f, 1.f), // extent (meters)
             1024, // Spatial resolution (pixels per meter)
             osg::Vec2i(1024, 1024), // Texture resolution
-            osg::Vec2(1, 1), sizingMode, "/ui/menu_quad/pose", extraLayers, intersectable };
+            osg::Vec2(1, 1), autoSize, VRGUIManager::DefaultUiSpace, extraLayers, intersectable };
     }
 
-    static const float sSideBySideRadius = 1.f;
-    static const float sSideBySideAzimuthInterval = -osg::PI_4;
+    //static const float sSideBySideRadius = 1.f;
+    //static const float sSideBySideAzimuthInterval = -osg::PI_4;
 
-    static const LayerConfig createSideBySideConfig(int priority)
-    {
-        LayerConfig config = createDefaultConfig(priority, Intersectable::Yes, true, SizingMode::Fixed, "");
-        config.sideBySide = true;
-        config.offset = Stereo::Position::fromMeters(0.f, sSideBySideRadius, -.25f);
-        config.extent = radiusAngleWidth(sSideBySideRadius, sSideBySideAzimuthInterval);
-        config.myGUIViewSize = osg::Vec2(0.70f, 0.70f);
-        return config;
-    }
+    //static const LayerConfig createSideBySideConfig(int priority)
+    //{
+    //    // TODO: Rewrite side-by-side logic to respect using spaces
+    //    LayerConfig config = createDefaultConfig(priority, true, true, false, "");
+    //    config.sideBySide = true;
+    //    //config.offset = Stereo::Position::fromMeters(0.f, sSideBySideRadius, -.25f);
+    //    config.extent = radiusAngleWidth(sSideBySideRadius, sSideBySideAzimuthInterval);
+    //    config.myGUIViewSize = osg::Vec2(0.70f, 0.70f);
+    //    return config;
+    //}
 
     VRGUIManager* sManager = nullptr;
     VRGUIManager& VRGUIManager::instance()
@@ -588,23 +654,14 @@ namespace MWVR
         VRGUIManager* mManager;
     };
 
-        void onFrameBeginUpdate(VR::Frame& frame) override
-        {
-            mParent->onFrameBegin(frame);
-        }
     VRGUIManager::VRGUIManager(Resource::ResourceSystem* resourceSystem, osg::Group* rootNode)
         : mResourceSystem(resourceSystem)
         , mRootNode(rootNode)
-        , mUiTracking(new VRGUITracking())
     {
         if (!sManager)
             sManager = this;
         else
             throw std::logic_error("Duplicated MWVR::VRGUIManager singleton");
-
-        VR::Viewer::instance().setFinalDrawCallback([this](osg::RenderInfo& info) { onFrameEnd(info); });
-
-        Paths::init();
 
         mGeometries->setName("VR GUI Geometry Root");
         mGeometries->setCullCallback(new LayerUpdateCallback(this));
@@ -615,6 +672,30 @@ namespace MWVR
         mGUICameras->setName("VR GUI Cameras Root");
         mGUICameras->setNodeMask(MWRender::VisMask::Mask_3DGUI);
         mRootNode->addChild(mGUICameras);
+        //                mHUDKeyboardPose = tp;
+        //                mHUDKeyboardPose.pose.position
+        //                    += mHUDKeyboardPose.pose.orientation * Stereo::Position::fromMWUnits(osg::Vec3(0, 35,
+        //                    -40));
+        //                // Tilt the keyboard slightly for easier typing.
+        //                mHUDKeyboardPose.pose.orientation
+        //                    = osg::Quat(osg::PI_4 / 2.f, osg::Vec3(-1, 0, 0)) * mHUDKeyboardPose.pose.orientation;
+        //            }
+        //            else if (mShouldUpdateStationaryPoseHeight)
+        //            {
+        //                mStationaryPose.pose.position.mZ = tp.pose.position.mZ;
+        //                mHUDKeyboardPose.pose.position.mZ = tp.pose.position.mZ
+        //                    + (mHUDKeyboardPose.pose.orientation * Stereo::Position::fromMWUnits(osg::Vec3(0, 35,
+        //                    -40))).mZ;
+        Stereo::Pose defaultUiPose = {};
+        defaultUiPose.position = Stereo::Position::fromMeters(0.f, 0.66f, -.25f);
+        Stereo::Pose defaultVKeyboardPose = {};
+        defaultVKeyboardPose.position = Stereo::Position::fromMWUnits(osg::Vec3(0, 35, -40));
+        defaultVKeyboardPose.orientation = osg::Quat(osg::PI_4 / 2.f, osg::Vec3(-1, 0, 0));
+
+        //defaultVKeyboardPose.position
+        OpenXRInput::instance().createReferenceSpace(DefaultUiSpace, VR::ReferenceSpace::Local, defaultUiPose);
+        OpenXRInput::instance().createReferenceSpace(
+            DefaultVKeyboardSpace, VR::ReferenceSpace::Local, defaultVKeyboardPose);
 
         readConfig();
     }
@@ -651,125 +732,126 @@ namespace MWVR
 
         LayerConfig defaultConfig = createDefaultConfig(1);
         LayerConfig loadingScreenConfig
-            = createDefaultConfig(1, Intersectable::Yes, true, SizingMode::Fixed, "LoadingScreenBackground");
+            = createDefaultConfig(1, true, true, false, "LoadingScreenBackground");
         LayerConfig mainMenuConfig
-            = createDefaultConfig(1, Intersectable::Yes, true, MWVR::SizingMode::Auto, "MainMenuBackground;Popup");
-        LayerConfig settingsConfig
-            = createDefaultConfig(2, Intersectable::Yes, true, MWVR::SizingMode::Auto);
-        LayerConfig journalBooksConfig = createDefaultConfig(2, Intersectable::Yes, false, SizingMode::Fixed);
-        LayerConfig defaultWindowsConfig = createDefaultConfig(3, Intersectable::Yes, true);
-        LayerConfig videoPlayerConfig = createDefaultConfig(4, Intersectable::Yes, true, SizingMode::Fixed);
-        LayerConfig messageBoxConfig = createDefaultConfig(6, Intersectable::Yes, false, SizingMode::Auto);
-        LayerConfig notificationConfig = createDefaultConfig(7, Intersectable::No, false, SizingMode::Fixed);
-        LayerConfig listBoxConfig = createDefaultConfig(10, Intersectable::Yes, true);
-        LayerConfig consoleConfig = createDefaultConfig(2, Intersectable::Yes, true);
-        LayerConfig radialMenuConfig = createDefaultConfig(11, Intersectable::Yes, false);
+            = createDefaultConfig(1, true, true, true, "MainMenuBackground;Popup");
+        LayerConfig settingsConfig = createDefaultConfig(2, true, true, true);
+        //LayerConfig journalBooksConfig = createDefaultConfig(2, true, false, false);
+        LayerConfig defaultWindowsConfig = createDefaultConfig(3, true, true);
+        LayerConfig videoPlayerConfig = createDefaultConfig(4, true, true, false);
+        LayerConfig messageBoxConfig = createDefaultConfig(6, true, false, true);
+        //LayerConfig notificationConfig = createDefaultConfig(7, false, false, false);
+        LayerConfig listBoxConfig = createDefaultConfig(10, true, true);
+        LayerConfig consoleConfig = createDefaultConfig(2, true, true);
+        //LayerConfig radialMenuConfig = createDefaultConfig(11, true, false);
         // TODO: Track around wrist instead of being a regular menu quad?
         // radialMenuConfig.offset = osg::Vec3(0.f, 0.66f, 0.f);
         // radialMenuConfig.trackingPath = Paths::sWristTopRightStr;
 
-        LayerConfig statsWindowConfig = createSideBySideConfig(0);
-        LayerConfig inventoryWindowConfig = createSideBySideConfig(1);
-        LayerConfig spellWindowConfig = createSideBySideConfig(2);
-        LayerConfig mapWindowConfig = createSideBySideConfig(3);
-        LayerConfig inventoryCompanionWindowConfig = createSideBySideConfig(4);
-        LayerConfig dialogueWindowConfig = createSideBySideConfig(5);
+        //LayerConfig statsWindowConfig = createSideBySideConfig(0);
+        //LayerConfig inventoryWindowConfig = createSideBySideConfig(1);
+        //LayerConfig spellWindowConfig = createSideBySideConfig(2);
+        //LayerConfig mapWindowConfig = createSideBySideConfig(3);
+        //LayerConfig inventoryCompanionWindowConfig = createSideBySideConfig(4);
+        //LayerConfig dialogueWindowConfig = createSideBySideConfig(5);
 
-        auto positionSettingToPath = [](const std::string& setting) -> std::string {
-            if (Misc::StringUtils::ciEqual(setting, "left wrist inner"))
-            {
-                return Paths::sWristInnerLeftStr;
-            }
-            if (Misc::StringUtils::ciEqual(setting, "right wrist inner"))
-            {
-                return Paths::sWristInnerRightStr;
-            }
-            if (Misc::StringUtils::ciEqual(setting, "left wrist top"))
-            {
-                return Paths::sWristTopLeftStr;
-            }
-            if (Misc::StringUtils::ciEqual(setting, "right wrist top"))
-            {
-                return Paths::sWristTopRightStr;
-            }
-            if (Misc::StringUtils::ciEqual(setting, "top left"))
-            {
-                return Paths::sHUDTopLeftStr;
-            }
-            if (Misc::StringUtils::ciEqual(setting, "top right"))
-            {
-                return Paths::sHUDTopRightStr;
-            }
-            if (Misc::StringUtils::ciEqual(setting, "bottom left"))
-            {
-                return Paths::sHUDBottomLeftStr;
-            }
-            if (Misc::StringUtils::ciEqual(setting, "bottom right"))
-            {
-                return Paths::sHUDBottomRightStr;
-            }
+        //auto positionSettingToPath = [](const std::string& setting) -> std::string {
+        //    if (Misc::StringUtils::ciEqual(setting, "left wrist inner"))
+        //    {
+        //        return Paths::sWristInnerLeftStr;
+        //    }
+        //    if (Misc::StringUtils::ciEqual(setting, "right wrist inner"))
+        //    {
+        //        return Paths::sWristInnerRightStr;
+        //    }
+        //    if (Misc::StringUtils::ciEqual(setting, "left wrist top"))
+        //    {
+        //        return Paths::sWristTopLeftStr;
+        //    }
+        //    if (Misc::StringUtils::ciEqual(setting, "right wrist top"))
+        //    {
+        //        return Paths::sWristTopRightStr;
+        //    }
+        //    if (Misc::StringUtils::ciEqual(setting, "top left"))
+        //    {
+        //        return Paths::sHUDTopLeftStr;
+        //    }
+        //    if (Misc::StringUtils::ciEqual(setting, "top right"))
+        //    {
+        //        return Paths::sHUDTopRightStr;
+        //    }
+        //    if (Misc::StringUtils::ciEqual(setting, "bottom left"))
+        //    {
+        //        return Paths::sHUDBottomLeftStr;
+        //    }
+        //    if (Misc::StringUtils::ciEqual(setting, "bottom right"))
+        //    {
+        //        return Paths::sHUDBottomRightStr;
+        //    }
 
-            return Paths::sHUDTopLeftStr;
-        };
+        //    return Paths::sHUDTopLeftStr;
+        //};
 
-        auto hudOffset = Stereo::Position::fromMeters(
-            osg::Vec3(Settings::Manager::getFloat("hud offset x", "VR"),
-                Settings::Manager::getFloat("hud offset y", "VR"), Settings::Manager::getFloat("hud offset z", "VR"))
-            - osg::Vec3(0.5, 0.5, 0.5));
+        //auto hudOffset = Stereo::Position::fromMeters(
+        //    osg::Vec3(Settings::Manager::getFloat("hud offset x", "VR"),
+        //        Settings::Manager::getFloat("hud offset y", "VR"), Settings::Manager::getFloat("hud offset z", "VR"))
+        //    - osg::Vec3(0.5, 0.5, 0.5));
 
-        auto tooltipOffset
-            = Stereo::Position::fromMeters(osg::Vec3(Settings::Manager::getFloat("tooltip offset x", "VR"),
-                                               Settings::Manager::getFloat("tooltip offset y", "VR"),
-                                               Settings::Manager::getFloat("tooltip offset z", "VR"))
-                - osg::Vec3(0.5, 0.5, 0.5));
+        //auto tooltipOffset
+        //    = Stereo::Position::fromMeters(osg::Vec3(Settings::Manager::getFloat("tooltip offset x", "VR"),
+        //                                       Settings::Manager::getFloat("tooltip offset y", "VR"),
+        //                                       Settings::Manager::getFloat("tooltip offset z", "VR"))
+        //        - osg::Vec3(0.5, 0.5, 0.5));
 
-        std::string hudPath = positionSettingToPath(Settings::Manager::getString("hud position", "VR"));
-        std::string tooltipPath = positionSettingToPath(Settings::Manager::getString("tooltip position", "VR"));
+        //std::string hudPath = positionSettingToPath(Settings::Manager::getString("hud position", "VR"));
+        //std::string tooltipPath = positionSettingToPath(Settings::Manager::getString("tooltip position", "VR"));
 
-        LayerConfig virtualKeyboardConfig = LayerConfig{ 10, false, .75f, {}, // offset (meters)
+        LayerConfig virtualKeyboardConfig = LayerConfig{ 10, .75f,
+            //{}, // offset (meters)
             osg::Vec2(0.f, 1.f), // center (model space)
             osg::Vec2(.25f, .25f), // extent (meters)
             2048, // Spatial resolution (pixels per meter)
             osg::Vec2i(1024, 1024), // Texture resolution
-            osg::Vec2(1, 1), SizingMode::Auto, Paths::sHUDKeyboardStr, "", Intersectable::Yes };
+            osg::Vec2(1, 1), true, DefaultVKeyboardSpace,
+            // Paths::sHUDKeyboardStr,
+            "", true };
 
-        LayerConfig HUDConfig = LayerConfig{ 0,
-            false, // side-by-side
-            0.f, // background
-            hudOffset,
-            // osg::Vec3(0,0,0), // offset (meters)
-            osg::Vec2(0.f, 0.5f), // center (model space)
-            osg::Vec2(.033f, .033f), // extent (meters)
-            1024, // resolution (pixels per meter)
-            osg::Vec2i(1024, 1024), defaultConfig.myGUIViewSize, SizingMode::Auto, hudPath, "", Intersectable::Yes };
+        //LayerConfig HUDConfig = LayerConfig{ 0,
+        //    false, // side-by-side
+        //    0.f, // background
+        //    hudOffset,
+        //    // osg::Vec3(0,0,0), // offset (meters)
+        //    osg::Vec2(0.f, 0.5f), // center (model space)
+        //    osg::Vec2(.033f, .033f), // extent (meters)
+        //    1024, // resolution (pixels per meter)
+        //    osg::Vec2i(1024, 1024), defaultConfig.myGUIViewSize, true, hudPath, "", true };
 
-        LayerConfig tooltipConfig = LayerConfig{ 0,
-            false, // side-by-side
-            0.f, // background
-            tooltipOffset, osg::Vec2(0.f, 0.5f), // center (model space)
-            osg::Vec2(.33f, .33f), // extent (meters)
-            1024, // resolution (pixels per meter)
-            osg::Vec2i(1024, 1024), defaultConfig.myGUIViewSize, SizingMode::Auto, tooltipPath, "",
-            Intersectable::No };
+        //LayerConfig tooltipConfig = LayerConfig{ 0,
+        //    false, // side-by-side
+        //    0.f, // background
+        //    tooltipOffset, osg::Vec2(0.f, 0.5f), // center (model space)
+        //    osg::Vec2(.33f, .33f), // extent (meters)
+        //    1024, // resolution (pixels per meter)
+        //    osg::Vec2i(1024, 1024), defaultConfig.myGUIViewSize, true, tooltipPath, "", false };
 
-        mLayerConfigs = {
+        mDefaultLayerConfigs = {
             { "DefaultConfig", defaultConfig },
-            { "HUD", HUDConfig },
-            { "Tooltip", tooltipConfig },
-            { "JournalBooks", journalBooksConfig },
-            { "InventoryCompanionWindow", inventoryCompanionWindowConfig },
-            { "InventoryWindow", inventoryWindowConfig },
-            { "SpellWindow", spellWindowConfig },
-            { "MapWindow", mapWindowConfig },
-            { "StatsWindow", statsWindowConfig },
-            { "DialogueWindow", dialogueWindowConfig },
+            //{ "HUD", HUDConfig },
+            //{ "Tooltip", tooltipConfig },
+            //{ "JournalBooks", journalBooksConfig },
+            //{ "InventoryCompanionWindow", inventoryCompanionWindowConfig },
+            //{ "InventoryWindow", inventoryWindowConfig },
+            //{ "SpellWindow", spellWindowConfig },
+            //{ "MapWindow", mapWindowConfig },
+            //{ "StatsWindow", statsWindowConfig },
+            //{ "DialogueWindow", dialogueWindowConfig },
             { "Modal", messageBoxConfig },
-            { "RadialMenu", radialMenuConfig },
+//            { "RadialMenu", radialMenuConfig },
             { "Windows", defaultWindowsConfig },
             { "ListBox", listBoxConfig },
             { "MainMenu", mainMenuConfig },
             { "Settings", settingsConfig },
-            { "Notification", notificationConfig },
+  //          { "Notification", notificationConfig },
             { "InputBlocker", videoPlayerConfig },
             { "Video", videoPlayerConfig },
             { "Console", consoleConfig },
@@ -794,88 +876,44 @@ namespace MWVR
         "HitOverlay",
     };
 
-    void VRGUIManager::updateSideBySideLayers()
-    {
-        // Nothing to update
-        if (mSideBySideLayers.size() == 0)
-            return;
+    // void VRGUIManager::updateSideBySideLayers()
+    //{
+    //     // Nothing to update
+    //     if (mSideBySideLayers.size() == 0)
+    //         return;
 
-        std::sort(mSideBySideLayers.begin(), mSideBySideLayers.end(),
-            [](const auto& lhs, const auto& rhs) { return *lhs < *rhs; });
+    //    std::sort(mSideBySideLayers.begin(), mSideBySideLayers.end(),
+    //        [](const auto& lhs, const auto& rhs) { return *lhs < *rhs; });
 
-        int n = mSideBySideLayers.size();
+    //    int n = mSideBySideLayers.size();
 
-        float span
-            = sSideBySideAzimuthInterval * static_cast<float>(n - 1); // zero index, places lone layers straight ahead
-        float low = -span / 2;
+    //    float span
+    //        = sSideBySideAzimuthInterval * static_cast<float>(n - 1); // zero index, places lone layers straight ahead
+    //    float low = -span / 2;
 
-        for (unsigned i = 0; i < mSideBySideLayers.size(); i++)
-        {
-            mSideBySideLayers[i]->setAngle(low + static_cast<float>(i) * sSideBySideAzimuthInterval);
-        }
-    }
-
-    void VRGUIManager::insertLayer(const std::string& name)
-    {
-        std::scoped_lock lock(mMutex);
-        LayerConfig config{};
-        auto configIt = mLayerConfigs.find(name);
-        if (configIt != mLayerConfigs.end())
-        {
-            config = configIt->second;
-        }
-        else
-        {
-            Log(Debug::Warning) << "Layer " << name << " has no configuration, using default";
-            config = mLayerConfigs["DefaultConfig"];
-        }
-
-        std::shared_ptr<VR::QuadLayer> vrLayer = std::make_shared<VR::QuadLayer>();
-
-        auto layer = osg::ref_ptr<VRGUILayer>(new VRGUILayer(mGeometries, mGUICameras, name, config, this, vrLayer));
-        mLayers[name] = layer;
-
-        if (layer->mStateset)
-        {
-            Shader::ShaderManager::DefineMap defineMap;
-            Stereo::shaderStereoDefines(defineMap);
-            auto& shaderManager = mResourceSystem->getSceneManager()->getShaderManager();
-
-            osg::ref_ptr<osg::Shader> vertexShader
-                = shaderManager.getShader("3dgui_vertex.glsl", defineMap, osg::Shader::VERTEX);
-            osg::ref_ptr<osg::Shader> fragmentShader
-                = shaderManager.getShader("3dgui_fragment.glsl", defineMap, osg::Shader::FRAGMENT);
-
-            if (vertexShader && fragmentShader)
-            {
-                layer->mStateset->setAttributeAndModes(shaderManager.getProgram(vertexShader, fragmentShader));
-            }
-        }
-    }
+    //    for (unsigned i = 0; i < mSideBySideLayers.size(); i++)
+    //    {
+    //        mSideBySideLayers[i]->setAngle(low + static_cast<float>(i) * sSideBySideAzimuthInterval);
+    //    }
+    //}
 
     void VRGUIManager::showLayer(const std::string& name)
     {
-        auto it = mLayers.find(name);
-        if (it == mLayers.end())
-        {
-            insertLayer(name);
-            it = mLayers.find(name);
-        }
+        auto& layer = getLayer(name);
+        layer.setVisible(true);
 
-        it->second->setVisible(true);
-
-        if (it->second->mConfig.sideBySide)
-        {
-            bool found = false;
-            for (auto layer : mSideBySideLayers)
-                if (layer == it->second)
-                    found = true;
-            if (!found)
-            {
-                mSideBySideLayers.push_back(it->second);
-                updateSideBySideLayers();
-            }
-        }
+        // if (it->second->mConfig->sideBySide)
+        //{
+        //     bool found = false;
+        //     for (auto layer : mSideBySideLayers)
+        //         if (layer == it->second)
+        //             found = true;
+        //     if (!found)
+        //     {
+        //         mSideBySideLayers.push_back(it->second);
+        //         updateSideBySideLayers();
+        //     }
+        // }
     }
 
     void VRGUIManager::insertWidget(MWGui::Layout* widget)
@@ -899,18 +937,18 @@ namespace MWVR
         if (it == mLayers.end())
             return;
 
-        for (auto it2 = mSideBySideLayers.begin(); it2 != mSideBySideLayers.end();)
-        {
-            if (*it2 == it->second)
-            {
-                it2 = mSideBySideLayers.erase(it2);
-                updateSideBySideLayers();
-            }
-            else
-            {
-                ++it2;
-            }
-        }
+        // for (auto it2 = mSideBySideLayers.begin(); it2 != mSideBySideLayers.end();)
+        //{
+        //     if (*it2 == it->second)
+        //     {
+        //         it2 = mSideBySideLayers.erase(it2);
+        //         updateSideBySideLayers();
+        //     }
+        //     else
+        //     {
+        //         ++it2;
+        //     }
+        // }
 
         if (it->second == mFocusLayer)
             setFocusLayer(nullptr);
@@ -956,32 +994,29 @@ namespace MWVR
             removeWidget(widget);
     }
 
-    void VRGUIManager::onRecenter()
-    {
-        mUiTracking->onRecenter();
-    }
-
-    void VRGUIManager::onEyeLevelReset()
-    {
-        mUiTracking->onEyeLevelReset();
-    }
-
-    void VRGUIManager::onFrameEnd(osg::RenderInfo& info)
+    void VRGUIManager::onFrameEnd(osg::RenderInfo& info, VR::Frame& frame)
     {
         std::scoped_lock lock(mMutex);
         for (auto& it : mLayers)
         {
-            if (it.second->visible())
-                it.second->blitLayer(info);
+            if (!it.second->visible())
+                continue;
+            it.second->blitLayer(info);
         }
     }
 
-    void VRGUIManager::onFrameBegin(VR::Frame& frame)
+    void VRGUIManager::onFrameUpdate(VR::Frame& frame)
     {
         std::scoped_lock lock(mMutex);
         for (auto& it : mLayers)
         {
-            it.second->updateLayer();
+            if (!it.second->visible())
+                continue;
+            it.second->updatePose();
+            if (it.second->updateLayer())
+            {
+                frame.layers.push_back(it.second->mVrLayer);
+            }
         }
     }
 
@@ -1044,13 +1079,19 @@ namespace MWVR
         mFocusWidget = widget;
     }
 
-    void VRGUIManager::configUpdated(const std::string& layer)
+    VRGUILayer& VRGUIManager::getLayer(const std::string& name)
     {
-        auto it = mLayers.find(layer);
+        // TODO: insert return statement here
+        auto it = mLayers.find(name);
         if (it != mLayers.end())
-        {
-            it->second->mConfig = mLayerConfigs[layer];
-        }
+            return *it->second;
+
+        auto layer = osg::ref_ptr<VRGUILayer>(new VRGUILayer(mGeometries, mGUICameras, name, this));
+        mLayers[name] = layer;
+        auto defaultConfig = mDefaultLayerConfigs.find(name);
+        if (defaultConfig != mDefaultLayerConfigs.end())
+            layer->setConfig(defaultConfig->second);
+        return *layer;
     }
 
     bool VRGUIManager::injectMouseClick(bool onPress)
@@ -1146,13 +1187,30 @@ namespace MWVR
             pickable->setPick(pick);
     }
 
+    void VRGUIManager::setLayerPose(const std::string& name, const Stereo::Pose& pose)
+    {
+        std::scoped_lock lock(mMutex);
+        getLayer(name).mPose = pose;
+    }
+
+    //void VRGUIManager::setLayerSpace(const std::string& name, std::shared_ptr<VR::Space> space)
+    //{
+    //    getLayer(name).mSpace = space;
+    //}
+
+    void VRGUIManager::setLayerConfig(const std::string& name, const LayerConfig& config)
+    {
+        std::scoped_lock lock(mMutex);
+        getLayer(name).setConfig(config);
+    }
+
     void VRGUIManager::computeGuiCursor(osg::Vec3 hitPoint)
     {
         float x = 0;
         float y = 0;
         if (mFocusLayer)
         {
-            osg::Vec2 bottomLeft = mFocusLayer->mConfig.center - osg::Vec2(0.5f, 0.5f);
+            osg::Vec2 bottomLeft = mFocusLayer->mConfig->center - osg::Vec2(0.5f, 0.5f);
             x = hitPoint.x() - bottomLeft.x();
             y = hitPoint.z() - bottomLeft.y();
             auto rect = mFocusLayer->mRealRect;
@@ -1182,15 +1240,15 @@ namespace MWVR
             setFocusWidget(nullptr);
     }
 
-    VRGUITracking::VRGUITracking()
-    {
-    }
-
-    VRGUITracking::~VRGUITracking() {}
-
-    //VR::TrackingPose VRGUITracking::locate(VR::VRPath path)
+    // VRGUITracking::VRGUITracking()
     //{
-    //    updateTracking();
+    // }
+
+    // VRGUITracking::~VRGUITracking() {}
+
+    // VR::TrackingPose VRGUITracking::locate(VR::VRPath path)
+    //{
+    //     updateTracking();
 
     //    if (path == Paths::sMenuQuad)
     //        return mStationaryPose;
@@ -1220,17 +1278,17 @@ namespace MWVR
     //    throw std::logic_error("Invalid Argument");
     //}
 
-    //std::vector<VR::VRPath> VRGUITracking::listSupportedPaths() const
+    // std::vector<VR::VRPath> VRGUITracking::listSupportedPaths() const
     //{
-    //    return { Paths::sMenuQuad, Paths::sHUDTopLeft, Paths::sHUDTopRight, Paths::sHUDBottomLeft,
-    //        Paths::sHUDBottomRight, Paths::sHUDMessage, Paths::sHUDKeyboard, Paths::sWristInnerLeft,
-    //        Paths::sWristInnerRight, Paths::sWristTopLeft, Paths::sWristTopRight };
-    //}
+    //     return { Paths::sMenuQuad, Paths::sHUDTopLeft, Paths::sHUDTopRight, Paths::sHUDBottomLeft,
+    //         Paths::sHUDBottomRight, Paths::sHUDMessage, Paths::sHUDKeyboard, Paths::sWristInnerLeft,
+    //         Paths::sWristInnerRight, Paths::sWristTopLeft, Paths::sWristTopRight };
+    // }
 
-    //void VRGUITracking::updateTracking()
+    // void VRGUITracking::updateTracking()
     //{
-    //    if (VR::getPredictedDisplayTime()  == mLastTime)
-    //        return;
+    //     if (VR::getPredictedDisplayTime()  == mLastTime)
+    //         return;
 
     //    VR::VRPath leftWrist = VR::stringToVRPath("/world/user/hand/left/input/aim/pose");
     //    VR::VRPath rightWrist = VR::stringToVRPath("/world/user/hand/right/input/aim/pose");
@@ -1301,7 +1359,8 @@ namespace MWVR
     //            {
     //                mStationaryPose.pose.position.mZ = tp.pose.position.mZ;
     //                mHUDKeyboardPose.pose.position.mZ = tp.pose.position.mZ
-    //                    + (mHUDKeyboardPose.pose.orientation * Stereo::Position::fromMWUnits(osg::Vec3(0, 35, -40))).mZ;
+    //                    + (mHUDKeyboardPose.pose.orientation * Stereo::Position::fromMWUnits(osg::Vec3(0, 35,
+    //                    -40))).mZ;
     //            }
 
     //            mShouldUpdateStationaryPose = false;
@@ -1338,14 +1397,14 @@ namespace MWVR
     //    mLastTime = VR::getPredictedDisplayTime();
     //}
 
-    //void VRGUITracking::resetStationaryPose()
+    // void VRGUITracking::resetStationaryPose()
     //{
-    //    mShouldUpdateStationaryPose = true;
-    //}
+    //     mShouldUpdateStationaryPose = true;
+    // }
 
-    //void VRGUITracking::resetStationaryPoseHeight() 
+    // void VRGUITracking::resetStationaryPoseHeight()
     //{
-    //    mShouldUpdateStationaryPoseHeight = true;
-    //}
+    //     mShouldUpdateStationaryPoseHeight = true;
+    // }
 
 }

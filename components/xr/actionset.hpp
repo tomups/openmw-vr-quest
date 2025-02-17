@@ -5,6 +5,7 @@
 
 #include "action.hpp"
 #include <components/vr/constants.hpp>
+#include <components/vr/space.hpp>
 
 #include <array>
 #include <map>
@@ -43,7 +44,7 @@ namespace XR
         XrActionSet xrActionSet() { return mActionSet; }
         std::vector<XrActionSuggestedBinding> suggestBindings();
 
-        XrSpace xrActionSpace(std::string id) const;
+        std::shared_ptr<VR::Space> actionSpace(const std::string& id) const;
 
         void createBoolAction(const std::string& actionName, const std::string& localName, const std::string& id);
         void createAxisAction(const std::string& actionName, const std::string& localName, const std::string& id);
@@ -56,6 +57,8 @@ namespace XR
         void suggestBinding(const std::string& id, const std::string& path);
 
         XrAction findXrAction(const std::string& id) const;
+        std::shared_ptr<VR::Space> createActionSpace(
+            const std::string& spaceId, const std::string& actionId, Stereo::Pose pose = {});
 
     protected:
         std::unique_ptr<XR::Action> createXRAction(XrActionType actionType, const std::string& actionName,
@@ -73,6 +76,7 @@ namespace XR
         std::map<std::string, PoseAction> mPoseActions;
         std::map<std::string, HapticsAction> mHapticsActions;
         std::map<std::string, InputAction*> mAllInputActions;
+        std::map<std::string, std::shared_ptr<VR::Space>> mActionSpaces;
 
         std::vector<std::pair<std::string, std::string>> mSuggestions;
     };

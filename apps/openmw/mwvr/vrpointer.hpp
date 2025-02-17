@@ -4,12 +4,14 @@
 #include "../mwrender/npcanimation.hpp"
 #include "../mwrender/renderingmanager.hpp"
 
-#include <components/vr/trackinglistener.hpp>
+#include <components/vr/space.hpp>
 
 #include <osg/Node>
 #include <osg/ref_ptr>
 
 #include <memory>
+
+#include <openxr/openxr.h>
 
 namespace SceneUtil
 {
@@ -50,7 +52,7 @@ namespace MWVR
     };
 
     //! Controls the beam used to target/select objects.
-    class UserPointer : public VR::TrackingListener
+    class UserPointer
     {
 
     public:
@@ -60,20 +62,17 @@ namespace MWVR
         // void updatePointerTarget();
         const MWRender::RayResult& getPointerRay() const;
         bool canPlaceObject() const;
-        void setSource(VR::VRPath source);
+        void setSource(std::shared_ptr<VR::Space> space);
         // bool enabled() const { return !!mSource; };
         float distanceToPointerTarget() const { return mDistanceToPointerTarget; }
         void activate();
+        void update();
 
     private:
-        void onTrackingUpdated(VR::TrackingManager& manager) override;
-
         bool tryProbePick(MWWorld::Ptr target);
 
-        // osg::ref_ptr<SceneUtil::PositionAttitudeTransform> mPointerSource;
-        osg::ref_ptr<SceneUtil::PositionAttitudeTransform> mPointerTransform;
-
-        VR::VRPath mSourcePath = 0;
+        std::shared_ptr<VR::Space> mSpace = 0;
+        osg::ref_ptr<VR::SpaceTransform> mSpaceTransform;
         osg::ref_ptr<osg::Group> mRoot;
 
         MWRender::RayResult mPointerRay = {};

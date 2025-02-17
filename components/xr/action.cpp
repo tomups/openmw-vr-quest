@@ -2,6 +2,7 @@
 #include "session.hpp"
 #include <components/xr/debug.hpp>
 #include <components/xr/instance.hpp>
+#include <components/xr/typeconversion.hpp>
 
 #include <cassert>
 
@@ -131,15 +132,7 @@ namespace XR
 
     PoseAction::PoseAction(std::unique_ptr<Action> action)
         : InputAction(std::move(action))
-        , mXRSpace{ XR_NULL_HANDLE }
     {
-        XrActionSpaceCreateInfo createInfo{};
-        createInfo.type = XR_TYPE_ACTION_SPACE_CREATE_INFO;
-        createInfo.action = mAction->xrAction();
-        createInfo.poseInActionSpace.orientation.w = 1.f;
-        createInfo.subactionPath = XR_NULL_PATH;
-        CHECK_XRCMD(xrCreateActionSpace(XR::Session::instance().xrSession(), &createInfo, &mXRSpace));
-        XR::Debugging::setName(mXRSpace, "OpenMW XR Action Space " + mAction->mName);
     }
 
     void PoseAction::update()
@@ -148,6 +141,20 @@ namespace XR
             mValue = true;
         else
             mValue = std::nullopt;
+    }
+
+    std::shared_ptr<Space> PoseAction::createActionSpace(Stereo::Pose pose) const
+    {
+        XrSpace space = XR_NULL_HANDLE;
+        XrActionSpaceCreateInfo createInfo{};
+        createInfo.type = XR_TYPE_ACTION_SPACE_CREATE_INFO;
+        createInfo.action = mAction->xrAction();
+        createInfo.poseInActionSpace = XR::toXR(pose);
+        createInfo.subactionPath = XR_NULL_PATH;
+        CHECK_XRCMD(xrCreateActionSpace(XR::Session::instance().xrSession(), &createInfo, &space));
+        if (space)
+            return std::make_shared<Space>(space);
+        return nullptr;
     }
 
     InputAction::InputAction(std::unique_ptr<Action> action)

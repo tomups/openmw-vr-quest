@@ -170,7 +170,7 @@ namespace Stereo
         osg::Quat orientation{ 0, 0, 0, 1 };
 
         //! Add one pose to another
-        Pose operator+(const Pose& rhs);
+        Pose operator+(const Pose& rhs) const;
         const Pose& operator+=(const Pose& rhs);
 
         //! Scale a pose (does not affect orientation)

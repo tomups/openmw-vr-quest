@@ -98,22 +98,21 @@ namespace MWVR
     UserPointer::UserPointer(osg::Group* root)
         : mRoot(root)
     {
-        mPointerTransform = new SceneUtil::PositionAttitudeTransform();
-        mPointerTransform->setNodeMask(MWRender::VisMask::Mask_Pointer);
-        mPointerTransform->setName("VR Pointer deformation");
-        mCrosshair = std::make_unique<Crosshair>(mPointerTransform, osg::Vec3f(1.f, 0.f, 0.f), 1.f, 0.f, true);
+        mSpaceTransform = new VR::SpaceTransform();
+        mSpaceTransform->setNodeMask(MWRender::VisMask::Mask_Pointer);
+        mSpaceTransform->setName("VR Pointer deformation");
+        mSpaceTransform->setReferenceFrame(osg::Transform::ABSOLUTE_RF);
+        mCrosshair = std::make_unique<Crosshair>(mSpaceTransform, osg::Vec3f(1.f, 0.f, 0.f), 1.f, 0.f, true);
         mCrosshair->show();
-        mRoot->addChild(mPointerTransform);
+        //mRoot->addChild(mSpaceTransform);
     }
 
     UserPointer::~UserPointer() {}
 
-    void UserPointer::setSource(VR::VRPath source)
+    void UserPointer::setSource(std::shared_ptr<VR::Space> space)
     {
-        if (mSourcePath == source)
-            return;
-
-        mSourcePath = source;
+        mSpace = space;
+        mSpaceTransform->setSpace(mSpace);
     }
 
     void UserPointer::activate()
@@ -202,27 +201,10 @@ namespace MWVR
         return mCanPlaceObject;
     }
 
-    void UserPointer::onTrackingUpdated(VR::TrackingManager& manager)
+    void UserPointer::update()
     {
-        mPointerTransform->setScale(osg::Vec3f(1, 1, 1));
-        mPointerTransform->setPosition(osg::Vec3f(0, 0, 0));
-        mPointerTransform->setAttitude(osg::Quat(0, 0, 0, 1));
-
-        auto tp = manager.locate(mSourcePath);
-
-        if (!tp.status)
-        {
-            mCrosshair->hide();
-            MWVR::VRGUIManager::instance().updateFocus(nullptr, osg::Vec3(0, 0, 0));
-
-            mPointerTarget = nullptr;
-            mPointerRay.mHit = false;
-            mPointerRay.mHitNode = nullptr;
-
-            return;
-        }
-
-        mDistanceToPointerTarget = Util::getPoseTarget(mPointerRay, tp.pose, true, false);
+        auto pose = Util::getNodePose(mSpaceTransform);
+        mDistanceToPointerTarget = Util::getPoseTarget(mPointerRay, pose, true, false);
         // Make a ref-counted copy of the target node to ensure the object's lifetime this frame.
         mPointerTarget = mPointerRay.mHitNode;
 
@@ -234,8 +216,6 @@ namespace MWVR
                 std::acos((mPointerRay.mHitNormalWorld / mPointerRay.mHitNormalWorld.length()) * osg::Vec3f(0, 0, 1))
                 >= osg::DegreesToRadians(30.f));
 
-            mPointerTransform->setPosition(tp.pose.position.asMWUnits());
-            mPointerTransform->setAttitude(tp.pose.orientation);
             mCrosshair->setStretch(mDistanceToPointerTarget / 3.f);
             mCrosshair->setWidth(0.25f);
             mCrosshair->setOffset(2.f * mDistanceToPointerTarget / 3.f);

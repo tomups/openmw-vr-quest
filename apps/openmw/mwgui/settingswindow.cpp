@@ -46,7 +46,6 @@
 #include "../mwvr/vrgui.hpp"
 #include "../mwvr/vrinputmanager.hpp"
 #include <components/vr/session.hpp>
-#include <components/vr/trackingmanager.hpp>
 #include <components/vr/viewer.hpp>
 #include <components/vr/vr.hpp>
 
@@ -913,7 +912,6 @@ namespace MWGui
         if (VR::getVR())
         {
             VR::Session::instance().processChangedSettings(changed);
-            VR::TrackingManager::instance().processChangedSettings(changed);
             VR::Viewer::instance().processChangedSettings(changed);
             MWVR::VRGUIManager::instance().processChangedSettings(changed);
         }

@@ -26,6 +26,7 @@
 #include <components/vr/trackingmanager.hpp>
 #include <components/vr/viewer.hpp>
 #include <components/vr/vr.hpp>
+#include "../mwvr/openxrinput.hpp"
 //## VR_PATCH END
 
 namespace
@@ -55,28 +56,6 @@ namespace
 
 namespace MWRender
 {
-//## VR_PATCH BEGIN
-    class CameraTrackingUpdateCallback : VR::TrackingListener
-    {
-    public:
-        CameraTrackingUpdateCallback(MWRender::Camera* camera)
-            : mCamera(camera)
-        {
-        }
-        void onTrackingUpdated(VR::TrackingManager& manager) override
-        {
-            auto tp = manager.locate(mPath);
-            if (!!tp.status)
-            {
-                mCamera->setPose(tp.pose);
-            }
-        }
-
-        MWRender::Camera* mCamera;
-        VR::VRPath mPath = VR::stringToVRPath("/world/user/head/input/pose");
-    };
-//## VR_PATCH END
-
     Camera::Camera(osg::Camera* camera)
         : mHeightScale(1.f)
         , mCollisionType(
@@ -130,7 +109,6 @@ namespace MWRender
         {
             mMode = Mode::VR;
             processViewChange();
-            mCameraTrackingUpdateCallback = std::make_unique<CameraTrackingUpdateCallback>(this);
         }
 //## VR_PATCH END
     }
@@ -167,8 +145,17 @@ namespace MWRender
         mTrackedPose = pose;
         mPosition = mTrackedPose.position.asMWUnits();
         updateCamera();
-//## VR_PATCH END
     }
+
+    void Camera::onFrameUpdate(VR::Frame&) 
+    {
+        auto tp = MWVR::OpenXRInput::instance().getSpace(MWVR::OpenXRInput::DefaultReferenceSpaceView)->locateInWorld();
+        if (!tp.status)
+            setPose(mTrackedPose);
+        else
+            setPose(tp.pose);
+    }
+    // ## VR_PATCH END
 
     osg::Vec3d Camera::getFocalPointOffset() const
     {
@@ -496,6 +483,8 @@ namespace MWRender
             mTrackingNode = mAnimation->getNode("Camera");
             if (!mTrackingNode)
                 mTrackingNode = mAnimation->getNode("Head");
+            else
+                Log(Debug::Verbose) << "Breakpoint";
             mHeightScale = 1.f;
         }
         else

@@ -3050,9 +3050,13 @@ namespace MWWorld
                     // VR should aim from the HAND unless it's KBMouseMode
                     if (aimFromVRPointer)
                     {
-                        Stereo::Pose weaponPose = getVRWeaponPose();
-                        origin = weaponPose.position.asMWUnits();
-                        orient = weaponPose.orientation;
+                        auto* node = MWVR::VRInputManager::instance().vrAimNode();
+                        if (node)
+                        {
+                            auto worldMatrix = osg::computeLocalToWorld(node->getParentalNodePaths()[0]);
+                            origin = worldMatrix.getTrans();
+                            orient = worldMatrix.getRotate();
+                        }
                     }
 //## VR_PATCH END
                     const osg::Vec3f direction = orient * osg::Vec3f(0, 1, 0);
@@ -4011,39 +4015,6 @@ namespace MWWorld
         mRendering->enableVRPointer(left, right);
     }
 
-    class WeaponPoseTrackingListener : VR::TrackingListener
-    {
-    public:
-        void onTrackingUpdated(VR::TrackingManager& manager) override
-        {
-            mPose = manager.locate(mPath);
-        }
-
-        VR::TrackingPose mPose;
-        VR::VRPath mPath;
-    };
-
-    Stereo::Pose World::getVRWeaponPose()
-    {
-        Stereo::Pose pose = {};
-        if (mWeaponPoseTrackingListener)
-        {
-            if (!!mWeaponPoseTrackingListener->mPose.status)
-                pose = mWeaponPoseTrackingListener->mPose.pose;
-            return pose;
-        }
-        auto* node = MWVR::VRInputManager::instance().vrAimNode();
-
-        if (node)
-        {
-            auto worldMatrix = osg::computeLocalToWorld(node->getParentalNodePaths()[0]);
-            pose.position = Stereo::Position::fromMWUnits(worldMatrix.getTrans());
-            pose.orientation = worldMatrix.getRotate();
-        }
-
-        return pose;
-    }
-
     std::optional<std::pair<MWWorld::Ptr, osg::Vec3f>> MWWorld::World::getVRMeleeHitContact(MWWorld::Ptr ptr)
     {
         if (ptr.getClass().getCreatureStats(ptr).getDrawState() != MWMechanics::DrawState::Weapon)
@@ -4064,25 +4035,15 @@ namespace MWWorld
             * (!weapon.isEmpty() ? weapon.get<ESM::Weapon>()->mBase->mData.mReach
                                  : store.find("fHandToHandReach")->mValue.getFloat());
 
-        Stereo::Pose weaponPose = getVRWeaponPose();
-        auto result
-            = mPhysics->getHitContact(ptr, weaponPose.position.asMWUnits(), weaponPose.orientation, distance);
+        auto* node = MWVR::VRInputManager::instance().vrAimNode();
+        if (!node)
+            return std::nullopt;
+            auto worldMatrix = osg::computeLocalToWorld(node->getParentalNodePaths()[0]);
+        auto result = mPhysics->getHitContact(ptr, worldMatrix.getTrans(), worldMatrix.getRotate(), distance);
         if (result.first.isEmpty())
             return std::nullopt;
         Log(Debug::Verbose) << "Hit: " << result.first.getTypeDescription();
         return result;
-    }
-
-    void World::setWeaponPosePath(int64_t path)
-    {
-        if (path == 0)
-            mWeaponPoseTrackingListener = nullptr;
-        else
-        {
-            if (!mWeaponPoseTrackingListener)
-                mWeaponPoseTrackingListener = std::make_unique<WeaponPoseTrackingListener>();
-            mWeaponPoseTrackingListener->mPath = static_cast<VR::VRPath>(path);
-        }
     }
 
 //## VR_PATCH END

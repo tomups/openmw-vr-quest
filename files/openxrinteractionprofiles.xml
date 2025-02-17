@@ -38,7 +38,6 @@
 				<Interaction type="AXIS" path="/input/trackpad/y" />
 				<Interaction type="BOOLEAN" path="/input/trackpad/click" />
 				<Interaction type="BOOLEAN" path="/input/trackpad/touch" />
-				<Interaction type="FLOAT" path="/input/trackpad/force" />
 				<Interaction type="FLOAT" path="/output/haptic" />
 			</Controller>
 		</InteractionsMap>

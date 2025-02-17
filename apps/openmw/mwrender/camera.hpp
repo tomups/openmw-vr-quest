@@ -11,6 +11,7 @@
 
 //## VR_PATCH BEGIN
 #include <components/stereo/types.hpp>
+#include <components/vr/session.hpp>
 //## VR_PATCH END
 
 #include "../mwworld/ptr.hpp"
@@ -26,13 +27,14 @@ namespace osg
 namespace MWRender
 {
     class NpcAnimation;
-//## VR_PATCH BEGIN
-    class CameraTrackingUpdateCallback;
-//## VR_PATCH END
 
     /// \brief Camera control
     class Camera
+    // ## VR_PATCH BEGIN
+        : private VR::Session::Listener
     {
+        virtual void onFrameUpdate(VR::Frame&);
+    //## VR_PATCH END
     public:
         enum class Mode : int
         {
@@ -159,7 +161,6 @@ namespace MWRender
     protected:
         Stereo::Pose mTrackedPose;
         mutable osg::Matrix mTrackedWorldMatrix;
-        std::unique_ptr<CameraTrackingUpdateCallback> mCameraTrackingUpdateCallback;
 //## VR_PATCH END
         MWWorld::Ptr mTrackingPtr;
         osg::ref_ptr<const osg::Node> mTrackingNode;

@@ -301,7 +301,6 @@ namespace OMW
 
     private:
         std::unique_ptr<Misc::CallbackManager> mCallbackManager;
-        std::unique_ptr<VR::TrackingManager> mVrTrackingManager;
         std::unique_ptr<MWVR::VRGUIManager> mVrGUIManager;
         std::unique_ptr<XR::Instance> mXrInstance;
         std::shared_ptr<XR::Session> mXrSession;

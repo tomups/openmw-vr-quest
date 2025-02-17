@@ -90,12 +90,6 @@ namespace Stereo
         }
 
         static bool sMultiview = false;
-
-        bool getMultiview(unsigned int contextID)
-        {
-            static bool multiView = getMultiviewImpl(contextID);
-            return multiView;
-        }
     }
 
     bool getTextureViewSupported()
@@ -105,7 +99,7 @@ namespace Stereo
 
     bool getMultiview()
     {
-        return getMultiview(0);
+        return sMultiview;
     }
 
     void configureExtensions(unsigned int contextID, bool enableMultiview)
@@ -115,7 +109,7 @@ namespace Stereo
 
         if (enableMultiview)
         {
-            sMultiview = getMultiview(contextID);
+            sMultiview = getMultiviewImpl(contextID);
         }
         else
         {

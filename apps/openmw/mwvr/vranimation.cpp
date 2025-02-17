@@ -1,3 +1,4 @@
+#include "openxrinput.hpp"
 #include "vranimation.hpp"
 #include "vrgui.hpp"
 #include "vrpointer.hpp"
@@ -30,6 +31,7 @@
 #include <components/vr/trackingmanager.hpp>
 #include <components/vr/trackingtransform.hpp>
 #include <components/vr/vr.hpp>
+#include <components/xr/session.hpp>
 
 #include "../mwworld/esmstore.hpp"
 
@@ -48,6 +50,7 @@
 #include "../mwworld/player.hpp"
 
 #include "vrpointer.hpp"
+#include "vrtracking.hpp"
 
 namespace MWVR
 {
@@ -265,70 +268,122 @@ namespace MWVR
         traverse(node, nv);
     }
 
+    // class TrackingController
+    //{
+    // public:
+    //     TrackingController(VR::VRPath trackingPath, VR::VRPath topLevelPath, osg::Vec3 baseOffset, bool left)
+    //         : mTrackingPath(trackingPath)
+    //         , mTopLevelPath(topLevelPath)
+    //         , mTransform(nullptr)
+    //         , mBaseOffset(baseOffset)
+    //         , mBaseOrientation(osg::PI_2, osg::Vec3f(0, 0, 1))
+    //         , mLeft(left)
+    //     {
+    //         if (left)
+    //             mBaseOrientation = osg::Quat(osg::PI, osg::Vec3f(1, 0, 0)) * mBaseOrientation;
+    //     }
+
+    //    void onTrackingUpdated(VR::TrackingManager& manager)
+    //    {
+    //        if (!mTransform)
+    //            return;
+
+    //        auto tp = manager.locate(mTrackingPath);
+    //        if (!tp.status)
+    //            return;
+
+    //        if (!VR::Session::instance().getInteractionProfileActive(mTopLevelPath))
+    //            return;
+
+    //        auto orientation = (mBaseOrientation)*tp.pose.orientation;
+
+    //        // Undo the wrist translate
+    //        // TODO: I'm sure this could bee a lot less hacky
+    //        // But i'll defer that to whenever we get inverse cinematics so i can track the hand directly.
+    //        auto* hand = mTransform->getChild(0);
+    //        auto handMatrix = hand->asTransform()->asMatrixTransform()->getMatrix();
+    //        auto position = tp.pose.position.asMWUnits() - (orientation * handMatrix.getTrans());
+
+    //        // Center hand mesh on tracking
+    //        // This is just an estimate from trial and error, any suggestion for improving this is welcome
+    //        position -= orientation * mBaseOffset;
+    //        auto offset = VR::Session::instance().getHandsOffset();
+    //        if (mLeft)
+    //            offset.x() = -offset.x();
+    //        position += tp.pose.orientation * offset;
+
+    //        // Get current world transform of limb
+    //        osg::Matrix worldToLimb = osg::computeWorldToLocal(mTransform->getParentalNodePaths()[0]);
+    //        // Get current world of the reference node
+    //        osg::Matrix worldReference = osg::Matrix::identity();
+    //        // New transform based on tracking.
+    //        worldReference.preMultTranslate(position);
+    //        worldReference.preMultRotate(orientation);
+
+    //        // Finally, set transform
+    //        mTransform->setMatrix(worldReference * worldToLimb * mTransform->getMatrix());
+    //    }
+
+    //    void setTransform(osg::MatrixTransform* transform) { mTransform = transform; }
+
+    //    VR::VRPath mTrackingPath;
+    //    VR::VRPath mTopLevelPath;
+    //    osg::ref_ptr<osg::MatrixTransform> mTransform;
+    //    osg::Vec3 mBaseOffset;
+    //    osg::Quat mBaseOrientation;
+    //    bool mLeft;
+    //};
+
     class TrackingController
     {
     public:
-        TrackingController(VR::VRPath trackingPath, VR::VRPath topLevelPath, osg::Vec3 baseOffset, bool left)
-            : mTrackingPath(trackingPath)
-            , mTopLevelPath(topLevelPath)
-            , mTransform(nullptr)
-            , mBaseOffset(baseOffset)
-            , mBaseOrientation(osg::PI_2, osg::Vec3f(0, 0, 1))
-            , mLeft(left)
+        TrackingController(std::shared_ptr<VR::Space> space, Stereo::Pose pose)
+            : mSpace(space)
+            , mPose(pose)
         {
-            if (left)
-                mBaseOrientation = osg::Quat(osg::PI, osg::Vec3f(1, 0, 0)) * mBaseOrientation;
         }
 
-        void onTrackingUpdated(VR::TrackingManager& manager)
+        void update(osg::MatrixTransform& transform)
         {
-            if (!mTransform)
-                return;
-
-            auto tp = manager.locate(mTrackingPath);
+            auto tp = mSpace->locateInWorld();
             if (!tp.status)
                 return;
-
-            if (!VR::Session::instance().getInteractionProfileActive(mTopLevelPath))
-                return;
-
-            auto orientation = (mBaseOrientation)*tp.pose.orientation;
+            auto pose = tp.pose + mPose;
 
             // Undo the wrist translate
             // TODO: I'm sure this could bee a lot less hacky
             // But i'll defer that to whenever we get inverse cinematics so i can track the hand directly.
-            auto* hand = mTransform->getChild(0);
-            auto handMatrix = hand->asTransform()->asMatrixTransform()->getMatrix();
-            auto position = tp.pose.position.asMWUnits() - (orientation * handMatrix.getTrans());
+            //auto* hand = mTransform->getChild(0);
+            //auto handMatrix = hand->asTransform()->asMatrixTransform()->getMatrix();
+            //auto position = tp.pose.position.asMWUnits() - (orientation * handMatrix.getTrans());
+            //auto position = pose.position.asMWUnits();
 
             // Center hand mesh on tracking
             // This is just an estimate from trial and error, any suggestion for improving this is welcome
-            position -= orientation * mBaseOffset;
-            auto offset = VR::Session::instance().getHandsOffset();
-            if (mLeft)
-                offset.x() = -offset.x();
-            position += tp.pose.orientation * offset;
+            //position -= orientation * mBaseOffset;
+            //auto offset = VR::Session::instance().getHandsOffset();
+            //if (mLeft)
+            //    offset.x() = -offset.x();
+            //position += tp.pose.orientation * offset;
 
-            // Get current world transform of limb
-            osg::Matrix worldToLimb = osg::computeWorldToLocal(mTransform->getParentalNodePaths()[0]);
+            // Transform back to local
+            osg::Matrix worldToLocal = osg::computeWorldToLocal(transform.getParentalNodePaths()[0]);
             // Get current world of the reference node
-            osg::Matrix worldReference = osg::Matrix::identity();
+            osg::Matrix spaceToWorld = osg::Matrix::identity();
             // New transform based on tracking.
-            worldReference.preMultTranslate(position);
-            worldReference.preMultRotate(orientation);
+            spaceToWorld.preMultTranslate(pose.position.asMWUnits());
+            spaceToWorld.preMultRotate(pose.orientation);
 
             // Finally, set transform
-            mTransform->setMatrix(worldReference * worldToLimb * mTransform->getMatrix());
+            transform.setMatrix(spaceToWorld * worldToLocal * transform.getMatrix());
+            // TODO: Wouldn't this work just as well? If so that could help with fp accuracy
+            // Might need to disable culling for this though
+            //transform.setReferenceFrame(osg::Transform::ABSOLUTE_RF);
+            //transform.setmatrix(spaceToWorld)
         }
 
-        void setTransform(osg::MatrixTransform* transform) { mTransform = transform; }
-
-        VR::VRPath mTrackingPath;
-        VR::VRPath mTopLevelPath;
-        osg::ref_ptr<osg::MatrixTransform> mTransform;
-        osg::Vec3 mBaseOffset;
-        osg::Quat mBaseOrientation;
-        bool mLeft;
+        std::shared_ptr<VR::Space> mSpace;
+        Stereo::Pose mPose;
     };
 
     VRAnimation::VRAnimation(const MWWorld::Ptr& ptr, osg::ref_ptr<osg::Group> parentNode,
@@ -344,8 +399,9 @@ namespace MWVR
         , mModelOffset(new osg::MatrixTransform(osg::Matrix::translate(osg::Vec3(0, -15, 0))))
         , mCrosshairsEnabled(false)
         , mSceneRoot(sceneRoot)
-        , mWorldHeadPath(VR::stringToVRPath("/world/user/head/input/pose"))
     {
+        //mReferenceSpace = XR::Session::instance().getReferenceSpace(XR_REFERENCE_SPACE_TYPE_LOCAL);
+
         for (int i = 0; i < 2; i++)
         {
             mHandControllers[i] = new HandController;
@@ -364,28 +420,28 @@ namespace MWVR
         mWeaponPointerTransform->setName("Weapon Pointer");
         mWeaponPointerTransform->setUpdateCallback(new WeaponPointerController);
         // mWeaponDirectionTransform->addChild(mWeaponPointerTransform);
-
-        auto worldPath = VR::stringToVRPath("/world/user");
-        auto* stageToWorldBinding
-            = static_cast<VR::StageToWorldBinding*>(VR::TrackingManager::instance().getTrackingSource(worldPath));
-        stageToWorldBinding->setOriginNode(mObjectRoot->getParent(0));
+        
+        //auto worldPath = VR::stringToVRPath("/world/user");
+        //auto* stageToWorldBinding
+        //    = static_cast<VR::StageToWorldBinding*>(VR::TrackingManager::instance().getTrackingSource(worldPath));
+        //stageToWorldBinding->setOriginNode(mObjectRoot->getParent(0));
 
         // Morrowind's meshes do not point forward by default and need re-positioning and orientation.
-        osg::Vec3 offset{ 15, 0, 0 };
+        //osg::Vec3 offset{ 15, 0, 0 };
 
-        {
-            auto topLevelPath = VR::stringToVRPath("/user/hand/right");
-            auto path = VR::stringToVRPath("/world/user/hand/right/input/aim/pose");
-            mVrControllers.emplace(
-                "bip01 r forearm", std::make_unique<TrackingController>(path, topLevelPath, offset, false));
-        }
+        //{
+        //    auto topLevelPath = VR::stringToVRPath("/user/hand/right");
+        //    auto path = VR::stringToVRPath("/world/user/hand/right/input/aim/pose");
+        //    mVrControllers.emplace(
+        //        "bip01 r forearm", std::make_unique<TrackingController>(path, topLevelPath, offset, false));
+        //}
 
-        {
-            auto topLevelPath = VR::stringToVRPath("/user/hand/left");
-            auto path = VR::stringToVRPath("/world/user/hand/left/input/aim/pose");
-            mVrControllers.emplace(
-                "bip01 l forearm", std::make_unique<TrackingController>(path, topLevelPath, offset, true));
-        }
+        //{
+        //    auto topLevelPath = VR::stringToVRPath("/user/hand/left");
+        //    auto path = VR::stringToVRPath("/world/user/hand/left/input/aim/pose");
+        //    mVrControllers.emplace(
+        //        "bip01 l forearm", std::make_unique<TrackingController>(path, topLevelPath, offset, true));
+        //}
     }
 
     VRAnimation::~VRAnimation() {}
@@ -441,68 +497,58 @@ namespace MWVR
             removeIndividualPart(ESM::PartReferenceType::PRT_RWrist);
         }
 
-        auto playerPtr = MWMechanics::getPlayer();
-        const MWWorld::LiveCellRef<ESM::NPC>* ref = playerPtr.get<ESM::NPC>();
-        const ESM::Race* race
-            = MWBase::Environment::get().getWorld()->getStore().get<ESM::Race>().find(ref->mBase->mRace);
-        bool isMale = ref->mBase->isMale();
-        float charHeightFactor = isMale ? race->mData.mMaleHeight : race->mData.mFemaleHeight;
-        auto charHeightBase
-            = Stereo::Unit::fromMeters(Settings::Manager::getFloat("character base height", "VR Debug"));
-        auto charHeight = charHeightBase * charHeightFactor;
-        VR::Session::instance().setCharHeight(charHeight);
-        Log(Debug::Verbose) << "Calculated character height: " << charHeight.asMeters();
+        updateCharHeight();
     }
 
-    void VRAnimation::onTrackingUpdated(VR::TrackingManager& manager)
-    {
-        if (mSkeleton)
-            mSkeleton->markBoneMatriceDirty();
+    //void VRAnimation::onTrackingUpdated(VR::TrackingManager& manager)
+    //{
+    //    if (mSkeleton)
+    //        mSkeleton->markBoneMatriceDirty();
 
-        auto tp = manager.locate(mWorldHeadPath);
+    //    auto tp = manager.locate(mWorldHeadPath);
 
-        if (!!tp.status)
-        {
-            auto world = MWBase::Environment::get().getWorld();
+    //    if (!!tp.status)
+    //    {
+    //        auto world = MWBase::Environment::get().getWorld();
 
-            auto& player = world->getPlayer();
-            auto playerPtr = player.getPlayer();
+    //        auto& player = world->getPlayer();
+    //        auto playerPtr = player.getPlayer();
 
-            float headYaw = 0.f;
-            float headPitch = 0.f;
-            float headRoll = 0.f;
-            Stereo::getEulerAngles(tp.pose.orientation, headYaw, headPitch, headRoll);
+    //        float headYaw = 0.f;
+    //        float headPitch = 0.f;
+    //        float headRoll = 0.f;
+    //        Stereo::getEulerAngles(tp.pose.orientation, headYaw, headPitch, headRoll);
 
-            world->rotateObject(playerPtr, osg::Vec3f(headPitch, 0.f, headYaw), MWBase::RotationFlag_none);
+    //        world->rotateObject(playerPtr, osg::Vec3f(headPitch, 0.f, headYaw), MWBase::RotationFlag_none);
 
-            osg::Vec3 rotation = {
-                0.,
-                0.,
-                0.,
-            };
+    //        osg::Vec3 rotation = {
+    //            0.,
+    //            0.,
+    //            0.,
+    //        };
 
-            if (VR::Session::instance().handDirectedMovement())
-            {
-                tp = manager.locate(VR::stringToVRPath("/world/user/hand/left/input/aim/pose"));
-                float handYaw = 0.f;
-                float handPitch = 0.f;
-                float handRoll = 0.f;
+    //        if (VR::Session::instance().handDirectedMovement())
+    //        {
+    //            tp = manager.locate(VR::stringToVRPath("/world/user/hand/left/input/aim/pose"));
+    //            float handYaw = 0.f;
+    //            float handPitch = 0.f;
+    //            float handRoll = 0.f;
 
-                Stereo::getEulerAngles(tp.pose.orientation, handYaw, handPitch, handRoll);
+    //            Stereo::getEulerAngles(tp.pose.orientation, handYaw, handPitch, handRoll);
 
-                rotation = {
-                    (handPitch - headPitch),
-                    0.,
-                    (handYaw - headYaw),
-                };
-            }
+    //            rotation = {
+    //                (handPitch - headPitch),
+    //                0.,
+    //                (handYaw - headYaw),
+    //            };
+    //        }
 
-            VR::Session::instance().setMovementAngleOffset(rotation);
-        }
+    //        VR::Session::instance().setMovementAngleOffset(rotation);
+    //    }
 
-        for (auto& controller : mVrControllers)
-            controller.second->onTrackingUpdated(manager);
-    }
+    //    for (auto& controller : mVrControllers)
+    //        controller.second->onTrackingUpdated(manager);
+    //}
 
     void VRAnimation::updateCrosshairs()
     {
@@ -641,6 +687,52 @@ namespace MWVR
         }
     }
 
+    void VRAnimation::updateCharHeight() 
+    {
+        // Compute an approximate character height (eye level)
+        //auto playerPtr = MWMechanics::getPlayer();
+        //const MWWorld::LiveCellRef<ESM::NPC>* ref = playerPtr.get<ESM::NPC>();
+        //const ESM::Race* race
+        //    = MWBase::Environment::get().getWorld()->getStore().get<ESM::Race>().find(ref->mBase->mRace);
+        //bool isMale = ref->mBase->isMale();
+        //float charHeightFactor = isMale ? race->mData.mMaleHeight : race->mData.mFemaleHeight;
+        //auto charHeightBase
+        //    = Stereo::Unit::fromMeters(Settings::Manager::getFloat("character base height", "VR Debug"));
+        //auto charHeight = charHeightBase * charHeightFactor;
+        //VR::Session::instance().setCharHeight(charHeight);
+        //Log(Debug::Verbose) << "Calculated character height: " << charHeight.asMeters();
+
+        // Use the actual animation to directly get the character's height
+        auto root = mObjectRoot;
+        auto head = getNode("Bip01 Head");
+        if (root && head)
+        {
+            // The head geometry needs to exist to find a rough estimate of the eye line.
+            if (mPartPriorities[ESM::PRT_Head] < 1 && !mHeadModel.empty())
+                addOrReplaceIndividualPart(ESM::PRT_Head, -1, 1, mHeadModel);
+            if (head->computeBound().radius() > 1.f)
+            {
+                auto path = head->getParentalNodePaths(root)[0];
+                auto m = osg::computeLocalToWorld(path);
+                mCharHeight = m.getTrans().z() + head->computeBound().radius();
+            }
+            removeIndividualPart(ESM::PRT_Head);
+        }
+
+        recenter();
+    }
+
+    void VRAnimation::onFrameUpdate(VR::Frame&) {
+        updateLocalSpaceWorldPose();
+        for (auto& it : mVrControllers)
+        {
+            if (auto* bone = getBoneByName(it.first))
+            {
+                it.second->update(*bone->asTransform()->asMatrixTransform());
+            }
+        }
+    }
+
     osg::Vec3f VRAnimation::runAnimation(float timepassed)
     {
         return NpcAnimation::runAnimation(timepassed);
@@ -652,15 +744,15 @@ namespace MWVR
 
         for (int i = 0; i < 2; ++i)
         {
-            auto forearm = mNodeMap.find(i == 0 ? "Bip01 L Forearm" : "Bip01 R Forearm");
-            if (forearm != mNodeMap.end())
-            {
-                auto controller = mVrControllers.find(forearm->first);
-                if (controller != mVrControllers.end())
-                {
-                    controller->second->setTransform(forearm->second);
-                }
-            }
+            //auto forearm = mNodeMap.find(i == 0 ? "Bip01 L Forearm" : "Bip01 R Forearm");
+            //if (forearm != mNodeMap.end())
+            //{
+            //    auto controller = mVrControllers.find(forearm->first);
+            //    if (controller != mVrControllers.end())
+            //    {
+            //        controller->second->setTransform(forearm->second);
+            //    }
+            //}
 
             auto hand = mNodeMap.find(i == 0 ? "Bip01 L Hand" : "Bip01 R Hand");
             if (hand != mNodeMap.end())
@@ -742,7 +834,8 @@ namespace MWVR
             mCrosshairSpell->setOffset(15.f);
             mCrosshairSpell->show();
 
-            mKBMouseCrosshairTransform = new VR::TrackingTransform(mWorldHeadPath);
+            mKBMouseCrosshairTransform = new VR::SpaceTransform(OpenXRInput::instance().getSpace(OpenXRInput::DefaultReferenceSpaceView));
+            mKBMouseCrosshairTransform->setReferenceFrame(osg::Transform::ABSOLUTE_RF);
             mSceneRoot->addChild(mKBMouseCrosshairTransform);
         }
         else
@@ -755,4 +848,44 @@ namespace MWVR
             mKBMouseCrosshairTransform = nullptr;
         }
     }
+
+    void VRAnimation::updateLocalSpaceWorldPose()
+    {
+        auto origin = mObjectRoot->getParent(0);
+        auto worldMatrix = osg::computeLocalToWorld(origin->getParentalNodePaths()[0]);
+        auto trans = worldMatrix.getTrans();
+        trans.z() += mCharHeight;
+        auto localRef = OpenXRInput::instance().getSpace(OpenXRInput::DefaultReferenceSpaceLocal);
+        Stereo::Pose originPose = { Stereo::Position::fromMWUnits(trans), worldMatrix.getRotate() };
+        XR::Session::instance().setReferenceWorldPose(originPose + mCharLocalSpacePose, localRef);
+    }
+
+    void VRAnimation::recenter()
+    {
+        //Recompute mCharLocalSpacePose so that view->locateInWorld() = mObjectRoot's pose + mCharHeight
+        auto localRef = OpenXRInput::instance().getSpace(OpenXRInput::DefaultReferenceSpaceLocal);
+        auto viewRef = OpenXRInput::instance().getSpace(OpenXRInput::DefaultReferenceSpaceView);
+        auto pose = localRef->locate(viewRef).pose;
+        float yaw = 0.f;
+        float pitch = 0.f;
+        float roll = 0.f;
+        Stereo::getEulerAngles(pose.orientation, yaw, pitch, roll);
+        pose.orientation = osg::Quat(yaw, osg::Vec3d(0, 0, 1));
+        mCharLocalSpacePose = pose;
+    }
+
+    void VRAnimation::attachBoneToSpace(const std::string& bone, std::shared_ptr<VR::Space> space, Stereo::Pose pose)
+    {
+        mVrControllers[bone] = std::make_unique<TrackingController>(space, pose);
+    }
+
+    void VRAnimation::addAnimSource(std::string_view model, const std::string& baseModel) 
+    {
+        Animation::addAnimSource(model, baseModel);
+        updateCharHeight();
+    }
+
+    //void VRAnimation::attachReferenceSpaceToBone(XrSpace space, const std::string& bone) 
+    //{
+    //}
 }

@@ -7,8 +7,7 @@
 
 #include <components/stereo/stereomanager.hpp>
 #include <components/vr/constants.hpp>
-
-#include <openxr/openxr.h>
+#include <components/vr/space.hpp>
 
 namespace VR
 {
@@ -65,6 +64,7 @@ namespace VR
 
         Type getType() const override { return Type::ProjectionLayer; }
 
+        std::shared_ptr<VR::Space> space;
         std::array<ProjectionLayerView, 2> views;
     };
 
@@ -81,7 +81,7 @@ namespace VR
         Stereo::Pose pose = {};
         osg::Vec2f extent = {};
         EyeVisibility eyeVisibility = EyeVisibility::Both;
-        XrSpace space = XR_NULL_HANDLE;
+        std::shared_ptr<VR::Space> space = XR_NULL_HANDLE;
 
         Type getType() const override { return Type::QuadLayer; }
     };

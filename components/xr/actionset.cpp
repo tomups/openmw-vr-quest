@@ -135,8 +135,9 @@ namespace XR
 
     void ActionSet::createPoseAction(const std::string& actionName, const std::string& localName, const std::string& id)
     {
-        mPoseActions.emplace(id, createXRAction(BoolAction::ActionType, actionName, localName));
+        mPoseActions.emplace(id, createXRAction(PoseAction::ActionType, actionName, localName));
         mAllInputActions.emplace(id, &mPoseActions.at(id));
+        createActionSpace(id, id);
     }
 
     void ActionSet::createHapticsAction(
@@ -161,6 +162,15 @@ namespace XR
         if (it != mAllInputActions.end())
             return it->second->xrAction();
         return mHapticsActions.at(id).xrAction();
+    }
+
+    std::shared_ptr<VR::Space> ActionSet::createActionSpace(
+        const std::string& id, const std::string& referenceId, Stereo::Pose pose)
+    {
+        auto space = mPoseActions.at(referenceId).createActionSpace(pose);
+        XR::Debugging::setName(space->xrSpace(), "OpenMW XR Action Space " + id);
+        mActionSpaces[id] = space;
+        return space;
     }
 
     XrActionSet ActionSet::createActionSet(const std::string& name)
@@ -236,11 +246,9 @@ namespace XR
         //xrSuggestedBindings.insert(xrSuggestedBindings.end(), suggestedBindings.begin(), suggestedBindings.end());
     }
 
-    XrSpace ActionSet::xrActionSpace(std::string id) const
+    std::shared_ptr<VR::Space> ActionSet::actionSpace(const std::string& id) const
     {
-        if (!mPoseActions.contains(id))
-            throw std::runtime_error("No such tracker: " + id);
-        return mPoseActions.at(id).xrSpace();
+        return mActionSpaces.at(id);
     }
 
     std::unique_ptr<XR::Action> ActionSet::createXRAction(XrActionType actionType, const std::string& actionName,

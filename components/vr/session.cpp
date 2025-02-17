@@ -77,8 +77,6 @@ namespace VR
 
     void Session::frameEnd(osg::RenderInfo& info, VR::Frame& frame)
     {
-        if (frame.shouldSyncFrameLoop)
-            syncFrameEnd(frame);
         for (auto& listener : mListeners)
             listener->onFrameEnd(info, frame);
     }
@@ -86,7 +84,8 @@ namespace VR
     void Session::swapBuffers(osg::GraphicsContext* gc, VR::Frame& frame)
     {
         gc->swapBuffersImplementation();
-        syncFrameEnd(frame);
+        if (frame.shouldSyncFrameLoop)
+            syncFrameEnd(frame);
     }
 
     void Session::addListener(Listener* listener) 
@@ -179,11 +178,13 @@ namespace VR
 
     Session::Listener::Listener()
     {
-        Session::instance().addListener(this);
+        if (VR::getVR())
+            Session::instance().addListener(this);
     }
 
     Session::Listener::~Listener()
     {
-        Session::instance().removeListener(this);
+        if (VR::getVR())
+            Session::instance().removeListener(this);
     }
 }

@@ -22,13 +22,6 @@ namespace VR
         DisplayTime sPredictedDisplayPeriod = 0;
         std::map<XrPath, XrPath> sActiveControllers = {};
         std::string sRuntimeName = "UNINITIALIZED";
-
-        namespace Paths
-        {
-            // Cache recurring path values for this source file
-            static const XrPath lctrl = stringToXrPath("/user/hand/left");
-            static const XrPath rctrl = stringToXrPath("/user/hand/right");
-        }
     }
 
     XrPath stringToXrPath(const std::string& path)
@@ -56,7 +49,9 @@ namespace VR
 
     bool getKBMouseModeActive()
     {
-        return !(getControllerActive(Paths::lctrl) || getControllerActive(Paths::rctrl));
+        return !getVR()
+            || !(getControllerActive(stringToXrPath("/user/hand/left"))
+                || getControllerActive(stringToXrPath("/user/hand/right")));
     }
 
     bool getSteamVR()
@@ -89,12 +84,12 @@ namespace VR
 
     bool getLeftControllerActive()
     {
-        return getControllerActive(Paths::lctrl);
+        return getControllerActive(stringToXrPath("/user/hand/left"));
     }
 
     bool getRightControllerActive()
     {
-        return getControllerActive(Paths::rctrl);
+        return getControllerActive(stringToXrPath("/user/hand/right"));
     }
 
     void setControllerActive(XrPath controllerPath, XrPath interactionProfilePath, bool active)

@@ -4,6 +4,7 @@
 #include <openxr/openxr.h>
 
 #include <components/vr/constants.hpp>
+#include <components/xr/space.hpp>
 
 #include <chrono>
 #include <deque>
@@ -95,13 +96,11 @@ namespace XR
         //! Convenience
         XrAction xrAction() const { return mAction->xrAction(); }
 
-        //! Action space
-        XrSpace xrSpace() const { return mXRSpace; }
-
         void update();
 
+        std::shared_ptr<Space> createActionSpace(Stereo::Pose pose) const;
+
     private:
-        XrSpace mXRSpace;
     };
 
     //! Action that activates once on release.

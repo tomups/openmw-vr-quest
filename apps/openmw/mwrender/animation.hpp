@@ -144,7 +144,18 @@ namespace MWRender
             float getValue(osg::NodeVisitor* nv) override { return 0.f; }
         };
 
-        struct AnimSource;
+        struct AnimSource
+        {
+            osg::ref_ptr<const SceneUtil::KeyframeHolder> mKeyframes;
+
+            typedef std::map<std::string, osg::ref_ptr<SceneUtil::KeyframeController>> ControllerMap;
+
+            ControllerMap mControllerMap[sNumBlendMasks];
+
+            const SceneUtil::TextKeyMap& getTextKeys() const;
+
+            osg::ref_ptr<const SceneUtil::AnimBlendRules> mAnimBlendRules;
+        };
 
         struct AnimState
         {
@@ -290,7 +301,7 @@ namespace MWRender
          * @param model The file to add the keyframes for. Note that the .nif file extension will be replaced with .kf.
          * @param baseModel The filename of the mObjectRoot, only used for error messages.
          */
-        void addAnimSource(std::string_view model, const std::string& baseModel);
+        virtual void addAnimSource(std::string_view model, const std::string& baseModel);
         std::shared_ptr<AnimSource> addSingleAnimSource(const std::string& model, const std::string& baseModel);
 
         /** Adds an additional light to the given node using the specified ESM record. */

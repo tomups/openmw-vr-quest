@@ -50,6 +50,11 @@ namespace MWVR
     class OpenXRInput
     {
     public:
+
+        static constexpr const char* DefaultReferenceSpaceLocal = "/default/reference/local";
+        static constexpr const char* DefaultReferenceSpaceView = "/default/reference/view";
+        static constexpr const char* DefaultReferenceSpaceStage = "/default/reference/stage";
+
         using XrSuggestedBindings = std::vector<XrActionSuggestedBinding>;
         using XrProfileSuggestedBindings = std::map<std::string, XrSuggestedBindings>;
 
@@ -61,6 +66,7 @@ namespace MWVR
         void createActionSets();
         void createLuaActions();
         void createPoseActions();
+        void createReferenceSpaces();
 
         //! Get the specified actionSet.
         XR::ActionSet& getActionSet(MWActionSet actionSet);
@@ -68,11 +74,17 @@ namespace MWVR
         //! Set bindings and attach actionSets to the session.
         void attachActionSets();
 
+        void createActionSpace(const std::string& id, const std::string& actionName, Stereo::Pose pose = {});
+        void createReferenceSpace(const std::string& id, VR::ReferenceSpace ref, Stereo::Pose pose = {});
+
+        std::shared_ptr<VR::Space> getSpace(const std::string& id) const;
+
     protected:
 
         std::filesystem::path mXrControllerSuggestionsFile;
         std::filesystem::path mDefaultXrControllerSuggestionsFile;
         //std::shared_ptr<XR::AxisDeadzone> mDeadzone{ std::make_shared<XR::AxisDeadzone>() };
+        std::map<std::string, std::shared_ptr<VR::Space>> mSpaces{};
         std::map<std::string, std::string> mInteractionProfileLocalNames{};
         std::map<MWActionSet, XR::ActionSet> mActionSets{};
         std::map<XrPath, std::string> mInteractionProfileNames{};

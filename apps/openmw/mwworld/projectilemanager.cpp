@@ -285,11 +285,20 @@ namespace MWWorld
 
         osg::Quat orient;
 //## VR_PATCH BEGIN
-        if (VR::getVR() && caster == MWBase::Environment::get().getWorld()->getPlayerPtr())
+        if (VR::getVR() && !VR::getKBMouseModeActive()
+            && caster == MWBase::Environment::get().getWorld()->getPlayerPtr())
         {
-            Stereo::Pose weaponPose = MWBase::Environment::get().getWorld()->getVRWeaponPose();
-            pos = weaponPose.position.asMWUnits();
-            orient = weaponPose.orientation;
+            auto tp = MWVR::Util::getXrPose(VR::Paths::RIGHT_HAND_AIM);
+            if (!!tp.status)
+            {
+                pos = tp.pose.position.asMWUnits();
+                orient = tp.pose.orientation;
+            }
+            // TODO:
+            //MWVR::Util::getWeaponPose()
+            //Stereo::Pose weaponPose = MWBase::Environment::get().getWorld()->getVRWeaponPose();
+            //pos = weaponPose.position.asMWUnits();
+            //orient = weaponPose.orientation;
         }
         else
             if (caster.getClass().isActor())

@@ -3,6 +3,7 @@
 #include "vrgui.hpp"
 #include "vrinputmanager.hpp"
 #include "vrpointer.hpp"
+#include "openxrinput.hpp"
 
 #include "../mwbase/environment.hpp"
 #include "../mwbase/windowmanager.hpp"
@@ -12,7 +13,9 @@
 #include "../mwrender/renderingmanager.hpp"
 #include "../mwworld/class.hpp"
 
+#include <components/vr/vr.hpp>
 #include <components/vr/trackingmanager.hpp>
+#include <components/xr/session.hpp>
 
 #include "osg/Transform"
 
@@ -34,14 +37,12 @@ namespace MWVR
 
         std::pair<MWWorld::Ptr, float> getTouchTarget()
         {
+            std::string path = Settings::Manager::getBool("left handed mode", "VR") ? VR::Paths::LEFT_HAND_AIM : VR::Paths::RIGHT_HAND_AIM;
+            auto space = OpenXRInput::instance().getActionSet(MWActionSet::Pose).actionSpace(path);
             MWRender::RayResult result;
-            std::string pointer = Settings::Manager::getBool("left handed mode", "VR")
-                ? "/world/user/hand/left/input/aim/pose"
-                : "/world/user/hand/right/input/aim/pose";
 
-            auto handPath = VR::stringToVRPath(pointer);
-            auto pose = VR::TrackingManager::instance().locate(handPath).pose;
-            auto distance = getPoseTarget(result, pose, true);
+            auto pose = space->locateInWorld();
+            auto distance = getPoseTarget(result, pose.pose, true);
             return std::pair<MWWorld::Ptr, float>(result.mHitObject, distance);
         }
 
@@ -93,6 +94,19 @@ namespace MWVR
             pose.position = Stereo::Position::fromMWUnits(worldMatrix.getTrans());
             pose.orientation = worldMatrix.getRotate();
             return pose;
+        }
+
+        VR::TrackingPose getXrPose(const std::string& path)
+        {
+            auto space = OpenXRInput::instance().getActionSet(MWActionSet::Pose).actionSpace(path);
+            return space->locateInWorld();
+        }
+
+        VRAnimation* getPlayerAnimation()
+        {
+            auto ptr = MWBase::Environment::get().getWorld()->getPlayerPtr();
+            auto* anim = MWBase::Environment::get().getWorld()->getAnimation(ptr);
+            return static_cast<MWVR::VRAnimation*>(anim);
         }
     }
 }

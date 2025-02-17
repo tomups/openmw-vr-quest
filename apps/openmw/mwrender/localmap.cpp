@@ -14,6 +14,8 @@
 #include <components/debug/debuglog.hpp>
 #include <components/esm3/fogstate.hpp>
 #include <components/esm3/loadcell.hpp>
+#include <components/resource/resourcesystem.hpp>
+#include <components/resource/scenemanager.hpp>
 #include <components/files/memorystream.hpp>
 #include <components/misc/constants.hpp>
 #include <components/resource/scenemanager.hpp>
@@ -735,9 +737,15 @@ namespace MWRender
         stateset->setAttributeAndModes(fog, osg::StateAttribute::OFF | osg::StateAttribute::OVERRIDE);
 
         // turn of sky blending
+        int skyTextureSlot = MWBase::Environment::get()
+                                 .getResourceSystem()
+                                 ->getSceneManager()
+                                 ->getShaderManager()
+                                 .reserveGlobalTextureUnits(Shader::ShaderManager::Slot::SkyTexture);
         stateset->addUniform(new osg::Uniform("far", 10000000.0f));
         stateset->addUniform(new osg::Uniform("skyBlendingStart", 8000000.0f));
         stateset->addUniform(new osg::Uniform("screenRes", osg::Vec2f{ 1, 1 }));
+        stateset->addUniform(new osg::Uniform("sky", skyTextureSlot));
 
         osg::ref_ptr<osg::LightModel> lightmodel = new osg::LightModel;
         lightmodel->setAmbientIntensity(osg::Vec4(0.3f, 0.3f, 0.3f, 1.f));

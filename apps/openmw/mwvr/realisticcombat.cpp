@@ -1,5 +1,6 @@
 #include "realisticcombat.hpp"
 #include "openxrinput.hpp"
+#include "vrutil.hpp"
 
 #include "../mwbase/environment.hpp"
 #include "../mwbase/soundmanager.hpp"
@@ -66,12 +67,6 @@ namespace MWVR
             Log(Debug::Verbose) << "realistic combat maximum swing velocity: " << mMaxVelocity;
         }
 
-        void StateMachine::onTrackingUpdated(VR::TrackingManager& manager)
-        {
-            XrSpace space = OpenXRInput::instance().getActionSet(MWActionSet::Pose).xrActionSpace(mTrackingAction);
-            mTrackingInput = XR::Session::instance().locateSpace(space, XR_REFERENCE_SPACE_TYPE_LOCAL);
-        }
-
         bool StateMachine::canSwing()
         {
             if (mSwingType >= 0)
@@ -134,11 +129,12 @@ namespace MWVR
 
         void StateMachine::update(float dt, bool enabled)
         {
-            auto& handPose = mTrackingInput.pose;
+            auto tp = MWVR::Util::getXrPose(mTrackingAction);
+            auto& pose = tp.pose;
             auto weaponType = MWBase::Environment::get().getWorld()->getActiveWeaponType();
 
             enabled = enabled && isMeleeWeapon(weaponType);
-            enabled = enabled && !!mTrackingInput.status;
+            enabled = enabled && !!tp.status;
 
             if (mEnabled != enabled)
             {
@@ -153,9 +149,9 @@ namespace MWVR
             // First determine direction of different swing types
 
             // Discover orientation of weapon
-            osg::Quat weaponDir = handPose.orientation;
+            osg::Quat weaponDir = pose.orientation;
 
-            // Morrowind models do not hold weapons at a natural angle, so i rotate the hand forward
+            // Morrowind animations do not hold weapons at natural angles, so i rotate the hand forward
             // to get a more natural angle on the weapon to allow more comfortable combat.
             if (weaponType != ESM::Weapon::HandToHand)
                 weaponDir = osg::Quat(osg::PI_4, osg::Vec3{ 1, 0, 0 }) * weaponDir;
@@ -177,11 +173,11 @@ namespace MWVR
             // Theoretically, the player's hand really could be at 0,0,0
             // but that's a super rare case so whatever.
             if (mPreviousPosition == osg::Vec3(0.f, 0.f, 0.f))
-                mPreviousPosition = handPose.position.asMeters();
+                mPreviousPosition = pose.position.asMeters();
 
-            osg::Vec3 movement = handPose.position.asMeters() - mPreviousPosition;
+            osg::Vec3 movement = pose.position.asMeters() - mPreviousPosition;
             mMovementSinceEnteredState += movement.length();
-            mPreviousPosition = handPose.position.asMeters();
+            mPreviousPosition = pose.position.asMeters();
             osg::Vec3 swingVector = movement / dt;
             osg::Vec3 swingDirection = swingVector;
             swingDirection.normalize();

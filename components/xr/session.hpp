@@ -15,6 +15,7 @@ namespace VR
 
 namespace XR
 {
+    class Space;
     extern void getEulerAngles(const osg::Quat& quat, float& yaw, float& pitch, float& roll);
 
     /// \brief Manages VR logic, such as managing frames, predicting their poses, and handling frame synchronization
@@ -33,15 +34,11 @@ namespace XR
 
         XrSession xrSession() { return mXrSession; }
 
-        XrSpace getReferenceSpace(XrReferenceSpaceType referenceSpace);
+        std::array<Stereo::View, 2> locateViews(int64_t predictedDisplayTime, VR::Space& reference) override;
 
-        std::array<Stereo::View, 2> locateViews(
-            int64_t predictedDisplayTime, XrReferenceSpaceType referenceSpace) override;
-
-        VR::TrackingPose locateSpace(XrSpace space, XrSpace referenceSpace);
-        VR::TrackingPose locateSpace(XrSpace space, XrReferenceSpaceType referenceSpace);
-
-        void xrDebugSetNames();
+        VR::TrackingPose locateSpace(XrSpace space, XrSpace referenceSpace) const;
+        VR::TrackingPose locateSpaceInWorld(XrSpace space) const;
+        void setReferenceWorldPose(Stereo::Pose pose, std::shared_ptr<VR::Space> reference) override;
 
         std::array<VR::SwapchainConfig, 2> getRecommendedSwapchainConfig() const override;
 
@@ -66,8 +63,6 @@ namespace XR
         void init();
         void cleanup();
 
-        void createXrReferenceSpaces();
-        void destroyXrReferenceSpaces();
         void logXrReferenceSpaces();
 
         void initCompositionLayerDepth();
@@ -78,16 +73,16 @@ namespace XR
         std::shared_ptr<VR::Swapchain> createSwapchain(uint32_t width, uint32_t height, uint32_t samples,
             uint32_t arraySize, VR::Swapchain::Attachment attachment, const std::string& name) override;
 
+        std::shared_ptr<VR::Space> createReferenceSpace(VR::ReferenceSpace reference, Stereo::Pose pose) override;
+        std::vector<VR::ReferenceSpace> getSupportedReferenceSpaceTypes() const override;
+
     private:
         XrSession mXrSession;
         std::queue<XrEventDataBuffer> mEventQueue;
         XrViewConfigurationType mViewConfigType;
         XrSessionState mState = XR_SESSION_STATE_UNKNOWN;
-
-        std::vector<XrReferenceSpaceType> mReferenceSpaceTypes{};
-        XrSpace mReferenceSpaceView = XR_NULL_HANDLE;
-        XrSpace mReferenceSpaceStage = XR_NULL_HANDLE;
-        XrSpace mReferenceSpaceLocal = XR_NULL_HANDLE;
+        Stereo::Pose mReferenceWorldPose = {};
+        std::shared_ptr<VR::Space> mReferenceSpace;
 
         std::mutex mMutex;
         uint32_t mAcquiredResources = 0;

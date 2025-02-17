@@ -8,9 +8,24 @@
 
 namespace VR
 {
+    // Common paths
+    namespace Paths
+    {
+        constexpr const char* LEFT_HAND_AIM = "/user/hand/left/input/aim/pose";
+        constexpr const char* LEFT_HAND = "/user/hand/left";
+        constexpr const char* RIGHT_HAND_AIM = "/user/hand/right/input/aim/pose";
+        constexpr const char* RIGHT_HAND = "/user/hand/right";
+    }
 
     //! Display time as a 64bit integer. Units and reference are undefined, value is as provided by the VR runtime.
     using DisplayTime = int64_t;
+
+    enum class ReferenceSpace
+    {
+        View = 1,
+        Local = 2,
+        Stage = 3
+    };
 
     //! A single tracked pose
     struct TrackingPose

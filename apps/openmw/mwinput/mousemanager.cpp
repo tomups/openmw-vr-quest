@@ -52,24 +52,26 @@ namespace MWInput
     }
 
 //## VR_PATCH BEGIN
-    void MouseManager::mouseMovedVR(const SDLUtil::MouseMotionEvent& arg)
-    {
-        if (VR::getKBMouseModeActive())
-        {
-            float x = arg.xrel * Settings::input().mCameraSensitivity * (Settings::input().mInvertXAxis ? -1 : 1) / 256.f;
-            MWVR::VRInputManager::instance().mouseMove(x);
-        }
-    }
+//     TODO:
+    //void MouseManager::mouseMovedVR(const SDLUtil::MouseMotionEvent& arg)
+    //{
+    //    if (VR::getKBMouseModeActive())
+    //    {
+    //        float x = arg.xrel * Settings::input().mCameraSensitivity * (Settings::input().mInvertXAxis ? -1 : 1) / 256.f;
+    //        MWVR::VRInputManager::instance().mouseMove(x);
+    //    }
+    //}
 //## VR_PATCH END
 
     void MouseManager::mouseMoved(const SDLUtil::MouseMotionEvent& arg)
     {
 //## VR_PATCH BEGIN
-        if (VR::getVR())
-        {
-            mouseMovedVR(arg);
-            return;
-        }
+//         TODO: Process in lua?
+        //if (VR::getVR())
+        //{
+        //    mouseMovedVR(arg);
+        //    return;
+        //}
 
 //## VR_PATCH END
         mBindingsManager->mouseMoved(arg);
@@ -240,11 +242,12 @@ namespace MWInput
 
         float xAxis = mBindingsManager->getActionValue(A_LookLeftRight) * 2.0f - 1.0f;
 //## VR_PATCH BEGIN
-        if (VR::getVR())
-        {
-            MWVR::VRInputManager::instance().turnLeftRight(xAxis, mPreviousXAxis, dt);
-            mPreviousXAxis = xAxis;
-        }
+//         TODO: Handle in lua
+        //if (VR::getVR())
+        //{
+        //    MWVR::VRInputManager::instance().turnLeftRight(xAxis, mPreviousXAxis, dt);
+        //    mPreviousXAxis = xAxis;
+        //}
 //## VR_PATCH END
         float yAxis = mBindingsManager->getActionValue(A_LookUpDown) * 2.0f - 1.0f;
         if (xAxis == 0 && yAxis == 0)

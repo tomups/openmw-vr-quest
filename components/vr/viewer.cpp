@@ -197,7 +197,11 @@ namespace VR
         setupMirrorTexture();
         setupSwapchains();
 
+        mReferenceSpaceLocal = mSession->createReferenceSpace(VR::ReferenceSpace::Local, {});
+        mReferenceSpaceView = mSession->createReferenceSpace(VR::ReferenceSpace::View, {});
+
         mProjectionLayer = std::make_shared<VR::ProjectionLayer>();
+        mProjectionLayer->space = mReferenceSpaceLocal;
         for (uint32_t i = 0; i < 2; i++)
         {
             mProjectionLayer->views[i].subImage.index = 0;
@@ -344,10 +348,6 @@ namespace VR
         if (mReadyFrames.empty())
             throw std::logic_error("VR::Viewer::currentUpdateFrame() called outside of update");
         return mReadyFrames.back();
-    }
-
-    void Viewer::setFinalDrawCallback(std::function<void(osg::RenderInfo& info)> cb) {
-        mFinalDrawCallback = cb;
     }
 
     osg::ref_ptr<osg::FrameBufferObject> Viewer::getXrFramebuffer(uint32_t view, osg::State* state)
@@ -508,8 +508,6 @@ namespace VR
         if (view == Misc::CallbackManager::View::Left)
             return;
         VR::Session::instance().frameEnd(info, mDrawFrame);
-        if (mFinalDrawCallback)
-            mFinalDrawCallback(info);
         if (mDrawFrame.shouldRender)
         {
             blit(info);
@@ -537,8 +535,8 @@ namespace VR
         auto& frame = mReadyFrames.back();
 
         auto localViews
-            = VR::Session::instance().locateViews(frame.predictedDisplayTime, XR_REFERENCE_SPACE_TYPE_LOCAL);
-        auto views = VR::Session::instance().locateViews(frame.predictedDisplayTime, XR_REFERENCE_SPACE_TYPE_VIEW);
+            = VR::Session::instance().locateViews(frame.predictedDisplayTime, *mReferenceSpaceLocal);
+        auto views = VR::Session::instance().locateViews(frame.predictedDisplayTime, *mReferenceSpaceView);
 
         if (frame.shouldRender && frame.shouldSyncFrameLoop)
         {
@@ -556,7 +554,6 @@ namespace VR
 
             std::shared_ptr<VR::ProjectionLayer> projectionLayer
                 = std::make_shared<VR::ProjectionLayer>(*mProjectionLayer);
-
             for (uint32_t i = 0; i < 2; i++)
             {
                 projectionLayer->views[i].view = localViews[i];

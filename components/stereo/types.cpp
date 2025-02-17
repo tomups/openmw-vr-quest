@@ -5,7 +5,7 @@
 namespace Stereo
 {
 
-    Pose Pose::operator+(const Pose& rhs)
+    Pose Pose::operator+(const Pose& rhs) const
     {
         Pose pose = *this;
         pose.position += this->orientation * rhs.position;

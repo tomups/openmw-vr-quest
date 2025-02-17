@@ -491,19 +491,6 @@ namespace MWRender
         float mAlpha;
     };
 
-    struct Animation::AnimSource
-    {
-        osg::ref_ptr<const SceneUtil::KeyframeHolder> mKeyframes;
-
-        typedef std::map<std::string, osg::ref_ptr<SceneUtil::KeyframeController>> ControllerMap;
-
-        ControllerMap mControllerMap[sNumBlendMasks];
-
-        const SceneUtil::TextKeyMap& getTextKeys() const;
-
-        osg::ref_ptr<const SceneUtil::AnimBlendRules> mAnimBlendRules;
-    };
-
     void UpdateVfxCallback::operator()(osg::Node* node, osg::NodeVisitor* nv)
     {
         traverse(node, nv);

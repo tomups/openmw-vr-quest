@@ -3,8 +3,9 @@
 
 #include "../mwrender/npcanimation.hpp"
 #include "../mwrender/renderingmanager.hpp"
-#include <components/vr/trackinglistener.hpp>
 #include <components/vr/vr.hpp>
+#include <components/vr/session.hpp>
+#include <components/vr/space.hpp>
 
 #include <osg/MatrixTransform>
 
@@ -14,9 +15,10 @@ namespace MWVR
     class FingerController;
     class TrackingController;
     class Crosshair;
+    class XrSpaceTransform;
 
     /// Subclassing NpcAnimation to implement VR related behaviour
-    class VRAnimation : public MWRender::NpcAnimation, public VR::TrackingListener
+    class VRAnimation : public MWRender::NpcAnimation, private VR::Session::Listener
     {
     protected:
         virtual void addControllers() override;
@@ -59,13 +61,30 @@ namespace MWVR
 
         void setEnableCrosshairs(bool enable);
 
-    protected:
+        void updateLocalSpaceWorldPose();
+        // Just hardcode Reference space Local -> object root
+        //void attachReferenceSpaceToBone(XrSpace space, const std::string& bone);
+        void attachBoneToSpace(const std::string& bone, std::shared_ptr<VR::Space> space, Stereo::Pose pose);
 
-        void onTrackingUpdated(VR::TrackingManager& manager) override;
+        virtual void addAnimSource(std::string_view model, const std::string& baseModel) override;
+
+    protected:
 
         void updateCrosshairs() override;
 
+        void updateCharHeight();
+
+        void onFrameUpdate(VR::Frame&) override;
+
+        void recenter();
+        void onRecenter() override { recenter(); };
+
     protected:
+
+        std::map<std::string, std::shared_ptr<VR::Space>> mBoneToSpaceAttachments;
+        std::string mReferenceAttachmentBone;
+        //XrSpace mReferenceSpace;
+
         typedef std::unordered_map<std::string, std::unique_ptr<TrackingController>, Misc::StringUtils::CiHash,
             Misc::StringUtils::CiEqual>
             TrackingControllerMap;
@@ -78,13 +97,13 @@ namespace MWVR
         osg::ref_ptr<osg::MatrixTransform> mWeaponPointerTransform;
 
         bool mCrosshairsEnabled;
+        float mCharHeight = 120.f;
+        Stereo::Pose mCharLocalSpacePose;
         std::unique_ptr<MWVR::Crosshair> mCrosshairAmmo;
         std::unique_ptr<MWVR::Crosshair> mCrosshairThrown;
         std::unique_ptr<MWVR::Crosshair> mCrosshairSpell;
         osg::ref_ptr<osg::Transform> mKBMouseCrosshairTransform;
         osg::ref_ptr<osg::Group> mSceneRoot;
-
-        VR::VRPath mWorldHeadPath;
     };
 
 }

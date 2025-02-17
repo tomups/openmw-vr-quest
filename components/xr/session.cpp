@@ -3,6 +3,7 @@
 #include "instance.hpp"
 #include "swapchain.hpp"
 #include "typeconversion.hpp"
+#include "space.hpp"
 
 #include <components/misc/constants.hpp>
 #include <components/sceneutil/depth.hpp>
@@ -11,6 +12,7 @@
 #include <components/vr/trackingsource.hpp>
 #include <components/vr/vr.hpp>
 #include <components/xr/tracking.hpp>
+#include <components/xr/space.hpp>
 
 #include <cassert>
 #include <sstream>
@@ -161,8 +163,7 @@ namespace XR
                     case VR::Layer::Type::ProjectionLayer:
                     {
                         VR::ProjectionLayer* projectionLayer = static_cast<VR::ProjectionLayer*>(layer.get());
-
-                        xrProjectionLayer.space = mReferenceSpaceLocal;
+                        xrProjectionLayer.space = static_cast<XR::Space*>(projectionLayer->space.get())->xrSpace();
                         xrProjectionLayer.viewCount = 2;
                         xrProjectionLayer.views = compositionLayerProjectionViews.data();
 
@@ -241,7 +242,7 @@ namespace XR
                         quadLayers.back().pose = toXR(pose);
                         quadLayers.back().size.width = quadLayer->extent.x();
                         quadLayers.back().size.height = quadLayer->extent.y();
-                        quadLayers.back().space = quadLayer->space;
+                        quadLayers.back().space = static_cast<XR::Space*>(quadLayer->space.get())->xrSpace();
 
                         if (quadLayer->subImage)
                         {
@@ -450,34 +451,14 @@ namespace XR
 
     void Session::init()
     {
-        createXrReferenceSpaces();
         initCompositionLayerDepth();
         initMSFTReprojection();
+        mReferenceSpace = createReferenceSpace(VR::ReferenceSpace::Local, {});
     }
 
     void Session::cleanup()
     {
-        destroyXrReferenceSpaces();
         destroyXrSession();
-    }
-
-    void Session::destroyXrReferenceSpaces()
-    {
-        if (mReferenceSpaceLocal)
-        {
-            CHECK_XRCMD(xrDestroySpace(mReferenceSpaceLocal));
-            mReferenceSpaceLocal = XR_NULL_HANDLE;
-        }
-        if (mReferenceSpaceStage)
-        {
-            CHECK_XRCMD(xrDestroySpace(mReferenceSpaceStage));
-            mReferenceSpaceStage = XR_NULL_HANDLE;
-        }
-        if (mReferenceSpaceView)
-        {
-            CHECK_XRCMD(xrDestroySpace(mReferenceSpaceView));
-            mReferenceSpaceView = XR_NULL_HANDLE;
-        }
     }
 
     void Session::destroyXrSession()
@@ -591,33 +572,6 @@ namespace XR
         }
     }
 
-    void Session::createXrReferenceSpaces()
-    {
-        uint32_t typeCount = 0;
-        CHECK_XRCMD(xrEnumerateReferenceSpaces(mXrSession, 0, &typeCount, nullptr));
-        mReferenceSpaceTypes.resize(typeCount);
-        CHECK_XRCMD(xrEnumerateReferenceSpaces(mXrSession, typeCount, &typeCount, mReferenceSpaceTypes.data()));
-        Log(Debug::Verbose) << "Available reference spaces:";
-        for (auto type : mReferenceSpaceTypes)
-            Log(Debug::Verbose) << "  " << to_string(type);
-
-        XrReferenceSpaceCreateInfo createInfo{};
-        createInfo.type = XR_TYPE_REFERENCE_SPACE_CREATE_INFO;
-        createInfo.poseInReferenceSpace.orientation.w = 1.f; // Identity pose
-
-        createInfo.referenceSpaceType = XR_REFERENCE_SPACE_TYPE_VIEW;
-        CHECK_XRCMD(xrCreateReferenceSpace(mXrSession, &createInfo, &mReferenceSpaceView));
-        Debugging::setName(mReferenceSpaceView, "OpenMW XR Reference Space View");
-
-        createInfo.referenceSpaceType = XR_REFERENCE_SPACE_TYPE_STAGE;
-        CHECK_XRCMD(xrCreateReferenceSpace(mXrSession, &createInfo, &mReferenceSpaceStage));
-        Debugging::setName(mReferenceSpaceStage, "OpenMW XR Reference Space Stage");
-
-        createInfo.referenceSpaceType = XR_REFERENCE_SPACE_TYPE_LOCAL;
-        CHECK_XRCMD(xrCreateReferenceSpace(mXrSession, &createInfo, &mReferenceSpaceLocal));
-        Debugging::setName(mReferenceSpaceLocal, "OpenMW XR Reference Space Local");
-    }
-
     void Session::logXrReferenceSpaces()
     {
         uint32_t spaceCount = 0;
@@ -633,21 +587,40 @@ namespace XR
         Log(Debug::Verbose) << ss.str();
     }
 
-    XrSpace Session::getReferenceSpace(XrReferenceSpaceType space)
+    std::shared_ptr<VR::Space> Session::createReferenceSpace(VR::ReferenceSpace reference, Stereo::Pose pose)
     {
-        switch (space)
-        {
-            case XR_REFERENCE_SPACE_TYPE_VIEW:
-                return mReferenceSpaceView;
-            case XR_REFERENCE_SPACE_TYPE_LOCAL:
-                return mReferenceSpaceLocal;
-            case XR_REFERENCE_SPACE_TYPE_STAGE:
-                return mReferenceSpaceStage;
-        }
-        return XR_NULL_HANDLE;
+        XrReferenceSpaceCreateInfo createInfo{};
+        createInfo.type = XR_TYPE_REFERENCE_SPACE_CREATE_INFO;
+        createInfo.poseInReferenceSpace = toXR(pose); // Identity pose
+
+        XrSpace space = XR_NULL_HANDLE;
+        createInfo.referenceSpaceType = static_cast<XrReferenceSpaceType>(reference);
+        CHECK_XRCMD(xrCreateReferenceSpace(mXrSession, &createInfo, &space));
+        Debugging::setName(
+            space, "Created OpenMW XR Reference Space " + std::string(to_string(createInfo.referenceSpaceType)));
+        if (space)
+            return std::make_shared<Space>(space);
+        return nullptr;
     }
 
-    std::array<Stereo::View, 2> Session::locateViews(int64_t predictedDisplayTime, XrReferenceSpaceType space)
+    std::vector<VR::ReferenceSpace> Session::getSupportedReferenceSpaceTypes() const
+    {
+        std::vector<XrReferenceSpaceType> referenceSpaceTypes;
+        uint32_t typeCount = 0;
+        CHECK_XRCMD(xrEnumerateReferenceSpaces(mXrSession, 0, &typeCount, nullptr));
+        referenceSpaceTypes.resize(typeCount);
+        CHECK_XRCMD(xrEnumerateReferenceSpaces(mXrSession, typeCount, &typeCount, referenceSpaceTypes.data()));
+        Log(Debug::Verbose) << "Available reference spaces:";
+        for (auto type : referenceSpaceTypes)
+            Log(Debug::Verbose) << "  " << to_string(type);
+
+        std::vector<VR::ReferenceSpace> res;
+        for (auto ref : referenceSpaceTypes)
+            res.push_back(static_cast<VR::ReferenceSpace>(ref));
+        return res;
+    }
+
+    std::array<Stereo::View, 2> Session::locateViews(int64_t predictedDisplayTime, VR::Space& reference)
     {
         std::array<XrView, 2> xrViews{};
         xrViews[0].type = XR_TYPE_VIEW;
@@ -661,7 +634,7 @@ namespace XR
         viewLocateInfo.type = XR_TYPE_VIEW_LOCATE_INFO;
         viewLocateInfo.viewConfigurationType = mViewConfigType;
         viewLocateInfo.displayTime = predictedDisplayTime;
-        viewLocateInfo.space = getReferenceSpace(space);
+        viewLocateInfo.space = static_cast<Space&>(reference).xrSpace();
         CHECK_XRCMD(xrLocateViews(mXrSession, &viewLocateInfo, &viewState, viewCount, &viewCount, xrViews.data()));
 
         std::array<Stereo::View, 2> vrViews{};
@@ -673,7 +646,19 @@ namespace XR
         return vrViews;
     }
 
-    VR::TrackingPose Session::locateSpace(XrSpace space, XrSpace referenceSpace)
+    VR::TrackingPose Session::locateSpaceInWorld(XrSpace space) const
+    {
+        auto tp = locateSpace(space, static_cast<Space*>(mReferenceSpace.get())->xrSpace());
+        tp.pose = mReferenceWorldPose + tp.pose;
+        return tp;
+    }
+
+    void Session::setReferenceWorldPose(Stereo::Pose pose, std::shared_ptr<VR::Space> reference) {
+        mReferenceWorldPose = pose;
+        mReferenceSpace = reference;
+    }
+
+    VR::TrackingPose Session::locateSpace(XrSpace space, XrSpace referenceSpace) const
     {
         VR::TrackingPose pose = {};
         pose.status = VR::TrackingStatus::Good;
@@ -709,11 +694,6 @@ namespace XR
 
         pose.pose = fromXR(location.pose);
         return pose;
-    }
-
-    VR::TrackingPose Session::locateSpace(XrSpace space, XrReferenceSpaceType referenceSpace)
-    {
-        return locateSpace(space, getReferenceSpace(referenceSpace));
     }
 
     std::array<VR::SwapchainConfig, 2> Session::getRecommendedSwapchainConfig() const

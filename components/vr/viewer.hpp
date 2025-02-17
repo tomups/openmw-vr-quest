@@ -81,8 +81,6 @@ namespace VR
 
         const VR::Frame& currentUpdateFrame();
 
-        void setFinalDrawCallback(std::function<void(osg::RenderInfo& info)> cb);
-
     private:
         osg::ref_ptr<osg::FrameBufferObject> getXrFramebuffer(uint32_t view, osg::State* state);
         void blitXrFramebuffer(osg::State* state, int i);
@@ -121,10 +119,10 @@ namespace VR
 
         std::map<osg::FrameBufferObject*, std::unique_ptr<Stereo::MultiviewFramebufferResolve>> mMultiviewResolve;
 
-        std::shared_ptr<VR::ProjectionLayer> mProjectionLayer;
+        std::shared_ptr<ProjectionLayer> mProjectionLayer;
         std::vector<std::shared_ptr<Layer>> mLayers;
-
-        std::function<void(osg::RenderInfo& info)> mFinalDrawCallback;
+        std::shared_ptr<Space> mReferenceSpaceLocal;
+        std::shared_ptr<Space> mReferenceSpaceView;
     };
 }
 

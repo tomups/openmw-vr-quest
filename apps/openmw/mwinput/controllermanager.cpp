@@ -220,17 +220,6 @@ namespace MWInput
 
     void ControllerManager::axisMoved(int deviceID, const SDL_ControllerAxisEvent& arg)
     {
-//## VR_PATCH BEGIN
-        if (VR::getVR() && !MWBase::Environment::get().getWindowManager()->isGuiMode())
-        {
-            if (arg.axis == SDL_CONTROLLER_AXIS_RIGHTY)
-            {
-                float value = static_cast<float>(arg.value) / (arg.value < 0 ? 32768.f : 32767.f);
-                MWVR::VRInputManager::instance().processUtilityStickY(
-                    -value, MWBase::Environment::get().getInputManager()->controlsDisabled());
-            }
-        }
-//## VR_PATCH END
 
         if (!Settings::input().mEnableController || MWBase::Environment::get().getInputManager()->controlsDisabled())
             return;

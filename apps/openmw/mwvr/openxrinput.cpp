@@ -105,14 +105,17 @@ namespace MWVR
         createLuaActions();
         createPoseActions();
         attachActionSets();
+        createReferenceSpaces();
     }
 
     void OpenXRInput::createActionSets()
     {
         mActionSets.emplace(
             std::piecewise_construct, std::forward_as_tuple(MWActionSet::Actions), std::forward_as_tuple("Lua"));
-        mActionSets.emplace(std::piecewise_construct, std::forward_as_tuple(MWActionSet::Tracking),
-            std::forward_as_tuple("Tracking"));
+        mActionSets.emplace(
+            std::piecewise_construct, std::forward_as_tuple(MWActionSet::Pose), std::forward_as_tuple("Poses"));
+        mActionSets.emplace(
+            std::piecewise_construct, std::forward_as_tuple(MWActionSet::Haptics), std::forward_as_tuple("Haptics"));
     }
 
     static std::string pathToValidOpenXRActionName(std::string_view name)
@@ -185,6 +188,7 @@ namespace MWVR
         {
             poseActionsSet.createPoseAction(pathToValidOpenXRActionName(path), path, path);
             poseActionsSet.suggestBinding(path, path);
+            createActionSpace(path, path);
         }
         for (auto& path : hapticsActions)
         {
@@ -200,6 +204,16 @@ namespace MWVR
         poseActionsSet.createPoseAction("hand_pose_right", "Hand Pose Right", "hand_pose_right");
         poseActionsSet.suggestBinding("hand_pose_left", "/user/hand/left/input/aim/pose");
         poseActionsSet.suggestBinding("hand_pose_right", "/user/hand/right/input/aim/pose");
+    }
+
+    void OpenXRInput::createReferenceSpaces()
+    {
+        auto supportedTypes = VR::Session::instance().getSupportedReferenceSpaceTypes();
+        createReferenceSpace(DefaultReferenceSpaceLocal, VR::ReferenceSpace::Local);
+        createReferenceSpace(DefaultReferenceSpaceView, VR::ReferenceSpace::View);
+        // OpenXR Requires that local and view must always be supported, but Stage is optional.
+        if (std::find(supportedTypes.begin(), supportedTypes.end(), VR::ReferenceSpace::Stage) != supportedTypes.end())
+            createReferenceSpace(DefaultReferenceSpaceStage, VR::ReferenceSpace::Stage);
     }
 
     XR::ActionSet& OpenXRInput::getActionSet(MWActionSet actionSet)
@@ -261,5 +275,27 @@ namespace MWVR
         attachInfo.countActionSets = actionSets.size();
         attachInfo.actionSets = actionSets.data();
         CHECK_XRCMD(xrAttachSessionActionSets(XR::Session::instance().xrSession(), &attachInfo));
+    }
+
+    void OpenXRInput::createActionSpace(const std::string& id, const std::string& actionName, Stereo::Pose pose) 
+    {
+        if (mSpaces.contains(id))
+            throw std::runtime_error("Space " + id + " already exists");
+        mSpaces[id] = mActionSets.at(MWActionSet::Pose).createActionSpace(id, actionName, pose);
+    }
+
+    void OpenXRInput::createReferenceSpace(const std::string& id, VR::ReferenceSpace ref, Stereo::Pose pose) 
+    {
+        if (mSpaces.contains(id))
+            throw std::runtime_error("Space " + id + " already exists");
+        mSpaces[id] = VR::Session::instance().createReferenceSpace(ref, pose);
+    }
+
+    std::shared_ptr<VR::Space> OpenXRInput::getSpace(const std::string& id) const
+    {
+        auto it = mSpaces.find(id);
+        if (it == mSpaces.end())
+            return nullptr;
+        return it->second;
     }
 }

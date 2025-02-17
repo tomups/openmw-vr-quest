@@ -8,11 +8,6 @@
 #include "../mwbase/world.hpp"
 #include "../mwworld/ptr.hpp"
 
-namespace VR
-{
-    class TrackingManager;
-}
-
 namespace MWVR
 {
     namespace RealisticCombat
@@ -52,7 +47,7 @@ namespace MWVR
         ///    Cooldown  -> Ready:       When the minimum period has passed since entering Cooldown state
         ///
         ///
-        class StateMachine : public VR::TrackingListener
+        class StateMachine
         {
         public:
             StateMachine(MWWorld::Ptr ptr, std::string_view poseAction);
@@ -60,8 +55,6 @@ namespace MWVR
             MWWorld::Ptr ptr() { return mPtr; }
 
         protected:
-            void onTrackingUpdated(VR::TrackingManager& manager) override;
-
             bool canSwing();
 
             void playSwish();
@@ -111,7 +104,6 @@ namespace MWVR
             bool mEnabled = false;
 
             osg::Vec3 mPreviousPosition{ 0.f, 0.f, 0.f };
-            VR::TrackingPose mTrackingInput = VR::TrackingPose();
             std::string mTrackingAction = 0;
         };
 

@@ -258,10 +258,12 @@ namespace MWRender
 
         // TODO: Clean up this mess of loose uniforms that shaders depend on.
         // turn off sky blending
+        int skyTextureSlot = mResourceSystem->getSceneManager()->getShaderManager().reserveGlobalTextureUnits(
+            Shader::ShaderManager::Slot::SkyTexture);
         stateset->addUniform(new osg::Uniform("far", 10000000.0f));
         stateset->addUniform(new osg::Uniform("skyBlendingStart", 8000000.0f));
         stateset->addUniform(new osg::Uniform("screenRes", osg::Vec2f{ 1, 1 }));
-
+        stateset->addUniform(new osg::Uniform("sky", skyTextureSlot));
         stateset->addUniform(new osg::Uniform("emissiveMult", 1.f));
 
         // Opaque stuff must have 1 as its fragment alpha as the FBO is translucent, so having blending off isn't enough

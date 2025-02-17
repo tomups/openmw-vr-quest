@@ -81,7 +81,6 @@ namespace MWWorld
     class WeatherManager;
     class Player;
     class ProjectileManager;
-    class WeaponPoseTrackingListener;
 
     /// \brief The game world and its visual representation
 
@@ -141,10 +140,6 @@ namespace MWWorld
         uint32_t mRandomSeed{};
         bool mIdsRebuilt{};
 
-//## VR_PATCH BEGIN
-        std::unique_ptr<WeaponPoseTrackingListener> mWeaponPoseTrackingListener;
-
-//## VR_PATCH END
         // not implemented
         World(const World&) = delete;
         World& operator=(const World&) = delete;
@@ -700,9 +695,7 @@ namespace MWWorld
 
         void enableVRPointer(bool left, bool right) override;
 
-        Stereo::Pose getVRWeaponPose() override;
         std::optional<std::pair<MWWorld::Ptr, osg::Vec3f>> getVRMeleeHitContact(MWWorld::Ptr ptr) override;
-        void setWeaponPosePath(int64_t path) override;
 //## VR_PATCH END
     };
 }
