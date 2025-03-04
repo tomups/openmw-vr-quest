@@ -38,7 +38,7 @@ namespace MWVR
         std::pair<MWWorld::Ptr, float> getTouchTarget()
         {
             std::string path = Settings::Manager::getBool("left handed mode", "VR") ? VR::Paths::LEFT_HAND_AIM : VR::Paths::RIGHT_HAND_AIM;
-            auto space = OpenXRInput::instance().getActionSet(MWActionSet::Pose).actionSpace(path);
+            auto space = OpenXRInput::instance().getSpace(path);
             MWRender::RayResult result;
 
             auto pose = space->locateInWorld();
@@ -98,7 +98,7 @@ namespace MWVR
 
         VR::TrackingPose getXrPose(const std::string& path)
         {
-            auto space = OpenXRInput::instance().getActionSet(MWActionSet::Pose).actionSpace(path);
+            auto space = OpenXRInput::instance().getSpace(path);
             return space->locateInWorld();
         }
 

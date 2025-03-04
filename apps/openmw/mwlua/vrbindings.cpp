@@ -5,6 +5,7 @@
 #include "../mwvr/openxrinput.hpp"
 #include "../mwvr/vranimation.hpp"
 #include "../mwvr/vrutil.hpp"
+#include "../mwvr/vrinputmanager.hpp"
 #include <components/lua/utilpackage.hpp>
 #include <components/vr/vr.hpp>
 #include <components/vr/trackingmanager.hpp>
@@ -18,6 +19,19 @@ namespace MWLua
 {
     namespace
     {
+        // sol's own get_or seems to be buggy and gives compiler errors at e.g. returning a osg::Vec2
+        // LuaUtil::Vec2 test = t.get_or("test", LuaUtil::Vec2())
+        // fails to compile
+        // so i wrote this wrapper to not go insane fetching osg::Vec2 values from a sol::table
+        template <typename T>
+        T get_or(const sol::table& t, const std::string& key, T&& o)
+        {
+            sol::optional<T> opt = t.get<sol::optional<T>>(key);
+            if (opt)
+                return opt.value();
+            return o;
+        }
+
         sol::table getAvailableInteractions(const Context& context)
         {
             sol::state_view lua = context.sol();
@@ -68,7 +82,7 @@ namespace MWLua
 
             sol::table t(lua, sol::create);
             t["position"] = pose.pose.position.asMWUnits();
-            t["transform"] = LuaUtil::asTransform(pose.pose.orientation);
+            t["orientation"] = LuaUtil::asTransform(pose.pose.orientation);
             return t;
         }
 
@@ -77,11 +91,11 @@ namespace MWLua
             Stereo::Pose pose = {};
             if (table)
             {
-                pose.position = table->get_or("position", pose.position);
-                sol::optional<LuaUtil::TransformQ> transform
-                    = table->get<sol::optional<LuaUtil::TransformQ>>("rotation");
-                if (transform)
+                pose.position = Stereo::Position::fromMWUnits(get_or<osg::Vec3f>(*table, "position", osg::Vec3f()));
+                if (auto transform = table->get<sol::optional<LuaUtil::TransformQ>>("orientation"))
                     pose.orientation = transform->mQ;
+                else if (auto transform = table->get<sol::optional<LuaUtil::TransformM>>("orientation"))
+                    pose.orientation = transform->mM.getRotate();
             }
             return pose;
         }
@@ -94,19 +108,6 @@ namespace MWLua
                 throw std::runtime_error("Player does not have an animation yet");
             return static_cast<MWVR::VRAnimation*>(anim);
         }
-
-        // sol's own get_or is buggy and gives compiler errors at e.g. returning a osg::Vec2
-        // LuaUtil::Vec2 test = t.get_or("test", LuaUtil::Vec2())
-        // fails to compile
-        // so i wrote this wrapper to not go insane fetching osg::Vec2 from a sol::table
-        template <typename T>
-        T get_or(const sol::table& t, const std::string& key, T&& o)
-        {
-            sol::optional<T> opt = t.get<sol::optional<T>>(key);
-            if (opt)
-                return opt.value();
-            return o;
-        }
     }
 
     sol::table initVRPackage(const Context& context)
@@ -115,27 +116,29 @@ namespace MWLua
         sol::table api(lua, sol::create);
         api["isVr"] = []() -> bool { return VR::getVR(); };
 
-        if (!VR::getVR())
-            return LuaUtil::makeReadOnly(api);
-
-        MWVR::OpenXRInput& xrinput = MWVR::OpenXRInput::instance();
-
         api["CONTROLLER_PATHS"] = LuaUtil::makeStrictReadOnly(LuaUtil::tableFromVector<std::string>(
             lua, { "/user/hand/left", "/user/hand/right", "/user/gamepad", "/user/treadmill" }));
 
-        api["INTERACTION_VALUE_TYPES"] = LuaUtil::makeStrictReadOnly(
-            LuaUtil::tableFromVector<std::string>(lua, { "BOOLEAN", "FLOAT", "AXIS", "POSE" }));
+        api["INTERACTION_VALUE_TYPES"] = LuaUtil::makeStrictReadOnly(LuaUtil::tableFromPairs<std::string, std::string>(
+            lua, { { "Boolean", "BOOLEAN" }, { "Float", "FLOAT" }, { "Axis", "AXIS" }, { "Pose", "POSE" } }));
 
         api["EYES"] = LuaUtil::makeStrictReadOnly(
             LuaUtil::tableFromPairs<std::string, int>(lua, { { "LEFT_EYE", 1 }, { "RIGHT_EYE", 2 } }));
 
         api["REFERENCE_SPACES"]
-            = LuaUtil::makeStrictReadOnly(LuaUtil::tableFromPairs<std::string, int>(lua,
+            = LuaUtil::makeStrictReadOnly(LuaUtil::tableFromPairs<std::string, VR::ReferenceSpace>(lua,
                 {
-                    { "VIEW", XR_REFERENCE_SPACE_TYPE_VIEW },
-                    { "LOCAL", XR_REFERENCE_SPACE_TYPE_LOCAL },
-                    { "STAGE", XR_REFERENCE_SPACE_TYPE_STAGE },
+                    { "View", VR::ReferenceSpace::View },
+                    { "Local", VR::ReferenceSpace::Local },
+                    { "Stage", VR::ReferenceSpace::Stage },
                 }));
+
+        if (!VR::getVR())
+            return LuaUtil::makeReadOnly(api);
+
+        MWVR::OpenXRInput& xrinput = MWVR::OpenXRInput::instance();
+        api["availableInteractions"] = getAvailableInteractions(context);
+        api["availableReferenceSpaces"] = getAvailableReferenceSpaces(context);
 
         api["isControllerActive"]
             = [](const std::string& path) -> bool { return VR::getControllerActive(VR::stringToXrPath(path)); };
@@ -145,21 +148,13 @@ namespace MWLua
                 return sol::nullopt;
             return std::string(VR::xrPathToString(p));
         };
-        api["getAvailableInteractions"]
-            // This table never changes and is fairly big, so I cache it.
-            = [interactions = getAvailableInteractions(context)](
-                  std::string_view path) -> sol::table { return interactions; };
-        api["getAvailableReferenceSpaces"]
-            // This table never changes and is fairly big, so I cache it.
-            = [references = getAvailableReferenceSpaces(context)](
-                  std::string_view path) -> sol::table { return references; };
 
         api["createDerivedSpace"] = sol::overload(
             [&xrinput](const std::string& spaceId, VR::ReferenceSpace referenceSpaceType, const sol::table& pose) {
-                xrinput.createReferenceSpace(spaceId, referenceSpaceType, poseFromTable(pose));
+                xrinput.createDerivedSpace(spaceId, referenceSpaceType, poseFromTable(pose));
             },
             [&xrinput](const std::string& spaceId, const std::string& actionName, const sol::table& pose) {
-                xrinput.createActionSpace(spaceId, actionName, poseFromTable(pose));
+                xrinput.createDerivedSpace(spaceId, actionName, poseFromTable(pose));
             });
 
         api["spaceExists"] = [&xrinput](const std::string& spaceId) -> bool { return !!xrinput.getSpace(spaceId); };
@@ -168,6 +163,8 @@ namespace MWLua
         api["getActionValue"] = [&actionSet = MWVR::OpenXRInput::instance().getActionSet(MWVR::MWActionSet::Actions)](
                                     const std::string& path) { return actionSet.getValue(path); };
         api["locateSpace"] = [&xrinput, lua](const std::string& spaceId, sol::optional<std::string> ref) -> sol::object {
+            if (!VR::getLocatingSpacesAllowed())
+                throw std::logic_error("locateSpace() is only allowed during onVRFrame()");
             auto space = xrinput.getSpace(spaceId);
             if (!space)
                 return sol::nil;
@@ -183,6 +180,8 @@ namespace MWLua
                                     const std::string& path, float value) { actionSet.applyHaptics(path, value); };
 
         api["locateSpaceInWorld"] = [&xrinput, lua](const std::string& spaceId) -> sol::object {
+            if (!VR::getLocatingSpacesAllowed())
+                throw std::logic_error("locateSpace() is only allowed during onVRFrame()");
             auto space = xrinput.getSpace(spaceId);
             if (!space)
                 return sol::nil;
@@ -190,36 +189,38 @@ namespace MWLua
             return tableFromPose(space->locateInWorld(), lua);
         };
 
-        api["attachBoneToSpace"] = 
-            [&xrinput](const std::string& bone, const std::string& spaceId, sol::table options) {
-            auto space = xrinput.getSpace(spaceId);
-            auto anim = getPlayerAnimation();
-            auto pose = poseFromTable(options.get<sol::optional<sol::table>>("pose"));
-            anim->attachBoneToSpace(bone, space, pose);
-            };
-
         api["_setGuiPose"] = [&guiManager = MWVR::VRGUIManager::instance()](const std::string& id,
                                  const sol::table& pose) {
                   guiManager.setLayerPose(id, poseFromTable(pose));
         };
 
         api["_setGuiLayer"]
-            = [&guiManager = MWVR::VRGUIManager::instance()](std::string_view layer, const sol::table& options) {
+            = [&guiManager = MWVR::VRGUIManager::instance()](const std::string& layer, const sol::table& options) {
                   MWVR::LayerConfig config;
                   config.priority = options.get_or("priority", 0);
-                  // I frankly gave up trying to get sol::table to return an osg::Vec2. All i get are insane compiler errors from a simple `osg::Vec2 asdf = get_or(key, osg::Vec2())`
                   config.opacity = options.get_or("backgroundOpacity", 0);
-                  config.center = get_or(options, "centerX", osg::Vec2());
-                  config.extent = get_or(options, "extentX", osg::Vec2(1, 1));
+                  config.center = get_or(options, "center", osg::Vec2());
+                  config.extent = get_or(options, "extent", osg::Vec2(1, 1));
                   config.spatialResolution = options.get_or("pixelsPerMeter", 1024);
-                  config.pixelResolution.x() = options.get_or("pixelResolutionWidth", 1024);
-                  config.pixelResolution.y() = options.get_or("pixelResolutionHeight", 1024);
+                  auto rttResolution = get_or(options, "rttResolution", osg::Vec2(1024, 1024));
+                  config.pixelResolution.x() = static_cast<int>(rttResolution.x());
+                  config.pixelResolution.y() = static_cast<int>(rttResolution.y());
                   config.myGUIViewSize = osg::Vec2(1, 1);
                   config.autoSize = options.get_or("autosize", true);
                   config.space = options.get_or("space", MWVR::VRGUIManager::DefaultUiSpace);
-                  config.extraLayers = "popup";
                   config.intersectable = options.get_or("intersectable", true);
+
+                  guiManager.setLayerConfig(layer, config);
               };
+
+        //api["_setPointerLeft"] = [&inputManager = MWVR::VRInputManager::instance()](
+        //                             bool enabled) { inputManager.setPointerLeft(enabled); };
+
+        //api["_setPointerRight"] = [&inputManager = MWVR::VRInputManager::instance()](
+        //                              bool enabled) { inputManager.setPointerRight(enabled); };
+
+        api["_setPointerActivation"] = [&inputManager = MWVR::VRInputManager::instance()](
+                                           bool enabled) { inputManager.setPointerActivation(enabled); };
 
         //api[]
 

@@ -33,7 +33,7 @@ namespace MWRender
     // ## VR_PATCH BEGIN
         : private VR::Session::Listener
     {
-        virtual void onFrameUpdate(VR::Frame&);
+        void onSpaceUpdate() override;
     //## VR_PATCH END
     public:
         enum class Mode : int

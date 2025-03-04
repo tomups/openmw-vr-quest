@@ -8,6 +8,8 @@
 
 #include <openxr/openxr.h>
 
+#include <array>
+
 namespace VR
 {
     class StageToWorldBinding;
@@ -38,9 +40,10 @@ namespace XR
 
         VR::TrackingPose locateSpace(XrSpace space, XrSpace referenceSpace) const;
         VR::TrackingPose locateSpaceInWorld(XrSpace space) const;
-        void setReferenceWorldPose(Stereo::Pose pose, std::shared_ptr<VR::Space> reference) override;
+        void setReferenceWorldPose(Stereo::Pose pose) override;
 
         std::array<VR::SwapchainConfig, 2> getRecommendedSwapchainConfig() const override;
+        std::shared_ptr<VR::Space> getReferenceSpace(VR::ReferenceSpace space) override;
 
     protected:
         void newFrame(uint64_t frameNo, bool& shouldSyncFrame, bool& shouldSyncInput) override;
@@ -73,7 +76,8 @@ namespace XR
         std::shared_ptr<VR::Swapchain> createSwapchain(uint32_t width, uint32_t height, uint32_t samples,
             uint32_t arraySize, VR::Swapchain::Attachment attachment, const std::string& name) override;
 
-        std::shared_ptr<VR::Space> createReferenceSpace(VR::ReferenceSpace reference, Stereo::Pose pose) override;
+        std::shared_ptr<XR::Space> createReferenceSpace(VR::ReferenceSpace reference, Stereo::Pose pose);
+        void createReferenceSpaces();
         std::vector<VR::ReferenceSpace> getSupportedReferenceSpaceTypes() const override;
 
     private:
@@ -82,7 +86,7 @@ namespace XR
         XrViewConfigurationType mViewConfigType;
         XrSessionState mState = XR_SESSION_STATE_UNKNOWN;
         Stereo::Pose mReferenceWorldPose = {};
-        std::shared_ptr<VR::Space> mReferenceSpace;
+        std::array<std::shared_ptr<XR::Space>, 3> mReferenceSpaces;
 
         std::mutex mMutex;
         uint32_t mAcquiredResources = 0;

@@ -379,6 +379,12 @@ bool OMW::Engine::frame(unsigned frameNumber, float frametime)
         mWorld->updateWindowManager();
     }
 
+    if (VR::getVR())
+    {
+        mLuaManager->onVRFrame();
+        VR::Session::instance().updateSpaces();
+    }
+
     // if there is a separate Lua thread, it starts the update now
     mLuaWorker->allowUpdate(frameStart, frameNumber, *stats);
 

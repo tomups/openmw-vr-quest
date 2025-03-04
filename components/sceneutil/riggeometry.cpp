@@ -21,7 +21,7 @@ namespace SceneUtil
         // update done in accept(NodeVisitor&)
 //## VR_PATCH BEGIN
 // VR-TODO: What was the motivation for this?
-        setCullingActive(false);
+        //setCullingActive(false);
 //## VR_PATCH END
     }
 

@@ -47,8 +47,9 @@ namespace VR
             virtual void onInstantTransition(){}
             virtual void onRecenter(){}
             virtual void onEyeLevelReset(){}
-            virtual void onSeatedModeChanged(){}
-            virtual void onFrameUpdate(VR::Frame&){}
+            virtual void onSeatedModeChanged() {}
+            virtual void onFrameUpdate(VR::Frame&) {}
+            virtual void onSpaceUpdate() {}
             virtual void onFrameRender(VR::Frame&){}
             //! \note onFrameEnd() is called from the draw thread.
             virtual void onFrameEnd(osg::RenderInfo& info, VR::Frame& frame) {}
@@ -70,6 +71,7 @@ namespace VR
 
         VR::Frame newFrame();
         void frameBeginUpdate(VR::Frame& frame);
+        void updateSpaces();
         void frameBeginRender(VR::Frame& frame);
         void frameEnd(osg::RenderInfo& info, VR::Frame& frame);
         void swapBuffers(osg::GraphicsContext* gc, VR::Frame& frame);
@@ -112,9 +114,10 @@ namespace VR
         void addListener(Listener* listener);
         void removeListener(Listener* listener);
 
-        virtual std::shared_ptr<Space> createReferenceSpace(VR::ReferenceSpace reference, Stereo::Pose pose) = 0;
         virtual std::vector<ReferenceSpace> getSupportedReferenceSpaceTypes() const = 0;
-        virtual void setReferenceWorldPose(Stereo::Pose pose, std::shared_ptr<VR::Space> reference) = 0;
+        virtual void setReferenceWorldPose(Stereo::Pose pose) = 0;
+
+        virtual std::shared_ptr<Space> getReferenceSpace(ReferenceSpace space) = 0;
 
     protected:
         void readSettings();

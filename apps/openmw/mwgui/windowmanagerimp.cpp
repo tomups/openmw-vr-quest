@@ -2504,6 +2504,8 @@ namespace MWGui
     {
         mViewer->eventTraversal();
         mViewer->updateTraversal();
+        if (VR::getVR())
+            VR::Session::instance().updateSpaces();
         mViewer->renderingTraversals();
     }
 

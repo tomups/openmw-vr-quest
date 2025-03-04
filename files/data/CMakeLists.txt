@@ -122,6 +122,13 @@ set(BUILTIN_DATA_FILES
     scripts/omw/input/actionbindings.lua
     scripts/omw/input/smoothmovement.lua
     scripts/omw/input/gamepadcontrols.lua
+    scripts/omw/vr/menus.lua
+    scripts/omw/vr/menus_init.lua
+    scripts/omw/vr/spaces.lua
+    scripts/omw/vr/vrui.lua
+    scripts/omw/vrinputs/bindings.lua
+    scripts/omw/vrinputs/common.lua
+    scripts/omw/vrinputs/settings.lua
     
     shaders/adjustments.omwfx
     shaders/bloomlinear.omwfx

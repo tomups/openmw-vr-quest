@@ -2,8 +2,8 @@
 
 #include <cmath>
 
-#include "vrpointer.hpp"
 #include "openxrinput.hpp"
+#include "vrpointer.hpp"
 
 #include <osg/BlendFunc>
 #include <osg/ClipNode>
@@ -28,9 +28,9 @@
 #include <components/sceneutil/visitor.hpp>
 #include <components/shader/shadermanager.hpp>
 #include <components/vr/rendertoswapchain.hpp>
+#include <components/vr/session.hpp>
 #include <components/vr/trackingmanager.hpp>
 #include <components/vr/viewer.hpp>
-#include <components/vr/session.hpp>
 
 #include "../mwrender/camera.hpp"
 #include "../mwrender/renderingmanager.hpp"
@@ -253,11 +253,11 @@ namespace MWVR
         clear();
     }
 
-    //void VRGUILayer::setAngle(float angle)
+    // void VRGUILayer::setAngle(float angle)
     //{
-    //    // mRotation = osg::Quat{ angle, osg::Z_AXIS };
-    //    updatePose();
-    //}
+    //     // mRotation = osg::Quat{ angle, osg::Z_AXIS };
+    //     updatePose();
+    // }
 
     osg::Texture2D* VRGUILayer::colorTexture() const
     {
@@ -311,31 +311,25 @@ namespace MWVR
         if (!tp.status)
             return;
         auto pose = tp.pose + mPose;
-         if (mVrLayer)
-        {
-             mVrLayer->pose = pose;
-         }
-         else
-        {
-             mTransform->setAttitude(pose.orientation);
-             mTransform->setPosition(pose.position.asMWUnits());
-         }
-        
-        //auto orientation = mRotation * mTrackedPose.orientation;
 
-        //// Orient the offset and move the layer
-        //auto position = mTrackedPose.position + orientation * mConfig.offset;
+        if (mConfig->priority != 0)
+        {
+            // Implement priority by moving this UI quad slightly towards the viewer based on priority.
+            auto view = OpenXRInput::instance().getSpace(OpenXRInput::DefaultReferenceSpaceView);
+            auto diff = view->locateInWorld().pose.position - pose.position;
+            diff = diff / 10000.f;
+            pose.position = pose.position + diff * mConfig->priority;
+        }
 
-        //if (mVrLayer)
-        //{
-        //    mVrLayer->pose.position = position;
-        //    mVrLayer->pose.orientation = orientation;
-        //}
-        //else
-        //{
-        //    mTransform->setAttitude(orientation);
-        //    mTransform->setPosition(position.asMWUnits());
-        //}
+        if (mVrLayer)
+        {
+            mVrLayer->pose = pose;
+        }
+        else
+        {
+            mTransform->setAttitude(pose.orientation);
+            mTransform->setPosition(pose.position.asMWUnits());
+        }
     }
 
     void VRGUILayer::updateRect()
@@ -396,8 +390,8 @@ namespace MWVR
 
             // Create the camera that will render the menu texture
             std::string filter = mLayerName;
-            if (!mConfig->extraLayers.empty())
-                filter = filter + ";" + mConfig->extraLayers;
+            // Some layers have their own background layer
+            filter = filter + ";" + mLayerName + "Background";
             osgMyGUI::RenderManager& renderManager
                 = static_cast<osgMyGUI::RenderManager&>(MyGUI::RenderManager::getInstance());
             mMyGUICamera = renderManager.createGUICamera(osg::Camera::NESTED_RENDER, filter);
@@ -477,22 +471,25 @@ namespace MWVR
                 mTransform->addChild(geometry);
         }
 
-        //if (mConfig->sideBySide && !mWidgets.empty())
-        //{
-        //    // The side-by-side windows are also the resizable windows.
-        //    // Stretch according to config
-        //    // This genre of layer should only ever have 1 widget as it will cover the full layer
-        //    auto* widget = mWidgets.front();
-        //    auto* myGUIWindow = dynamic_cast<MyGUI::Window*>(widget->mMainWidget);
-        //    auto* windowBase = dynamic_cast<MWGui::WindowBase*>(widget);
-        //    if (windowBase && myGUIWindow)
-        //    {
-        //        auto w = mConfig.myGUIViewSize.x();
-        //        auto h = mConfig.myGUIViewSize.y();
-        //        windowBase->setCoordf(0.f, 0.f, w, h);
-        //        windowBase->onWindowResize(myGUIWindow);
-        //    }
-        //}
+        if (!mWidgets.empty())
+        {
+            // if (mConfig->sideBySide && !mWidgets.empty())
+            //{
+            // Auto stretch resizeable windows
+            // Stretch according to config
+            // This genre of layer should only ever have 1 widget as it will cover the full layer
+            auto* widget = mWidgets.front();
+            auto* myGUIWindow = dynamic_cast<MyGUI::Window*>(widget->mMainWidget);
+            auto* windowBase = dynamic_cast<MWGui::WindowBase*>(widget);
+            if (windowBase && myGUIWindow)
+            {
+                // auto w = mConfig.myGUIViewSize.x();
+                // auto h = mConfig.myGUIViewSize.y();
+                //windowBase->setCoordf(0.f, 0.f, 0.7f, 0.7f);
+                //windowBase->onWindowResize(myGUIWindow);
+            }
+            // }
+        }
         updateRect();
 
         //// Pixels per unit
@@ -602,32 +599,18 @@ namespace MWVR
             mGeometryRoot->addChild(mTransform);
     }
 
-    static const LayerConfig createDefaultConfig(int priority, bool intersectable = true,
-        bool background = true, bool autoSize = true, std::string extraLayers = "Popup")
+    static const LayerConfig createDefaultConfig(
+        int priority, bool intersectable = true, bool background = true, bool autoSize = true)
     {
         return LayerConfig{ priority,
             background ? 0.75f : 0.f, // background
-            //Stereo::Position::fromMeters(0.f, 0.66f, -.25f), // offset
+            // Stereo::Position::fromMeters(0.f, 0.66f, -.25f), // offset
             osg::Vec2(0.f, 0.f), // center (model space)
             osg::Vec2(1.f, 1.f), // extent (meters)
             1024, // Spatial resolution (pixels per meter)
             osg::Vec2i(1024, 1024), // Texture resolution
-            osg::Vec2(1, 1), autoSize, VRGUIManager::DefaultUiSpace, extraLayers, intersectable };
+            osg::Vec2(1, 1), autoSize, VRGUIManager::DefaultUiSpace, intersectable };
     }
-
-    //static const float sSideBySideRadius = 1.f;
-    //static const float sSideBySideAzimuthInterval = -osg::PI_4;
-
-    //static const LayerConfig createSideBySideConfig(int priority)
-    //{
-    //    // TODO: Rewrite side-by-side logic to respect using spaces
-    //    LayerConfig config = createDefaultConfig(priority, true, true, false, "");
-    //    config.sideBySide = true;
-    //    //config.offset = Stereo::Position::fromMeters(0.f, sSideBySideRadius, -.25f);
-    //    config.extent = radiusAngleWidth(sSideBySideRadius, sSideBySideAzimuthInterval);
-    //    config.myGUIViewSize = osg::Vec2(0.70f, 0.70f);
-    //    return config;
-    //}
 
     VRGUIManager* sManager = nullptr;
     VRGUIManager& VRGUIManager::instance()
@@ -688,14 +671,12 @@ namespace MWVR
         //                    -40))).mZ;
         Stereo::Pose defaultUiPose = {};
         defaultUiPose.position = Stereo::Position::fromMeters(0.f, 0.66f, -.25f);
-        Stereo::Pose defaultVKeyboardPose = {};
-        defaultVKeyboardPose.position = Stereo::Position::fromMWUnits(osg::Vec3(0, 35, -40));
-        defaultVKeyboardPose.orientation = osg::Quat(osg::PI_4 / 2.f, osg::Vec3(-1, 0, 0));
+        // Stereo::Pose defaultVKeyboardPose = {};
+        // defaultVKeyboardPose.position = Stereo::Position::fromMWUnits(osg::Vec3(0, 35, -40));
+        // defaultVKeyboardPose.orientation = osg::Quat(osg::PI_4 / 2.f, osg::Vec3(-1, 0, 0));
 
-        //defaultVKeyboardPose.position
-        OpenXRInput::instance().createReferenceSpace(DefaultUiSpace, VR::ReferenceSpace::Local, defaultUiPose);
-        OpenXRInput::instance().createReferenceSpace(
-            DefaultVKeyboardSpace, VR::ReferenceSpace::Local, defaultVKeyboardPose);
+        // defaultVKeyboardPose.position
+        OpenXRInput::instance().createDerivedSpace(DefaultUiSpace, VR::ReferenceSpace::Local, defaultUiPose);
 
         readConfig();
     }
@@ -731,108 +712,106 @@ namespace MWVR
         clear();
 
         LayerConfig defaultConfig = createDefaultConfig(1);
-        LayerConfig loadingScreenConfig
-            = createDefaultConfig(1, true, true, false, "LoadingScreenBackground");
-        LayerConfig mainMenuConfig
-            = createDefaultConfig(1, true, true, true, "MainMenuBackground;Popup");
+        LayerConfig loadingScreenConfig = createDefaultConfig(1, true, true, false);
+        LayerConfig mainMenuConfig = createDefaultConfig(1, true, true, true);
         LayerConfig settingsConfig = createDefaultConfig(2, true, true, true);
-        //LayerConfig journalBooksConfig = createDefaultConfig(2, true, false, false);
+        // LayerConfig journalBooksConfig = createDefaultConfig(2, true, false, false);
         LayerConfig defaultWindowsConfig = createDefaultConfig(3, true, true);
         LayerConfig videoPlayerConfig = createDefaultConfig(4, true, true, false);
         LayerConfig messageBoxConfig = createDefaultConfig(6, true, false, true);
-        //LayerConfig notificationConfig = createDefaultConfig(7, false, false, false);
+        // LayerConfig notificationConfig = createDefaultConfig(7, false, false, false);
         LayerConfig listBoxConfig = createDefaultConfig(10, true, true);
         LayerConfig consoleConfig = createDefaultConfig(2, true, true);
-        //LayerConfig radialMenuConfig = createDefaultConfig(11, true, false);
-        // TODO: Track around wrist instead of being a regular menu quad?
-        // radialMenuConfig.offset = osg::Vec3(0.f, 0.66f, 0.f);
-        // radialMenuConfig.trackingPath = Paths::sWristTopRightStr;
+        // LayerConfig radialMenuConfig = createDefaultConfig(11, true, false);
+        //  TODO: Track around wrist instead of being a regular menu quad?
+        //  radialMenuConfig.offset = osg::Vec3(0.f, 0.66f, 0.f);
+        //  radialMenuConfig.trackingPath = Paths::sWristTopRightStr;
 
-        //LayerConfig statsWindowConfig = createSideBySideConfig(0);
-        //LayerConfig inventoryWindowConfig = createSideBySideConfig(1);
-        //LayerConfig spellWindowConfig = createSideBySideConfig(2);
-        //LayerConfig mapWindowConfig = createSideBySideConfig(3);
-        //LayerConfig inventoryCompanionWindowConfig = createSideBySideConfig(4);
-        //LayerConfig dialogueWindowConfig = createSideBySideConfig(5);
+        // LayerConfig statsWindowConfig = createSideBySideConfig(0);
+        // LayerConfig inventoryWindowConfig = createSideBySideConfig(1);
+        // LayerConfig spellWindowConfig = createSideBySideConfig(2);
+        // LayerConfig mapWindowConfig = createSideBySideConfig(3);
+        // LayerConfig inventoryCompanionWindowConfig = createSideBySideConfig(4);
+        // LayerConfig dialogueWindowConfig = createSideBySideConfig(5);
 
-        //auto positionSettingToPath = [](const std::string& setting) -> std::string {
-        //    if (Misc::StringUtils::ciEqual(setting, "left wrist inner"))
-        //    {
-        //        return Paths::sWristInnerLeftStr;
-        //    }
-        //    if (Misc::StringUtils::ciEqual(setting, "right wrist inner"))
-        //    {
-        //        return Paths::sWristInnerRightStr;
-        //    }
-        //    if (Misc::StringUtils::ciEqual(setting, "left wrist top"))
-        //    {
-        //        return Paths::sWristTopLeftStr;
-        //    }
-        //    if (Misc::StringUtils::ciEqual(setting, "right wrist top"))
-        //    {
-        //        return Paths::sWristTopRightStr;
-        //    }
-        //    if (Misc::StringUtils::ciEqual(setting, "top left"))
-        //    {
-        //        return Paths::sHUDTopLeftStr;
-        //    }
-        //    if (Misc::StringUtils::ciEqual(setting, "top right"))
-        //    {
-        //        return Paths::sHUDTopRightStr;
-        //    }
-        //    if (Misc::StringUtils::ciEqual(setting, "bottom left"))
-        //    {
-        //        return Paths::sHUDBottomLeftStr;
-        //    }
-        //    if (Misc::StringUtils::ciEqual(setting, "bottom right"))
-        //    {
-        //        return Paths::sHUDBottomRightStr;
-        //    }
+        // auto positionSettingToPath = [](const std::string& setting) -> std::string {
+        //     if (Misc::StringUtils::ciEqual(setting, "left wrist inner"))
+        //     {
+        //         return Paths::sWristInnerLeftStr;
+        //     }
+        //     if (Misc::StringUtils::ciEqual(setting, "right wrist inner"))
+        //     {
+        //         return Paths::sWristInnerRightStr;
+        //     }
+        //     if (Misc::StringUtils::ciEqual(setting, "left wrist top"))
+        //     {
+        //         return Paths::sWristTopLeftStr;
+        //     }
+        //     if (Misc::StringUtils::ciEqual(setting, "right wrist top"))
+        //     {
+        //         return Paths::sWristTopRightStr;
+        //     }
+        //     if (Misc::StringUtils::ciEqual(setting, "top left"))
+        //     {
+        //         return Paths::sHUDTopLeftStr;
+        //     }
+        //     if (Misc::StringUtils::ciEqual(setting, "top right"))
+        //     {
+        //         return Paths::sHUDTopRightStr;
+        //     }
+        //     if (Misc::StringUtils::ciEqual(setting, "bottom left"))
+        //     {
+        //         return Paths::sHUDBottomLeftStr;
+        //     }
+        //     if (Misc::StringUtils::ciEqual(setting, "bottom right"))
+        //     {
+        //         return Paths::sHUDBottomRightStr;
+        //     }
 
         //    return Paths::sHUDTopLeftStr;
         //};
 
-        //auto hudOffset = Stereo::Position::fromMeters(
-        //    osg::Vec3(Settings::Manager::getFloat("hud offset x", "VR"),
-        //        Settings::Manager::getFloat("hud offset y", "VR"), Settings::Manager::getFloat("hud offset z", "VR"))
-        //    - osg::Vec3(0.5, 0.5, 0.5));
+        // auto hudOffset = Stereo::Position::fromMeters(
+        //     osg::Vec3(Settings::Manager::getFloat("hud offset x", "VR"),
+        //         Settings::Manager::getFloat("hud offset y", "VR"), Settings::Manager::getFloat("hud offset z", "VR"))
+        //     - osg::Vec3(0.5, 0.5, 0.5));
 
-        //auto tooltipOffset
-        //    = Stereo::Position::fromMeters(osg::Vec3(Settings::Manager::getFloat("tooltip offset x", "VR"),
-        //                                       Settings::Manager::getFloat("tooltip offset y", "VR"),
-        //                                       Settings::Manager::getFloat("tooltip offset z", "VR"))
-        //        - osg::Vec3(0.5, 0.5, 0.5));
+        // auto tooltipOffset
+        //     = Stereo::Position::fromMeters(osg::Vec3(Settings::Manager::getFloat("tooltip offset x", "VR"),
+        //                                        Settings::Manager::getFloat("tooltip offset y", "VR"),
+        //                                        Settings::Manager::getFloat("tooltip offset z", "VR"))
+        //         - osg::Vec3(0.5, 0.5, 0.5));
 
-        //std::string hudPath = positionSettingToPath(Settings::Manager::getString("hud position", "VR"));
-        //std::string tooltipPath = positionSettingToPath(Settings::Manager::getString("tooltip position", "VR"));
+        // std::string hudPath = positionSettingToPath(Settings::Manager::getString("hud position", "VR"));
+        // std::string tooltipPath = positionSettingToPath(Settings::Manager::getString("tooltip position", "VR"));
 
-        LayerConfig virtualKeyboardConfig = LayerConfig{ 10, .75f,
-            //{}, // offset (meters)
-            osg::Vec2(0.f, 1.f), // center (model space)
-            osg::Vec2(.25f, .25f), // extent (meters)
-            2048, // Spatial resolution (pixels per meter)
-            osg::Vec2i(1024, 1024), // Texture resolution
-            osg::Vec2(1, 1), true, DefaultVKeyboardSpace,
-            // Paths::sHUDKeyboardStr,
-            "", true };
+        // LayerConfig virtualKeyboardConfig = LayerConfig{ 10, .75f,
+        //     //{}, // offset (meters)
+        //     osg::Vec2(0.f, 1.f), // center (model space)
+        //     osg::Vec2(.25f, .25f), // extent (meters)
+        //     2048, // Spatial resolution (pixels per meter)
+        //     osg::Vec2i(1024, 1024), // Texture resolution
+        //     osg::Vec2(1, 1), true, DefaultVKeyboardSpace,
+        //     // Paths::sHUDKeyboardStr,
+        //     true };
 
-        //LayerConfig HUDConfig = LayerConfig{ 0,
-        //    false, // side-by-side
-        //    0.f, // background
-        //    hudOffset,
-        //    // osg::Vec3(0,0,0), // offset (meters)
-        //    osg::Vec2(0.f, 0.5f), // center (model space)
-        //    osg::Vec2(.033f, .033f), // extent (meters)
-        //    1024, // resolution (pixels per meter)
-        //    osg::Vec2i(1024, 1024), defaultConfig.myGUIViewSize, true, hudPath, "", true };
+        // LayerConfig HUDConfig = LayerConfig{ 0,
+        //     false, // side-by-side
+        //     0.f, // background
+        //     hudOffset,
+        //     // osg::Vec3(0,0,0), // offset (meters)
+        //     osg::Vec2(0.f, 0.5f), // center (model space)
+        //     osg::Vec2(.033f, .033f), // extent (meters)
+        //     1024, // resolution (pixels per meter)
+        //     osg::Vec2i(1024, 1024), defaultConfig.myGUIViewSize, true, hudPath, "", true };
 
-        //LayerConfig tooltipConfig = LayerConfig{ 0,
-        //    false, // side-by-side
-        //    0.f, // background
-        //    tooltipOffset, osg::Vec2(0.f, 0.5f), // center (model space)
-        //    osg::Vec2(.33f, .33f), // extent (meters)
-        //    1024, // resolution (pixels per meter)
-        //    osg::Vec2i(1024, 1024), defaultConfig.myGUIViewSize, true, tooltipPath, "", false };
+        // LayerConfig tooltipConfig = LayerConfig{ 0,
+        //     false, // side-by-side
+        //     0.f, // background
+        //     tooltipOffset, osg::Vec2(0.f, 0.5f), // center (model space)
+        //     osg::Vec2(.33f, .33f), // extent (meters)
+        //     1024, // resolution (pixels per meter)
+        //     osg::Vec2i(1024, 1024), defaultConfig.myGUIViewSize, true, tooltipPath, "", false };
 
         mDefaultLayerConfigs = {
             { "DefaultConfig", defaultConfig },
@@ -846,17 +825,17 @@ namespace MWVR
             //{ "StatsWindow", statsWindowConfig },
             //{ "DialogueWindow", dialogueWindowConfig },
             { "Modal", messageBoxConfig },
-//            { "RadialMenu", radialMenuConfig },
+            //            { "RadialMenu", radialMenuConfig },
             { "Windows", defaultWindowsConfig },
             { "ListBox", listBoxConfig },
             { "MainMenu", mainMenuConfig },
             { "Settings", settingsConfig },
-  //          { "Notification", notificationConfig },
+            //          { "Notification", notificationConfig },
             { "InputBlocker", videoPlayerConfig },
             { "Video", videoPlayerConfig },
             { "Console", consoleConfig },
             { "LoadingScreen", loadingScreenConfig },
-            { "VirtualKeyboard", virtualKeyboardConfig },
+            //{ "VirtualKeyboard", virtualKeyboardConfig },
         };
     }
 
@@ -979,7 +958,7 @@ namespace MWVR
         auto* layer = widget->mMainWidget->getLayer();
         auto name = layer->getName();
 
-        Log(Debug::Debug) << "SetVisible: " << name << ": " << visible;
+        Log(Debug::Verbose) << "SetVisible: " << name << ": " << visible;
 
         if (layerBlacklist.find(name) != layerBlacklist.end())
         {
@@ -1012,12 +991,18 @@ namespace MWVR
         {
             if (!it.second->visible())
                 continue;
-            it.second->updatePose();
             if (it.second->updateLayer())
             {
                 frame.layers.push_back(it.second->mVrLayer);
             }
         }
+    }
+
+    void VRGUIManager::onSpaceUpdate()
+    {
+        std::scoped_lock lock(mMutex);
+        for (auto& it : mLayers)
+            it.second->updatePose();
     }
 
     void VRGUIManager::updateFocus(osg::Node* focusNode, osg::Vec3f hitPoint)
@@ -1193,10 +1178,10 @@ namespace MWVR
         getLayer(name).mPose = pose;
     }
 
-    //void VRGUIManager::setLayerSpace(const std::string& name, std::shared_ptr<VR::Space> space)
+    // void VRGUIManager::setLayerSpace(const std::string& name, std::shared_ptr<VR::Space> space)
     //{
-    //    getLayer(name).mSpace = space;
-    //}
+    //     getLayer(name).mSpace = space;
+    // }
 
     void VRGUIManager::setLayerConfig(const std::string& name, const LayerConfig& config)
     {

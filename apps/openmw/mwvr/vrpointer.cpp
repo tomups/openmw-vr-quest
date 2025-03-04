@@ -101,10 +101,9 @@ namespace MWVR
         mSpaceTransform = new VR::SpaceTransform();
         mSpaceTransform->setNodeMask(MWRender::VisMask::Mask_Pointer);
         mSpaceTransform->setName("VR Pointer deformation");
-        mSpaceTransform->setReferenceFrame(osg::Transform::ABSOLUTE_RF);
         mCrosshair = std::make_unique<Crosshair>(mSpaceTransform, osg::Vec3f(1.f, 0.f, 0.f), 1.f, 0.f, true);
         mCrosshair->show();
-        //mRoot->addChild(mSpaceTransform);
+        mRoot->addChild(mSpaceTransform);
     }
 
     UserPointer::~UserPointer() {}
@@ -347,9 +346,17 @@ namespace MWVR
         stateset->setAttributeAndModes(material, osg::StateAttribute::ON);
 
         // turn of sky blending
+        int skyTextureSlot = MWBase::Environment::get()
+                                 .getResourceSystem()
+                                 ->getSceneManager()
+                                 ->getShaderManager()
+                                 .reserveGlobalTextureUnits(
+            Shader::ShaderManager::Slot::SkyTexture);
         stateset->addUniform(new osg::Uniform("far", 10000000.0f));
         stateset->addUniform(new osg::Uniform("skyBlendingStart", 8000000.0f));
         stateset->addUniform(new osg::Uniform("screenRes", osg::Vec2f{ 1, 1 }));
+        stateset->addUniform(new osg::Uniform("sky", skyTextureSlot));
+        stateset->addUniform(new osg::Uniform("emissiveMult", 1.f));
 
         MWBase::Environment::get().getResourceSystem()->getSceneManager()->recreateShaders(geometry, "objects", true);
 
@@ -369,6 +376,7 @@ namespace MWVR
         mTransform->addChild(mGeometry);
         mTransform->setAttitude(osg::Quat(0, 0, 0, 1));
         mTransform->setNodeMask(MWRender::Mask_Pointer);
+        mGeometry->setCullingActive(false);
 
         updateMatrix();
     }

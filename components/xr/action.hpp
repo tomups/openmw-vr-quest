@@ -80,6 +80,8 @@ namespace XR
 
         std::optional<Value> value() const { return mValue; }
 
+        virtual void update() = 0;
+
     protected:
         std::unique_ptr<Action> mAction;
         std::optional<Value> mValue;
@@ -96,7 +98,7 @@ namespace XR
         //! Convenience
         XrAction xrAction() const { return mAction->xrAction(); }
 
-        void update();
+        void update() override;
 
         std::shared_ptr<Space> createActionSpace(Stereo::Pose pose) const;
 
@@ -112,7 +114,7 @@ namespace XR
 
         static const XrActionType ActionType = XR_ACTION_TYPE_BOOLEAN_INPUT;
 
-        void update();
+        void update() override;
 
     private:
         std::chrono::steady_clock::time_point mPressTime{};
@@ -177,7 +179,7 @@ namespace XR
 
         static const XrActionType ActionType = XR_ACTION_TYPE_FLOAT_INPUT;
 
-        void update();
+        void update() override;
 
     private:
     };

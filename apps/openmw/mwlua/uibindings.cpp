@@ -17,6 +17,7 @@
 
 #include "../mwbase/environment.hpp"
 #include "../mwbase/windowmanager.hpp"
+#include <MyGUI_InputManager.h>
 
 namespace MWLua
 {
@@ -300,6 +301,24 @@ namespace MWLua
               };
         api["_isWindowVisible"]
             = [windowManager](std::string_view window) { return windowManager->isWindowVisible(window); };
+        api["_menuBack"]
+            = [windowManager]() { 
+                if (MyGUI::InputManager::getInstance().isModalAny())
+                {
+                    windowManager->exitCurrentModal();
+                }
+                else
+                {
+                    // Console/postprocessorhud do not respect the GUI stack
+                    // so i have to manually check for and close them.
+                    if (windowManager->isConsoleMode())
+                        windowManager->toggleConsole();
+                    else if (windowManager->isPostProcessorHudVisible())
+                        windowManager->togglePostProcessorHud();
+                    else
+                        windowManager->exitCurrentGuiMode();
+                }
+            };
 
         // TODO
         // api["_showMouseCursor"] = [](bool) {};

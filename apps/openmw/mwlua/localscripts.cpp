@@ -3,6 +3,7 @@
 #include <components/esm3/loadcell.hpp>
 #include <components/esm3/loadweap.hpp>
 #include <components/misc/strings/lower.hpp>
+#include <components/vr/vr.hpp>
 
 #include "../mwbase/environment.hpp"
 #include "../mwbase/mechanicsmanager.hpp"
@@ -56,6 +57,14 @@ namespace MWLua
         controls["sneak"] = CONTROL(bool, mSneak);
         controls["jump"] = CONTROL(bool, mJump);
         controls["use"] = CONTROL(int, mUse);
+        if (VR::getVR())
+        {
+            controls["pointerActivate"] = CONTROL(bool, vr.mPointerActivate);
+            controls["pointerLeft"] = CONTROL(bool, vr.mPointerLeft);
+            controls["pointerRight"] = CONTROL(bool, vr.mPointerRight);
+            controls["pointerTarget"]
+                = sol::property([](const ActorControls& c) { return LObject(getId(c.vr.mPointerTarget)); });
+        }
 #undef CONTROL
 
         sol::usertype<SelfObject> selfAPI

@@ -4,6 +4,7 @@
 #include "../mwinput/actions.hpp"
 
 #include "vrinput.hpp"
+#include <components/vr/session.hpp>
 #include <components/xr/action.hpp>
 #include <components/xr/actionset.hpp>
 
@@ -47,13 +48,17 @@ namespace MWVR
 
     /// \brief Generates and manages OpenXR Actions and ActionSets by generating openxr bindings from a list of
     /// SuggestedBindings structs.
-    class OpenXRInput
+    class OpenXRInput : VR::Session::Listener
     {
     public:
 
         static constexpr const char* DefaultReferenceSpaceLocal = "/default/reference/local";
         static constexpr const char* DefaultReferenceSpaceView = "/default/reference/view";
         static constexpr const char* DefaultReferenceSpaceStage = "/default/reference/stage";
+        static constexpr const char* LeftHandAim = "/user/hand/left/input/aim/pose";
+        static constexpr const char* LeftHandGrip = "/user/hand/left/input/grip/pose";
+        static constexpr const char* RightHandAim = "/user/hand/right/input/aim/pose";
+        static constexpr const char* RightHandGrip = "/user/hand/right/input/grip/pose";
 
         using XrSuggestedBindings = std::vector<XrActionSuggestedBinding>;
         using XrProfileSuggestedBindings = std::map<std::string, XrSuggestedBindings>;
@@ -74,12 +79,15 @@ namespace MWVR
         //! Set bindings and attach actionSets to the session.
         void attachActionSets();
 
-        void createActionSpace(const std::string& id, const std::string& actionName, Stereo::Pose pose = {});
-        void createReferenceSpace(const std::string& id, VR::ReferenceSpace ref, Stereo::Pose pose = {});
+        void createDerivedSpace(const std::string& id, const std::string& referenceId, Stereo::Pose pose = {});
+        void createDerivedSpace(const std::string& id, VR::ReferenceSpace ref, Stereo::Pose pose = {});
+        void createActionSpace(const std::string& id, const std::string& actionName);
+        void createReferenceSpace(const std::string& id, VR::ReferenceSpace ref);
 
         std::shared_ptr<VR::Space> getSpace(const std::string& id) const;
 
     protected:
+        void onFrameUpdate(VR::Frame&) override;
 
         std::filesystem::path mXrControllerSuggestionsFile;
         std::filesystem::path mDefaultXrControllerSuggestionsFile;

@@ -8,6 +8,8 @@
 #include <components/vr/trackinglistener.hpp>
 #include <components/vr/vr.hpp>
 
+#include "../mwworld/ptr.hpp"
+
 namespace XR
 {
     class ActionSet;
@@ -58,12 +60,20 @@ namespace MWVR
         osg::Node* vrAimNode() { return mVRAimNode; }
         const osg::Node* vrAimNode() const { return mVRAimNode; }
 
+        void setPointerLeft(bool enabled);
+        bool getPointerLeft() const;
+        void setPointerRight(bool enabled);
+        bool getPointerRight() const;
+        void setPointerActivation(bool enabled);
+
         // void mouseMove(float x);
         // void turnLeftRight(float value, float previousValue, float dt);
 
         // void processUtilityStickX(float value, bool disableControls);
         // void processUtilityStickY(float value, bool disableControls);
         void pointActivation(bool onPress, bool injectMousePress = true);
+
+        MWWorld::Ptr getPointerTarget() const;
 
     protected:
         //void processAction(const class XR::InputAction* action, float dt, bool disableControls);
@@ -95,8 +105,9 @@ namespace MWVR
         std::unique_ptr<UserPointer> mVRPointer;
         std::unique_ptr<OpenXRInput> mXRInput;
         std::unique_ptr<RealisticCombat::StateMachine> mRealisticCombat;
-        bool mPointerLeft = false;
-        bool mPointerRight = false;
+        bool mPointerActivation = false;
+        bool mPointerLeft = true;
+        bool mPointerRight = true;
 
         osg::ref_ptr<osg::Node> mVRAimNode;
     };

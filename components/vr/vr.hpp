@@ -50,6 +50,7 @@ namespace VR
     XrPath getControllerInteractionProfile(XrPath controllerPath);
     bool getLeftControllerActive();
     bool getRightControllerActive();
+    bool getLocatingSpacesAllowed();
     Stereo::Unit getPlayerHeight();
     DisplayTime getPredictedDisplayTime();
     DisplayTime getPredictedDisplayPeriod();
@@ -62,6 +63,7 @@ namespace VR
     void setSneakOffsetEnabled(bool enabled);
     void setPredictedDisplayTime(DisplayTime time);
     void setPredictedDisplayPeriod(DisplayTime time);
+    void setLocatingSpacesAllowed(bool allowed);
     void setRuntimeName(std::string name);
 
     void recenter();

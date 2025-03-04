@@ -453,7 +453,7 @@ namespace XR
     {
         initCompositionLayerDepth();
         initMSFTReprojection();
-        mReferenceSpace = createReferenceSpace(VR::ReferenceSpace::Local, {});
+        createReferenceSpaces();
     }
 
     void Session::cleanup()
@@ -587,7 +587,7 @@ namespace XR
         Log(Debug::Verbose) << ss.str();
     }
 
-    std::shared_ptr<VR::Space> Session::createReferenceSpace(VR::ReferenceSpace reference, Stereo::Pose pose)
+    std::shared_ptr<XR::Space> Session::createReferenceSpace(VR::ReferenceSpace reference, Stereo::Pose pose)
     {
         XrReferenceSpaceCreateInfo createInfo{};
         createInfo.type = XR_TYPE_REFERENCE_SPACE_CREATE_INFO;
@@ -601,6 +601,11 @@ namespace XR
         if (space)
             return std::make_shared<Space>(space);
         return nullptr;
+    }
+
+    void Session::createReferenceSpaces() { 
+        for (auto ref : getSupportedReferenceSpaceTypes())
+            mReferenceSpaces[static_cast<int>(ref) - 1] = createReferenceSpace(ref, {});
     }
 
     std::vector<VR::ReferenceSpace> Session::getSupportedReferenceSpaceTypes() const
@@ -648,18 +653,19 @@ namespace XR
 
     VR::TrackingPose Session::locateSpaceInWorld(XrSpace space) const
     {
-        auto tp = locateSpace(space, static_cast<Space*>(mReferenceSpace.get())->xrSpace());
+        auto tp = locateSpace(space, static_cast<Space*>(mReferenceSpaces[static_cast<int>(VR::ReferenceSpace::Local) - 1].get())->xrSpace());
         tp.pose = mReferenceWorldPose + tp.pose;
         return tp;
     }
 
-    void Session::setReferenceWorldPose(Stereo::Pose pose, std::shared_ptr<VR::Space> reference) {
+    void Session::setReferenceWorldPose(Stereo::Pose pose) {
         mReferenceWorldPose = pose;
-        mReferenceSpace = reference;
     }
 
     VR::TrackingPose Session::locateSpace(XrSpace space, XrSpace referenceSpace) const
     {
+        if (!VR::getLocatingSpacesAllowed())
+            throw std::logic_error("locateSpace() called outside of frame sync");
         VR::TrackingPose pose = {};
         pose.status = VR::TrackingStatus::Good;
         pose.time = VR::getPredictedDisplayTime();
@@ -711,6 +717,10 @@ namespace XR
         }
 
         return configs;
+    }
+    std::shared_ptr<VR::Space> Session::getReferenceSpace(VR::ReferenceSpace space)
+    {
+        return mReferenceSpaces.at(static_cast<int>(space)-1);
     }
 }
 

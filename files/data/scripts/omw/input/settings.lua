@@ -5,6 +5,7 @@ local ui = require('openmw.ui')
 local util = require('openmw.util')
 local async = require('openmw.async')
 local I = require('openmw.interfaces')
+local vr = require('openmw.vr')
 
 local settingsGroup = 'SettingsOMWControls'
 

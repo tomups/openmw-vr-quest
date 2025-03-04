@@ -121,8 +121,6 @@ namespace VR
 
         std::shared_ptr<ProjectionLayer> mProjectionLayer;
         std::vector<std::shared_ptr<Layer>> mLayers;
-        std::shared_ptr<Space> mReferenceSpaceLocal;
-        std::shared_ptr<Space> mReferenceSpaceView;
     };
 }
 

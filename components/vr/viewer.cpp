@@ -197,11 +197,7 @@ namespace VR
         setupMirrorTexture();
         setupSwapchains();
 
-        mReferenceSpaceLocal = mSession->createReferenceSpace(VR::ReferenceSpace::Local, {});
-        mReferenceSpaceView = mSession->createReferenceSpace(VR::ReferenceSpace::View, {});
-
         mProjectionLayer = std::make_shared<VR::ProjectionLayer>();
-        mProjectionLayer->space = mReferenceSpaceLocal;
         for (uint32_t i = 0; i < 2; i++)
         {
             mProjectionLayer->views[i].subImage.index = 0;
@@ -534,9 +530,11 @@ namespace VR
         std::unique_lock<std::mutex> lock(mMutex);
         auto& frame = mReadyFrames.back();
 
+        auto referenceSpaceLocal = mSession->getReferenceSpace(VR::ReferenceSpace::Local);
+        auto referenceSpaceView = mSession->getReferenceSpace(VR::ReferenceSpace::View);
         auto localViews
-            = VR::Session::instance().locateViews(frame.predictedDisplayTime, *mReferenceSpaceLocal);
-        auto views = VR::Session::instance().locateViews(frame.predictedDisplayTime, *mReferenceSpaceView);
+            = VR::Session::instance().locateViews(frame.predictedDisplayTime, *referenceSpaceLocal);
+        auto views = VR::Session::instance().locateViews(frame.predictedDisplayTime, *referenceSpaceView);
 
         if (frame.shouldRender && frame.shouldSyncFrameLoop)
         {
@@ -554,6 +552,8 @@ namespace VR
 
             std::shared_ptr<VR::ProjectionLayer> projectionLayer
                 = std::make_shared<VR::ProjectionLayer>(*mProjectionLayer);
+
+            projectionLayer->space = referenceSpaceLocal;
             for (uint32_t i = 0; i < 2; i++)
             {
                 projectionLayer->views[i].view = localViews[i];

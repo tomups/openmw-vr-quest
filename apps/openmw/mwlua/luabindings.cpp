@@ -92,6 +92,9 @@ namespace MWLua
             { "openmw.ui", initUserInterfacePackage(context) },
             { "openmw.menu", initMenuPackage(context) },
             { "openmw.input", initInputPackage(context) },
+            // ## VR_PATCH BEGIN
+            { "openmw.vr", initVRPackage(context) },
+            // ## VR_PATCH END
         };
     }
 }

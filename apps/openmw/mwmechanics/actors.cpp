@@ -12,6 +12,7 @@
 #include <components/misc/rng.hpp>
 #include <components/sceneutil/positionattitudetransform.hpp>
 #include <components/settings/values.hpp>
+#include <components/vr/vr.hpp>
 
 #include <components/esm3/loadcrea.hpp>
 #include <components/esm3/loadgmst.hpp>
@@ -40,6 +41,8 @@
 #include "../mwrender/vismask.hpp"
 
 #include "../mwsound/constants.hpp"
+
+#include "../mwvr/vrinputmanager.hpp"
 
 #include "actor.hpp"
 #include "actorutil.hpp"
@@ -385,6 +388,14 @@ namespace MWMechanics
                 AttackType attackType = static_cast<AttackType>(controls.mUse);
                 stats.setAttackingOrSpell(attackType != AttackType::NoAttack);
                 stats.setAttackType(attackTypeName(attackType));
+
+                if (VR::getVR())
+                {
+                    MWVR::VRInputManager::instance().setPointerLeft(controls.vr.mPointerLeft);
+                    MWVR::VRInputManager::instance().setPointerRight(controls.vr.mPointerRight);
+                    MWVR::VRInputManager::instance().setPointerActivation(controls.vr.mPointerActivate);
+                    controls.vr.mPointerTarget = MWVR::VRInputManager::instance().getPointerTarget();
+                }
 
                 controls.mChanged = false;
             }

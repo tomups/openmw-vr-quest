@@ -55,8 +55,8 @@ namespace MWVR
 
             if (!disableControls)
                 MWBase::Environment::get().getWorld()->enableVRPointer(
-                    (guiMode || mPointerLeft) && VR::getLeftControllerActive(),
-                    (guiMode || mPointerRight) && VR::getRightControllerActive());
+                    mPointerLeft && VR::getLeftControllerActive(),
+                    mPointerRight && VR::getRightControllerActive());
 
             bool leftHanded = Settings::Manager::getBool("left handed mode", "VR");
             std::string action = "";
@@ -72,7 +72,7 @@ namespace MWVR
             else if (mPointerRight)
                 action = VR::Paths::LEFT_HAND_AIM;
             if (!action.empty())
-                source = mXRInput->getActionSet(MWActionSet::Pose).actionSpace(action);
+                source = mXRInput->getSpace(action);
         }
 
         if (!mVRPointer && !disableControls)
@@ -88,13 +88,14 @@ namespace MWVR
         if (mVRPointer)
         {
             mVRPointer->setSource(source);
+            mVRPointer->update();
         }
     }
 
     void VRInputManager::updateCombat(float dt)
     {
-        if (!VR::getKBMouseModeActive())
-            return updateRealisticCombat(dt);
+        //if (!VR::getKBMouseModeActive())
+        //    return updateRealisticCombat(dt);
     }
 
     void VRInputManager::updateRealisticCombat(float dt)
@@ -140,6 +141,20 @@ namespace MWVR
 
         if (mVRPointer && !onPress)
             mVRPointer->activate();
+    }
+
+    MWWorld::Ptr VRInputManager::getPointerTarget() const
+    {
+        // TODO: In the future, dehardcode drag and drop as well
+        if (!MWBase::Environment::get().getWindowManager()->getDragAndDrop().mIsOnDragAndDrop)
+        {
+            const auto& ray = mVRPointer->getPointerRay();
+            if (ray.mHit)
+            {
+                return ray.mHitObject;
+            }
+        }
+        return MWWorld::Ptr();
     }
 
     void VRInputManager::injectChannelValue(MWInput::Actions action, float value)
@@ -304,6 +319,34 @@ namespace MWVR
         //Settings::Manager::setFloat("player height", "VR", height.asMeters());
         //Settings::Manager::setBool("intro sequence complete", "VR", true);
         //VR::Session::instance().computePlayerScale();
+    }
+
+    void VRInputManager::setPointerLeft(bool enabled)
+    {
+        mPointerLeft = enabled;
+    }
+
+    bool VRInputManager::getPointerLeft() const
+    {
+        return mPointerLeft;
+    }
+
+    void VRInputManager::setPointerRight(bool enabled)
+    {
+        mPointerRight = enabled;
+    }
+
+    bool VRInputManager::getPointerRight() const
+    {
+        return mPointerRight;
+    }
+
+    void VRInputManager::setPointerActivation(bool enabled) 
+    {
+        std::swap(mPointerActivation, enabled);
+        if (mPointerActivation != enabled)
+            pointActivation(mPointerActivation, true);
+
     }
 
     static VRInputManager* sInputManager;

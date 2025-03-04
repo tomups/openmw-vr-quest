@@ -9,6 +9,7 @@
 
 #include "../mwgui/mode.hpp"
 #include "../mwrender/animationpriority.hpp"
+#include "../mwworld/ptr.hpp"
 #include <components/sdlutil/events.hpp>
 
 namespace MWWorld
@@ -120,6 +121,13 @@ namespace MWBase
             float mPitchChange = 0;
             float mYawChange = 0;
             int mUse = 0;
+            struct
+            {
+                bool mPointerActivate = 0;
+                bool mPointerLeft = 0;
+                bool mPointerRight = 0;
+                MWWorld::Ptr mPointerTarget;
+            } vr;
         };
 
         virtual ActorControls* getActorControls(const MWWorld::Ptr&) const = 0;

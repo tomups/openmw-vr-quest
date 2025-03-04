@@ -277,18 +277,41 @@ namespace MWVR
         CHECK_XRCMD(xrAttachSessionActionSets(XR::Session::instance().xrSession(), &attachInfo));
     }
 
-    void OpenXRInput::createActionSpace(const std::string& id, const std::string& actionName, Stereo::Pose pose) 
+    void OpenXRInput::createDerivedSpace(const std::string& id, const std::string& referenceId, Stereo::Pose pose)
     {
+        if (!mSpaces.contains(referenceId))
+            throw std::runtime_error("No such space " + referenceId);
         if (mSpaces.contains(id))
-            throw std::runtime_error("Space " + id + " already exists");
-        mSpaces[id] = mActionSets.at(MWActionSet::Pose).createActionSpace(id, actionName, pose);
+        {
+            auto space = dynamic_cast<VR::DerivedSpace*>(mSpaces[id].get());
+            if (!space)
+                throw std::runtime_error("Space " + id + " already exists and is immutable");
+            space->setPose(pose);
+            space->setReference(mSpaces[referenceId]);
+            return;
+        }
+        mSpaces[id] = std::make_shared<VR::DerivedSpace>(mSpaces.at(referenceId), pose);
     }
 
-    void OpenXRInput::createReferenceSpace(const std::string& id, VR::ReferenceSpace ref, Stereo::Pose pose) 
+    void OpenXRInput::createDerivedSpace(const std::string& id, VR::ReferenceSpace ref, Stereo::Pose pose) 
     {
         if (mSpaces.contains(id))
             throw std::runtime_error("Space " + id + " already exists");
-        mSpaces[id] = VR::Session::instance().createReferenceSpace(ref, pose);
+        mSpaces[id] = std::make_shared<VR::DerivedSpace>(VR::Session::instance().getReferenceSpace(ref), pose);
+    }
+
+    void OpenXRInput::createActionSpace(const std::string& id, const std::string& actionName) 
+    {
+        if (mSpaces.contains(id))
+            throw std::runtime_error("Space " + id + " already exists");
+        mSpaces[id] = mActionSets.at(MWActionSet::Pose).createActionSpace(id, actionName);
+    }
+
+    void OpenXRInput::createReferenceSpace(const std::string& id, VR::ReferenceSpace ref) 
+    {
+        if (mSpaces.contains(id))
+            throw std::runtime_error("Space " + id + " already exists");
+        mSpaces[id] = VR::Session::instance().getReferenceSpace(ref);
     }
 
     std::shared_ptr<VR::Space> OpenXRInput::getSpace(const std::string& id) const
@@ -297,5 +320,9 @@ namespace MWVR
         if (it == mSpaces.end())
             return nullptr;
         return it->second;
+    }
+    void OpenXRInput::onFrameUpdate(VR::Frame&) 
+    {
+        mActionSets.at(MWActionSet::Pose).update();
     }
 }

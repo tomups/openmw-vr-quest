@@ -57,7 +57,7 @@ namespace MWVR
         osg::Vec2 myGUIViewSize; //!< Resizable elements are resized to this (fraction of full view)
         bool autoSize; //!< How to size the layer
         std::string space;
-        std::string extraLayers; //!< Additional layers to draw (list separated by any non-alphabetic)
+        //std::string extraLayers; //!< Additional layers to draw (list separated by any non-alphabetic)
         bool intersectable;
 
         bool operator<(const LayerConfig& rhs) const { return priority < rhs.priority; }
@@ -170,7 +170,6 @@ namespace MWVR
     {
     public:
         static constexpr const char* DefaultUiSpace = "/default/ui/menu";
-        static constexpr const char* DefaultVKeyboardSpace = "/default/ui/virtualkeyboard";
 
         static VRGUIManager& instance();
 
@@ -204,6 +203,7 @@ namespace MWVR
 
         /// Update traversal
         void onFrameUpdate(VR::Frame& frame) override;
+        void onSpaceUpdate() override;
         void onFrameEnd(osg::RenderInfo& info, VR::Frame& frame) override;
 
         /// Gui cursor coordinates to use to simulate a mouse press/move if the player is currently pointing at a vr gui

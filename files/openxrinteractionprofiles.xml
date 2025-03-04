@@ -44,39 +44,6 @@
 	</Entry>
 	<Entry>
 		<InteractionProfiles>
-			<InteractionProfile path="/interaction_profiles/microsoft/xbox_controller" />
-		</InteractionProfiles>
-		<InteractionsMap>
-			<Controller path="/user/gamepad">
-				<Interaction type="BOOLEAN" path="/input/menu/click" />
-				<Interaction type="BOOLEAN" path="/input/view/click" />
-				<Interaction type="BOOLEAN" path="/input/a/click" />
-				<Interaction type="BOOLEAN" path="/input/b/click" />
-				<Interaction type="BOOLEAN" path="/input/x/click" />
-				<Interaction type="BOOLEAN" path="/input/y/click" />
-				<Interaction type="BOOLEAN" path="/input/dpad_left/click" />
-				<Interaction type="BOOLEAN" path="/input/dpad_right/click" />
-				<Interaction type="BOOLEAN" path="/input/dpad_up/click" />
-				<Interaction type="BOOLEAN" path="/input/dpad_down/click" />
-				<Interaction type="BOOLEAN" path="/input/shoulder_left/click" />
-				<Interaction type="BOOLEAN" path="/input/shoulder_right/click" />
-				<Interaction type="FLOAT" path="/input/trigger_left/value" />
-				<Interaction type="FLOAT" path="/input/trigger_right/value" />
-				<Interaction type="AXIS" path="/input/thumbstick_left/x" />
-				<Interaction type="AXIS" path="/input/thumbstick_left/y" />
-				<Interaction type="BOOLEAN" path="/input/thumbstick_left/click" />
-				<Interaction type="AXIS" path="/input/thumbstick_right/x" />
-				<Interaction type="AXIS" path="/input/thumbstick_right/y" />
-				<Interaction type="BOOLEAN" path="/input/thumbstick_right/click" />
-				<Interaction type="FLOAT" path="/output/haptic_left" />
-				<Interaction type="FLOAT" path="/output/haptic_right" />
-				<Interaction type="FLOAT" path="/output/haptic_left_trigger" />
-				<Interaction type="FLOAT" path="/output/haptic_right_trigger" />
-			</Controller>
-		</InteractionsMap>
-	</Entry>
-	<Entry>
-		<InteractionProfiles>
 			<InteractionProfile path="/interaction_profiles/oculus/go_controller" />
 		</InteractionProfiles>
 		<InteractionsMap>

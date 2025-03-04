@@ -5,21 +5,19 @@ namespace VR
 {
     SpaceTransform::SpaceTransform()
     {
-        setReferenceFrame(osg::Transform::ABSOLUTE_RF);
     }
     SpaceTransform::SpaceTransform(std::shared_ptr<Space> space)
         : mSpace(space)
     {
-        setReferenceFrame(osg::Transform::ABSOLUTE_RF);
     }
 
     SpaceTransform::SpaceTransform(const SpaceTransform& transform, const osg::CopyOp&)
         : mSpace(transform.mSpace)
     {
-        setReferenceFrame(osg::Transform::ABSOLUTE_RF);
     }
 
-    void SpaceTransform::setSpace(std::shared_ptr<VR::Space> space) {
+    void SpaceTransform::setSpace(std::shared_ptr<VR::Space> space)
+    {
         mSpace = space;
     }
 
@@ -27,8 +25,7 @@ namespace VR
     {
         if (_referenceFrame == RELATIVE_RF)
         {
-            // TODO: This use case doesn't make sense
-            //matrix.preMult(mMatrix);
+             matrix.preMult(mMatrix);
         }
         else // absolute
         {
@@ -43,8 +40,7 @@ namespace VR
 
         if (_referenceFrame == RELATIVE_RF)
         {
-            // TODO: This use case doesn't make sense
-            //matrix.postMult(inverse);
+            matrix.postMult(inverse);
         }
         else // absolute
         {
@@ -53,29 +49,38 @@ namespace VR
         return true;
     }
 
-    void SpaceTransform::onFrameUpdate(VR::Frame&)
+    void SpaceTransform::onSpaceUpdate()
     {
-        VR::TrackingPose tp = {};
-        if (_referenceFrame == RELATIVE_RF)
-        {
-            // TODO: This use case doesn't make sense
-            //tp = mSpace->locate();
-        }
-        else // absolute
-        {
-            if (mSpace)
-                tp = mSpace->locateInWorld();
-        }
+        VR::TrackingPose tp = mSpace->locateInWorld();
 
-        if (!tp.status)
+        mMatrix.makeIdentity();
+        if (!!tp.status)
         {
-            mMatrix.makeIdentity();
-        }
-        else
-        {
-            mMatrix.preMultTranslate(tp.pose.position.asMWUnits());
-            mMatrix.preMultRotate(tp.pose.orientation);
+            mMatrix.makeRotate(tp.pose.orientation);
+            mMatrix.postMultTranslate(tp.pose.position.asMWUnits());
         }
     }
 
+    Space::Space() {}
+
+    DerivedSpace::DerivedSpace(std::shared_ptr<Space> reference, Stereo::Pose pose)
+        : mReference(reference)
+        , mPose(pose)
+    {
+    }
+
+    TrackingPose VR::DerivedSpace::locate(const std::shared_ptr<Space>& reference) const
+    {
+        auto tp = mReference->locate(reference);
+        if (!!tp.status)
+            tp.pose += mPose;
+        return tp;
+    }
+    TrackingPose DerivedSpace::locateInWorld() const
+    {
+        auto tp = mReference->locateInWorld();
+        if (!!tp.status)
+            tp.pose += mPose;
+        return tp;
+    }
 }

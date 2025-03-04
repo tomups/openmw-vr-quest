@@ -147,7 +147,7 @@ namespace MWRender
         updateCamera();
     }
 
-    void Camera::onFrameUpdate(VR::Frame&) 
+    void Camera::onSpaceUpdate() 
     {
         auto tp = MWVR::OpenXRInput::instance().getSpace(MWVR::OpenXRInput::DefaultReferenceSpaceView)->locateInWorld();
         if (!tp.status)

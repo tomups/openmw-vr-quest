@@ -18,6 +18,7 @@ namespace VR
         bool sVRMode = false;
         bool sSteamVR = false;
         bool sSeatedPlay = false;
+        bool sLocatingSpacesAllowed = false;
         DisplayTime sPredictedDisplayTime = 0;
         DisplayTime sPredictedDisplayPeriod = 0;
         std::map<XrPath, XrPath> sActiveControllers = {};
@@ -92,6 +93,11 @@ namespace VR
         return getControllerActive(stringToXrPath("/user/hand/right"));
     }
 
+    bool getLocatingSpacesAllowed()
+    {
+        return sLocatingSpacesAllowed;
+    }
+
     void setControllerActive(XrPath controllerPath, XrPath interactionProfilePath, bool active)
     {
         if (active)
@@ -149,6 +155,11 @@ namespace VR
     void setPredictedDisplayPeriod(DisplayTime time)
     {
         sPredictedDisplayPeriod = time;
+    }
+
+    void setLocatingSpacesAllowed(bool allowed) 
+    {
+        sLocatingSpacesAllowed = allowed;
     }
 
     void setRuntimeName(std::string name)

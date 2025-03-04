@@ -62,9 +62,6 @@ namespace MWVR
         void setEnableCrosshairs(bool enable);
 
         void updateLocalSpaceWorldPose();
-        // Just hardcode Reference space Local -> object root
-        //void attachReferenceSpaceToBone(XrSpace space, const std::string& bone);
-        void attachBoneToSpace(const std::string& bone, std::shared_ptr<VR::Space> space, Stereo::Pose pose);
 
         virtual void addAnimSource(std::string_view model, const std::string& baseModel) override;
 
@@ -74,7 +71,7 @@ namespace MWVR
 
         void updateCharHeight();
 
-        void onFrameUpdate(VR::Frame&) override;
+        void onSpaceUpdate() override;
 
         void recenter();
         void onRecenter() override { recenter(); };
@@ -96,6 +93,7 @@ namespace MWVR
         osg::ref_ptr<osg::MatrixTransform> mWeaponDirectionTransform;
         osg::ref_ptr<osg::MatrixTransform> mWeaponPointerTransform;
 
+        bool mRecenter = false;
         bool mCrosshairsEnabled;
         float mCharHeight = 120.f;
         Stereo::Pose mCharLocalSpacePose;

@@ -71,6 +71,15 @@ namespace MWLua
         LuaUi::clearSettings();
     }
 
+    void LuaManager::onVRFrame() 
+    {
+        mMenuScripts.onVRFrame();
+        PlayerScripts* playerScripts
+            = mPlayer.isEmpty() ? nullptr : dynamic_cast<PlayerScripts*>(mPlayer.getRefData().getLuaScripts());
+        if (playerScripts)
+            playerScripts->onVRFrame();
+    }
+
     void LuaManager::initConfiguration()
     {
         mConfiguration.init(MWBase::Environment::get().getESMStore()->getLuaScriptsCfg());

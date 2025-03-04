@@ -5,6 +5,7 @@
 #include <components/sdlutil/sdlgraphicswindow.hpp>
 #include <components/vr/trackingsource.hpp>
 #include <components/vr/vr.hpp>
+#include <components/vr/space.hpp>
 
 #include <osg/Camera>
 
@@ -65,6 +66,15 @@ namespace VR
         }
         for (auto& listener : mListeners)
             listener->onFrameUpdate(frame);
+        VR::setLocatingSpacesAllowed(true);
+        //updateSpaces();
+    }
+
+    void Session::updateSpaces()
+    {
+        for (auto& listener : mListeners)
+            listener->onSpaceUpdate();
+        VR::setLocatingSpacesAllowed(false);
     }
 
     void Session::frameBeginRender(VR::Frame& frame)

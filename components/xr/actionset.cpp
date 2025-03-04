@@ -135,9 +135,8 @@ namespace XR
 
     void ActionSet::createPoseAction(const std::string& actionName, const std::string& localName, const std::string& id)
     {
-        mPoseActions.emplace(id, createXRAction(PoseAction::ActionType, actionName, localName));
+        auto res = mPoseActions.emplace(id, createXRAction(PoseAction::ActionType, actionName, localName));
         mAllInputActions.emplace(id, &mPoseActions.at(id));
-        createActionSpace(id, id);
     }
 
     void ActionSet::createHapticsAction(
@@ -165,11 +164,10 @@ namespace XR
     }
 
     std::shared_ptr<VR::Space> ActionSet::createActionSpace(
-        const std::string& id, const std::string& referenceId, Stereo::Pose pose)
+        const std::string& spaceId, const std::string& actionId, Stereo::Pose pose)
     {
-        auto space = mPoseActions.at(referenceId).createActionSpace(pose);
-        XR::Debugging::setName(space->xrSpace(), "OpenMW XR Action Space " + id);
-        mActionSpaces[id] = space;
+        auto space = mPoseActions.at(actionId).createActionSpace(pose);
+        XR::Debugging::setName(space->xrSpace(), "OpenMW XR Action Space " + spaceId);
         return space;
     }
 
@@ -246,11 +244,6 @@ namespace XR
         //xrSuggestedBindings.insert(xrSuggestedBindings.end(), suggestedBindings.begin(), suggestedBindings.end());
     }
 
-    std::shared_ptr<VR::Space> ActionSet::actionSpace(const std::string& id) const
-    {
-        return mActionSpaces.at(id);
-    }
-
     std::unique_ptr<XR::Action> ActionSet::createXRAction(XrActionType actionType, const std::string& actionName,
         const std::string& localName)
     {
@@ -280,6 +273,11 @@ namespace XR
         {
             CHECK_XRRESULT(res, "xrSyncActions");
             return;
+        }
+        else if (res == XR_SUCCESS)
+        {
+            for (auto& action : mAllInputActions)
+                action.second->update();
         }
         else
         {
