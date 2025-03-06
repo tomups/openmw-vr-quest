@@ -1,0 +1,218 @@
+local vr = require('openmw.vr')
+
+if not vr.isVr() then
+    return {}
+end
+
+local ui = require('openmw.ui')
+local util = require('openmw.util')
+local I = require('openmw.interfaces')
+local storage = require('openmw.storage')
+local input = require('openmw.input')
+local core = require('openmw.core')
+local async = require('openmw.async')
+
+local interactionNames = {
+    ['/user/hand/left/input/a/click'] = 'Left A Click',
+    ['/user/hand/left/input/a/touch'] = 'Left A Touch',
+    ['/user/hand/left/input/b/click'] = 'Left B Click',
+    ['/user/hand/left/input/b/touch'] = 'Left B Touch',
+    ['/user/hand/left/input/back/click'] = 'Left Back Click',
+    ['/user/hand/left/input/menu/click'] = 'Left Menu Click',
+    ['/user/hand/left/input/select/click'] = 'Left Select Click',
+    ['/user/hand/left/input/squeeze/click'] = 'Left Squeeze Click',
+    ['/user/hand/left/input/squeeze/force'] = 'Left Squeeze Force',
+    ['/user/hand/left/input/squeeze/value'] = 'Left Squeeze Value',
+    ['/user/hand/left/input/thumbrest/touch'] = 'Left Thumbrest Touch',
+    ['/user/hand/left/input/thumbstick/click'] = 'Left Stick Click',
+    ['/user/hand/left/input/thumbstick/touch'] = 'Left Stick Touch',
+    ['/user/hand/left/input/thumbstick/x'] = 'Left Stick X',
+    ['/user/hand/left/input/thumbstick/x/left'] = 'Left Stick Left',
+    ['/user/hand/left/input/thumbstick/x/right'] = 'Left Stick Right',
+    ['/user/hand/left/input/thumbstick/y'] = 'Left Stick Y',
+    ['/user/hand/left/input/thumbstick/y/down'] = 'Left Stick Down',
+    ['/user/hand/left/input/thumbstick/y/up'] = 'Left Stick Up',
+    ['/user/hand/left/input/trackpad/click'] = 'Left Trackpad Click',
+    ['/user/hand/left/input/trackpad/force'] = 'Left Trackpad Force',
+    ['/user/hand/left/input/trackpad/touch'] = 'Left Trackpad Touch',
+    ['/user/hand/left/input/trackpad/x'] = 'Left Trackpad X',
+    ['/user/hand/left/input/trackpad/x/left'] = 'Left Trackpad X Left',
+    ['/user/hand/left/input/trackpad/x/right'] = 'Left Trackpad X Right',
+    ['/user/hand/left/input/trackpad/y'] = 'Left Trackpad Y',
+    ['/user/hand/left/input/trackpad/y/down'] = 'Left Trackpad Y Down',
+    ['/user/hand/left/input/trackpad/y/up'] = 'Left Trackpad Y Up',
+    ['/user/hand/left/input/trigger/click'] = 'Left Trigger Touch',
+    ['/user/hand/left/input/trigger/touch'] = 'Left Trigger Touch',
+    ['/user/hand/left/input/trigger/value'] = 'Left Trigger Value',
+    ['/user/hand/left/input/x/click'] = 'Left X Click',
+    ['/user/hand/left/input/x/touch'] = 'Left X Touch',
+    ['/user/hand/left/input/y/click'] = 'Left Y Click',
+    ['/user/hand/left/input/y/touch'] = 'Left Y Touch',
+    ['/user/hand/right/input/a/click'] = 'Right A Click',
+    ['/user/hand/right/input/a/touch'] = 'Right A Touch',
+    ['/user/hand/right/input/b/click'] = 'Right B Click',
+    ['/user/hand/right/input/b/touch'] = 'Right B Touch',
+    ['/user/hand/right/input/back/click'] = 'Right Back Click',
+    ['/user/hand/right/input/menu/click'] = 'Right Menu Click',
+    ['/user/hand/right/input/select/click'] = 'Right Select Click',
+    ['/user/hand/right/input/squeeze/click'] = 'Right Squeeze Click',
+    ['/user/hand/right/input/squeeze/force'] = 'Right Squeeze Force',
+    ['/user/hand/right/input/squeeze/value'] = 'Right Squeeze Value',
+    ['/user/hand/right/input/thumbrest/touch'] = 'Right Thumbrest Touch',
+    ['/user/hand/right/input/thumbstick/click'] = 'Right Thumbstick Click',
+    ['/user/hand/right/input/thumbstick/touch'] = 'Right Thumbstick Touch',
+    ['/user/hand/right/input/thumbstick/x'] = 'Right Thumbstick X',
+    ['/user/hand/right/input/thumbstick/x/left'] = 'Right Thumbstick X Left',
+    ['/user/hand/right/input/thumbstick/x/right'] = 'Right Thumbstick X Right',
+    ['/user/hand/right/input/thumbstick/y'] = 'Right Thumbstick Y',
+    ['/user/hand/right/input/thumbstick/y/down'] = 'Right Thumbstick Y Down',
+    ['/user/hand/right/input/thumbstick/y/up'] = 'Right Thumbstick Y Up',
+    ['/user/hand/right/input/trackpad/click'] = 'Right Trackpad Click',
+    ['/user/hand/right/input/trackpad/force'] = 'Right Trackpad Force',
+    ['/user/hand/right/input/trackpad/touch'] = 'Right Trackpad Touch',
+    ['/user/hand/right/input/trackpad/x'] = 'Right Trackpad X',
+    ['/user/hand/right/input/trackpad/x/left'] = 'Right Trackpad X Left',
+    ['/user/hand/right/input/trackpad/x/right'] = 'Right Trackpad X Right',
+    ['/user/hand/right/input/trackpad/y'] = 'Right Trackpad Y',
+    ['/user/hand/right/input/trackpad/y/down'] = 'Right Trackpad Y Down',
+    ['/user/hand/right/input/trackpad/y/up'] = 'Right Trackpad Y Up',
+    ['/user/hand/right/input/trigger/click'] = 'Right Trigger Click',
+    ['/user/hand/right/input/trigger/touch'] = 'Right Trigger Touch',
+    ['/user/hand/right/input/trigger/value'] = 'Right Trigger Value',
+}
+
+
+local function getInteractionName(interactionPath)
+    if interactionNames[interactionPath] then
+        return interactionNames[interactionPath]
+    end
+    return interactionPath
+end
+
+local inputTypes = {
+    action = input.actions,
+    trigger = input.triggers,
+}
+local interfaceL10n = core.l10n('interface')
+
+local function bindingLabel(isRecording, binding, default)
+    if isRecording then
+        return interfaceL10n('N/A')
+    elseif binding and binding.path then
+        return getInteractionName(binding.path)
+    elseif default and not binding then
+        return getInteractionName(binding.path)
+    else
+        return interfaceL10n('None')
+    end
+end
+
+local bindingSection = storage.playerSection('OMWInputBindingsVR')
+local recording = nil
+
+I.Settings.registerRenderer('inputBindingVR', function(value, set, arg)
+    if type(value) ~= 'table' then error('inputBindingVR: must have a table default value') end
+    if type(value.id) ~= 'string' then error('inputBindingVR: default value table must contain a string id value') end
+    if not value.type then error('inputBindingVR: default value table must contain a string type value') end
+    if not inputTypes[value.type] then error('inputBindingVR: type must be "action" or "trigger"') end
+    if not value.key then error('inputBindingVR: default value table must contain a string type key') end
+    local info = inputTypes[value.type][value.key]
+    if not info then print(string.format('inputBindingVR: %s %s not found', value.type, value.key)) return end
+   
+    local l10n = core.l10n(info.l10n)
+
+    local name = {
+        template = I.MWUI.templates.textNormal,
+        props = {
+            text = l10n(info.name),
+        },
+    }
+
+    local description = {
+        template = I.MWUI.templates.textNormal,
+        props = {
+            text = l10n(info.description),
+        },
+    }
+
+    local binding = bindingSection:get(value.id)
+    local label = bindingLabel(recording and recording.id == value.id, binding, value.path)
+
+    local recorder = {
+        template = I.MWUI.templates.textNormal,
+        props = {
+            text = label,
+        },
+        events = {
+            -- Although we're in VR. The VR pointer fakes mouse clicks so we're still
+            -- listening for a mouseclick here.
+            mouseClick = async:callback(function()
+                if recording ~= nil then return end
+                if binding ~= nil then 
+                    binding.path = nil
+                    bindingSection:set(value.id, binding) 
+                end
+                recording = {
+                    value = value,
+                    refresh = function() set(value) end,
+                }
+                recording.refresh()
+            end),
+        },
+    }
+
+    local row = {
+        type = ui.TYPE.Flex,
+        props = {
+            horizontal = true,
+        },
+        content = ui.content {
+            name,
+            { props = { size = util.vector2(10, 0) } },
+            recorder,
+        },
+    }
+    local column = {
+        type = ui.TYPE.Flex,
+        content = ui.content {
+            row,
+            description,
+        },
+    }
+
+    return column
+end)
+
+local function bindInteraction(path)
+    if recording == nil then return end
+    
+    if path:sub(-5) == 'touch' then
+        -- Before binding touch, we need a system to disambiguate touch from click otherwise
+        -- it's impossible to bind click without binding touch.
+        return
+    end
+    
+    local binding = {
+        path = path,
+        type = recording.value.type,
+        key = recording.value.key,
+    }
+    bindingSection:set(recording.id, binding)
+    local refresh = recording.refresh
+    recording = nil
+    refresh()
+end
+
+local function onFrame(dt)
+
+end
+
+return {
+    engineHandlers = {
+        onFrame = onFrame,
+    },
+    
+    eventHandlers = {
+        RecordVRBinding = function(data) bindInteraction(data.path) end,
+    }
+}

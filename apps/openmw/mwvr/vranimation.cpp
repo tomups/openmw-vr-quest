@@ -722,17 +722,26 @@ namespace MWVR
         recenter();
     }
 
-    void VRAnimation::onSpaceUpdate() {
+    void VRAnimation::onSpaceUpdate()
+    {
+        auto localRef = OpenXRInput::instance().getSpace(OpenXRInput::DefaultReferenceSpaceLocal);
+        auto viewRef = OpenXRInput::instance().getSpace(OpenXRInput::DefaultReferenceSpaceView);
+        auto pose = localRef->locate(viewRef).pose;
+        float newYaw = 0.f;
+        float oldYaw = 0.f;
+        float pitch = 0.f;
+        float roll = 0.f;
+        Stereo::getEulerAngles(mHeadPoseInLocalSpace.orientation, oldYaw, pitch, roll);
+        Stereo::getEulerAngles(pose.orientation, newYaw, pitch, roll);
+        mHeadPoseInLocalSpace = pose;
+        // Slightly awkward because I want to adjust yaw, but set pitch absolutely
+        float yaw = oldYaw - newYaw + mPtr.getRefData().getPosition().rot[2];
+        auto world = MWBase::Environment::get().getWorld();
+        world->rotateObject(mPtr, osg::Vec3f(pitch, 0.f, yaw), MWBase::RotationFlag_none);
+
         if (mRecenter)
         {
             // Recompute mCharLocalSpacePose so that view->locateInWorld() = mObjectRoot's pose + mCharHeight
-            auto localRef = OpenXRInput::instance().getSpace(OpenXRInput::DefaultReferenceSpaceLocal);
-            auto viewRef = OpenXRInput::instance().getSpace(OpenXRInput::DefaultReferenceSpaceView);
-            auto pose = localRef->locate(viewRef).pose;
-            float yaw = 0.f;
-            float pitch = 0.f;
-            float roll = 0.f;
-            Stereo::getEulerAngles(pose.orientation, yaw, pitch, roll);
             pose.orientation = osg::Quat(yaw, osg::Vec3d(0, 0, 1));
             mCharLocalSpacePose = pose;
             mRecenter = false;
@@ -874,7 +883,7 @@ namespace MWVR
         auto worldMatrix = osg::computeLocalToWorld(origin->getParentalNodePaths()[0]);
         auto trans = worldMatrix.getTrans();
         trans.z() += mCharHeight;
-        Stereo::Pose originPose = { Stereo::Position::fromMWUnits(trans), worldMatrix.getRotate() };
+        Stereo::Pose originPose = { Stereo::Position::fromMWUnits(trans), osg::Quat{ 0, 0, 0, 1 } };
         XR::Session::instance().setReferenceWorldPose(originPose + mCharLocalSpacePose);
     }
 

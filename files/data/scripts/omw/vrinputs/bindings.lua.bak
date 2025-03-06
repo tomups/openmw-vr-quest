@@ -1,0 +1,380 @@
+local vr = require('openmw.vr')
+
+if not vr.isVr() then
+    return {}
+end
+
+local ui = require('openmw.ui')
+local util = require('openmw.util')
+local I = require('openmw.interfaces')
+local storage = require('openmw.storage')
+local input = require('openmw.input')
+local core = require('openmw.core')
+local async = require('openmw.async')
+local types = require('openmw.types')
+local Player = types.Player
+local self = require('openmw.self')
+
+local settingsGroup = 'SettingsOMWControlsVR'
+
+local function boolSetting(key, default)
+    return {
+        key = key,
+        renderer = 'checkbox',
+        name = key,
+        description = key .. 'Description',
+        default = default,
+    }
+end
+
+I.Settings.registerPage({
+    key = 'OMWControlsVR',
+    l10n = 'OMWControlsVR',
+    name = 'ControlsPage',
+    description = 'ControlsPageDescription',
+})
+
+local recording = nil
+
+local supportedInteractionPaths = {
+    input = {},
+    output = {},
+}
+for profile, controllers in pairs(vr.availableInteractions) do
+    for controller, interactions in pairs(controllers) do
+        for interaction, interactionType in pairs(interactions) do
+            local path = controller..interaction
+            if string.find(interaction, 'input') then
+                supportedInteractionPaths.input[path] = interactionType
+            else
+                supportedInteractionPaths.output[path] = interactionType
+            end
+        end
+    end
+end
+
+local vrActions = {
+    use = vr.INTERACTION_VALUE_TYPES.Boolean,
+    menu_back = vr.INTERACTION_VALUE_TYPES.Boolean,
+    -- todo
+
+}
+
+
+local inputActions = {
+}
+
+local function registerAction(path, type, func)
+    -- I wanted to use openmw.input's action system for this
+    -- but it doesn't work during the main menu.
+    
+    --input.registerAction {
+    --    key = path,
+    --    type = type,
+    --    l10n = 'VRInteractionPathLocalization',
+    --    name = path,
+    --    description = 'A VR interaction path',
+    --    defaultValue = default,
+    --}
+    --input.bindAction(path, async:callback(func), {})
+    
+    -- Instead I'm rolling my own
+    inputActions[path] = {
+        type = type,
+        func = func,
+        valueBoolean = false,
+        valueNumber = 0,
+    }
+end
+
+-- Register an action for every input
+for path, type in pairs(supportedInteractionPaths.input) do
+    if type == vr.INTERACTION_VALUE_TYPES.Boolean then
+        registerAction(
+            path, 
+            input.ACTION_TYPE.Boolean,
+            function() 
+                return vr.getActionValue(path) == true 
+            end
+        )
+    elseif type == vr.INTERACTION_VALUE_TYPES.Float then
+        registerAction(
+            path, 
+            input.ACTION_TYPE.Number,
+            function() 
+                local v = vr.getActionValue(path) 
+                if not v then return 0 end
+                return v
+            end
+        )
+    elseif type == vr.INTERACTION_VALUE_TYPES.Axis then
+        registerAction(
+            path, 
+            input.ACTION_TYPE.Number,
+            function() 
+                local v = vr.getActionValue(path) 
+                if not v then return 0 end
+                return v
+            end
+        )
+        -- For Axis actions we want the option to assigning left/right/up/down as separate Number actions
+        -- allowing thumbsticks or forcepads to be used as additional assignables
+        local neg = '/left'
+        local pos = '/right'
+        if path:sub(-2) == '/y' then
+            neg = '/down'
+            pos = '/up'
+        end
+        registerAction(
+            path..neg,
+            input.ACTION_TYPE.Number,
+            function() 
+                local v = vr.getActionValue(path) 
+                if not v or v > 0 then return 0 end
+                return -v
+            end
+        )
+        registerAction(
+            path..pos,
+            input.ACTION_TYPE.Number,
+            function() 
+                local v = vr.getActionValue(path) 
+                if not v or v < 0 then return 0 end
+                return v
+            end
+        )
+    end
+end
+
+
+local function invalidBinding(binding)
+    if not binding.key then
+        return 'has no key'
+    elseif binding.type ~= 'action' and binding.type ~= 'trigger' then
+        return string.format('has invalid type', binding.type)
+    elseif binding.type == 'action' and not input.actions[binding.key] then
+        return string.format("action %s doesn't exist", binding.key)
+    elseif binding.type == 'trigger' and not input.triggers[binding.key] then
+        return string.format("trigger %s doesn't exist", binding.key)
+    end
+end
+
+local bindingSection = storage.playerSection('OMWInputBindingsVR')
+local actionBindings = {}
+local boundActions = {}
+
+local function bindAction(binding, id)
+    local action = binding.key
+    actionBindings[action] = actionBindings[action] or {}
+    actionBindings[action][id] = binding
+    if not boundActions[action] then
+        boundActions[action] = true
+        if input.actions[action].type == input.ACTION_TYPE.Boolean then
+            input.bindAction(action, async:callback(function(dt, v)
+                for _, binding in pairs(actionBindings[action] or {}) do
+                    v = inputActions[binding.path].valueBoolean or v
+                end
+                return v
+            end), {})
+        else
+            input.bindAction(action, async:callback(function(dt, v)
+                for _, binding in pairs(actionBindings[action] or {}) do
+                    local v2 = inputActions[binding.path].valueNumber
+                    v = math.max(math.abs(v or 0), math.abs(v2 or 0))
+                end
+                return v
+            end), {})
+        end
+    end
+end
+
+local triggerBindings = {}
+local function bindTrigger(binding, id)
+    triggerBindings[binding.path] = triggerBindings[binding.path] or {}
+    triggerBindings[binding.path][id] = binding
+end
+
+local function clearBinding(id)
+    actionBindings[id] = nil
+    triggerBindings[id] = nil
+end
+
+local function registerBinding(binding, id)
+    local invalid = invalidBinding(binding)
+    if invalid then
+        print(string.format('Skipping invalid binding %s: %s', id, invalid))
+    elseif binding.type == 'action' then
+        bindAction(binding, id)
+    elseif binding.type == 'trigger' then
+        bindTrigger(binding, id)
+    end
+end
+
+bindingSection:subscribe(async:callback(function(_, id)
+    if not id then return end
+    local binding = bindingSection:get(id)
+    clearBinding(id)
+    if binding ~= nil and binding.path then
+        registerBinding(binding, id)
+    end
+    return id
+end))
+
+input.registerTrigger {
+    key = 'TestTrigger',
+    l10n = 'MyLocalizationContext',
+    name = 'TestTrigger',
+    description = 'A simple test',
+}
+ 
+input.registerTriggerHandler('TestTrigger', async:callback(function() 
+    print('TestTrigger!') 
+    ui.showMessage('TestTrigger!') 
+end))
+
+local function bindSetting(key, type, default)
+    return {
+        key = key..'Key',
+        renderer = 'inputBindingVR',
+        name = key..'Key',
+        description = key .. 'KeyDescription',
+        default = {
+            id = key..'_VR',
+            key = key,
+            path = default,
+            type = type,
+        },
+    }
+end
+
+input.registerAction {
+    key = 'PointerLeft',
+    type = input.ACTION_TYPE.Boolean,
+    l10n = 'OMWControlsVR',
+    name = 'PointerLeft_Name',
+    description = 'PointerLeft_Description',
+    defaultValue = false,
+}
+
+input.registerAction {
+    key = 'PointerRight',
+    type = input.ACTION_TYPE.Boolean,
+    l10n = 'OMWControlsVR',
+    name = 'PointerRight_Name',
+    description = 'PointerLeft_Description',
+    defaultValue = false,
+}
+
+local settings = {
+        bindSetting('TestTrigger', 'trigger', '/user/hand/right/input/a/click'),
+    }
+
+I.Settings.registerGroup({
+    key = settingsGroup,
+    page = 'OMWControlsVR',
+    l10n = 'OMWControlsVR',
+    name = 'MovementSettingsVR',
+    permanentStorage = true,
+    settings = settings,
+})
+
+local initialized = false
+
+local function init()
+    -- Set up default bindings
+    for _, setting in pairs(settings) do
+        if setting.renderer == 'inputBindingVR' and setting.default.path then
+            registerBinding({
+                path = setting.default.path,
+                type = setting.default.type,
+                key = setting.default.key
+            }, setting.default.id)
+        end
+    end
+    
+    -- Set up stored bindings from the bindingSection (defaults are never stored in there).
+    for id, binding in pairs(bindingSection:asTable()) do
+        clearBinding(id)
+        if binding.path then
+            registerBinding(binding, id)
+        end
+    end
+end
+
+local function inputChangedBoolean(path, action)
+    if action.valueBoolean then
+        print('Input detected: '..path)
+        for _, binding in pairs (triggerBindings[path] or {}) do
+            input.activateTrigger(binding.key)
+        end
+        
+        types.Player.sendMenuEvent(self, "RecordVRBinding", {path = path})
+    end
+end
+
+local function updateInputs()
+    for path, action in pairs(inputActions) do
+        local prevBoolean = action.valueBoolean
+        value = action.func()
+        if type(value) == 'number' then
+            action.valueNumber = value
+            -- When converting a float input to bool, we want to transition from false to true and back at different values,
+            -- to avoid rapid change-spam when input is ~0.5
+            action.valueBoolean = prevBoolean 
+                and value > 0.4
+                or value > 0.6
+        else
+            action.valueNumber = value and 1 or 0
+            action.valueBoolean = value
+        end
+        if action.valueBoolean ~= prevBoolean then
+            inputChangedBoolean(path, action)
+        end
+    end
+end
+
+
+local function controlsAllowed()
+    return not core.isWorldPaused()
+        and Player.getControlSwitch(self, Player.CONTROL_SWITCH.Controls)
+        and not I.UI.getMode()
+end
+
+local function updatePointer()
+    if not controlsAllowed()
+        self.controls.pointerLeft = true
+        self.controls.pointerRight = true
+    end
+    
+end
+
+local function onFrame(dt)
+    if not initialized then 
+        init() 
+        initialized = true
+    end
+    updateInputs()
+    updatePointer()
+end
+
+return {
+    engineHandlers = {
+        onFrame = onFrame,
+    },
+    
+    eventHandlers = {
+    },
+
+    interfaceName = 'vrinputs',
+    ---
+    -- 3D menus
+    -- @module VRUI
+
+    interface = {
+        --- Interface version
+        -- @field [parent=#VRUI] #number version
+        version = 0,
+        
+        supportedInteractionPaths = supportedInteractionPaths,
+    }
+}

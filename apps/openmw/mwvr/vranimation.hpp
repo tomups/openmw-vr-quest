@@ -96,6 +96,7 @@ namespace MWVR
         bool mRecenter = false;
         bool mCrosshairsEnabled;
         float mCharHeight = 120.f;
+        Stereo::Pose mHeadPoseInLocalSpace;
         Stereo::Pose mCharLocalSpacePose;
         std::unique_ptr<MWVR::Crosshair> mCrosshairAmmo;
         std::unique_ptr<MWVR::Crosshair> mCrosshairThrown;
