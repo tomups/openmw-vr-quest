@@ -16,7 +16,7 @@ namespace VR
 
 
 
-        virtual TrackingPose locate(const std::shared_ptr<Space>& reference) const = 0;
+        virtual TrackingPose locate(const Space& reference) const = 0;
         virtual TrackingPose locateInWorld() const = 0;
     };
 
@@ -29,7 +29,7 @@ namespace VR
         DerivedSpace(const DerivedSpace&) = delete;
         void operator=(const DerivedSpace&) = delete;
 
-        TrackingPose locate(const std::shared_ptr<Space>& reference) const override;
+        TrackingPose locate(const Space& reference) const override;
         TrackingPose locateInWorld() const override;
 
         void setPose(Stereo::Pose pose) { mPose = pose; }

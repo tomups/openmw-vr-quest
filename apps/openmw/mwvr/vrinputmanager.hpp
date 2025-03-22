@@ -64,7 +64,7 @@ namespace MWVR
         bool getPointerLeft() const;
         void setPointerRight(bool enabled);
         bool getPointerRight() const;
-        void setPointerActivation(bool enabled);
+        void pointerActivate();
 
         // void mouseMove(float x);
         // void turnLeftRight(float value, float previousValue, float dt);

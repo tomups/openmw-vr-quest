@@ -18,6 +18,7 @@ namespace VR
 namespace XR
 {
     class Space;
+    class ReferenceSpace;
     extern void getEulerAngles(const osg::Quat& quat, float& yaw, float& pitch, float& roll);
 
     /// \brief Manages VR logic, such as managing frames, predicting their poses, and handling frame synchronization
@@ -44,6 +45,7 @@ namespace XR
 
         std::array<VR::SwapchainConfig, 2> getRecommendedSwapchainConfig() const override;
         std::shared_ptr<VR::Space> getReferenceSpace(VR::ReferenceSpace space) override;
+        XrSpace createReferenceSpace(VR::ReferenceSpace reference, Stereo::Pose pose);
 
     protected:
         void newFrame(uint64_t frameNo, bool& shouldSyncFrame, bool& shouldSyncInput) override;
@@ -73,10 +75,10 @@ namespace XR
 
         void destroyXrSession();
 
+        void recenter() override;
+
         std::shared_ptr<VR::Swapchain> createSwapchain(uint32_t width, uint32_t height, uint32_t samples,
             uint32_t arraySize, VR::Swapchain::Attachment attachment, const std::string& name) override;
-
-        std::shared_ptr<XR::Space> createReferenceSpace(VR::ReferenceSpace reference, Stereo::Pose pose);
         void createReferenceSpaces();
         std::vector<VR::ReferenceSpace> getSupportedReferenceSpaceTypes() const override;
 
@@ -86,7 +88,7 @@ namespace XR
         XrViewConfigurationType mViewConfigType;
         XrSessionState mState = XR_SESSION_STATE_UNKNOWN;
         Stereo::Pose mReferenceWorldPose = {};
-        std::array<std::shared_ptr<XR::Space>, 3> mReferenceSpaces;
+        std::array<std::shared_ptr<ReferenceSpace>, 3> mReferenceSpaces;
 
         std::mutex mMutex;
         uint32_t mAcquiredResources = 0;

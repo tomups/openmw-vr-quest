@@ -67,6 +67,8 @@ namespace VR
     void setRuntimeName(std::string name);
 
     void recenter();
+    bool getShouldRecenterLua();
+    void setShouldRecenterLua(bool arg);
     void resetEyeLevel();
 }
 

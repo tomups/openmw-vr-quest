@@ -108,6 +108,23 @@ namespace MWLua
                 throw std::runtime_error("Player does not have an animation yet");
             return static_cast<MWVR::VRAnimation*>(anim);
         }
+
+        MWVR::LayerConfig layerConfigFromTable(const sol::table& options)
+        {
+            MWVR::LayerConfig layerConfig;
+            layerConfig.opacity = options.get_or("backgroundOpacity", 0);
+            layerConfig.center = get_or(options, "center", osg::Vec2());
+            layerConfig.extent = get_or(options, "extent", osg::Vec2(1, 1));
+            layerConfig.spatialResolution = options.get_or("pixelsPerMeter", 1024);
+            auto rttResolution = get_or(options, "rttResolution", osg::Vec2(1024, 1024));
+            layerConfig.pixelResolution.x() = static_cast<int>(rttResolution.x());
+            layerConfig.pixelResolution.y() = static_cast<int>(rttResolution.y());
+            layerConfig.myGUIViewSize = osg::Vec2(1, 1);
+            layerConfig.autoSize = options.get_or("autosize", true);
+            layerConfig.space = options.get_or<std::string>("space", "");
+            layerConfig.intersectable = options.get_or("intersectable", false);
+            return layerConfig;
+        }
     }
 
     sol::table initVRPackage(const Context& context)
@@ -142,7 +159,7 @@ namespace MWLua
 
         api["isControllerActive"]
             = [](const std::string& path) -> bool { return VR::getControllerActive(VR::stringToXrPath(path)); };
-        api["getInteractionProfileForController"] = [](const std::string& path) -> sol::optional<std::string> {
+        api["getInteractionProfileOfController"] = [](const std::string& path) -> sol::optional<std::string> {
             auto p = VR::getControllerInteractionProfile(VR::stringToXrPath(path));
             if (!p)
                 return sol::nullopt;
@@ -172,7 +189,7 @@ namespace MWLua
             std::shared_ptr<VR::Space> reference
                 = xrinput.getSpace(ref.value_or(MWVR::OpenXRInput::DefaultReferenceSpaceLocal));
 
-            return tableFromPose(space->locate(reference), lua);
+            return tableFromPose(space->locate(*reference), lua);
         };
         // All known /output/ path values are of type FLOAT.
         // If there is ever a reason to support more, we can expand this with overloads (or use sol::object).
@@ -190,37 +207,38 @@ namespace MWLua
         };
 
         api["_setGuiPose"] = [&guiManager = MWVR::VRGUIManager::instance()](const std::string& id,
-                                 const sol::table& pose) {
-                  guiManager.setLayerPose(id, poseFromTable(pose));
+                                 const sol::table& pose) { guiManager.setLayerPose(id, poseFromTable(pose)); };
+
+        api["_setModeConfig"] = [&guiManager = MWVR::VRGUIManager::instance()](
+                                   const std::string& mode, const sol::table& options) {
+            guiManager.setModeConfig(mode, layerConfigFromTable(options));
         };
 
-        api["_setGuiLayer"]
-            = [&guiManager = MWVR::VRGUIManager::instance()](const std::string& layer, const sol::table& options) {
-                  MWVR::LayerConfig config;
-                  config.priority = options.get_or("priority", 0);
-                  config.opacity = options.get_or("backgroundOpacity", 0);
-                  config.center = get_or(options, "center", osg::Vec2());
-                  config.extent = get_or(options, "extent", osg::Vec2(1, 1));
-                  config.spatialResolution = options.get_or("pixelsPerMeter", 1024);
-                  auto rttResolution = get_or(options, "rttResolution", osg::Vec2(1024, 1024));
-                  config.pixelResolution.x() = static_cast<int>(rttResolution.x());
-                  config.pixelResolution.y() = static_cast<int>(rttResolution.y());
-                  config.myGUIViewSize = osg::Vec2(1, 1);
-                  config.autoSize = options.get_or("autosize", true);
-                  config.space = options.get_or("space", MWVR::VRGUIManager::DefaultUiSpace);
-                  config.intersectable = options.get_or("intersectable", true);
+        api["_setModePose"] = [&guiManager = MWVR::VRGUIManager::instance()](
+                                   const std::string& mode, const sol::table& pose, sol::optional<std::string> window) {
+            guiManager.setModePose(mode, poseFromTable(pose), window.value_or(""));
+        };
 
-                  guiManager.setLayerConfig(layer, config);
+        api["_setLayerConfig"]
+            = [&guiManager = MWVR::VRGUIManager::instance()](const std::string& layer, const sol::table& options) {
+                  guiManager.setLayerConfig(layer, layerConfigFromTable(options));
               };
 
-        //api["_setPointerLeft"] = [&inputManager = MWVR::VRInputManager::instance()](
-        //                             bool enabled) { inputManager.setPointerLeft(enabled); };
+        api["_setLayerPose"]
+            = [&guiManager = MWVR::VRGUIManager::instance()](const std::string& layer, const sol::table& pose) {
+                  guiManager.setLayerPose(layer, poseFromTable(pose));
+              };
 
-        //api["_setPointerRight"] = [&inputManager = MWVR::VRInputManager::instance()](
-        //                              bool enabled) { inputManager.setPointerRight(enabled); };
+        api["_setPointerLeft"] = [&inputManager = MWVR::VRInputManager::instance()](
+                                     bool enabled) { inputManager.setPointerLeft(enabled); };
 
-        api["_setPointerActivation"] = [&inputManager = MWVR::VRInputManager::instance()](
-                                           bool enabled) { inputManager.setPointerActivation(enabled); };
+        api["_setPointerRight"] = [&inputManager = MWVR::VRInputManager::instance()](
+                                      bool enabled) { inputManager.setPointerRight(enabled); };
+
+        api["_pointerActivate"]
+            = [&inputManager = MWVR::VRInputManager::instance()]() { inputManager.pointerActivate(); };
+
+        api["_recenter"] = []() { VR::recenter(); };
 
         //api[]
 

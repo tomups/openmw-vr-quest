@@ -400,6 +400,7 @@ namespace MWBase
         virtual bool isWindowVisible(std::string_view windowId) const = 0;
         virtual std::vector<std::string_view> getAllWindowIds() const = 0;
         virtual std::vector<std::string_view> getAllowedWindowIds(MWGui::GuiMode mode) const = 0;
+        virtual const std::map<MWGui::GuiMode, std::string_view>& guiModeToName() const = 0;
     };
 }
 

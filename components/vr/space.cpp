@@ -1,5 +1,6 @@
 #include "space.hpp"
 #include <components/sceneutil/nodecallback.hpp>
+#include "space.hpp"
 
 namespace VR
 {
@@ -51,9 +52,11 @@ namespace VR
 
     void SpaceTransform::onSpaceUpdate()
     {
-        VR::TrackingPose tp = mSpace->locateInWorld();
-
         mMatrix.makeIdentity();
+        if (!mSpace)
+            return;
+
+        VR::TrackingPose tp = mSpace->locateInWorld();
         if (!!tp.status)
         {
             mMatrix.makeRotate(tp.pose.orientation);
@@ -69,7 +72,7 @@ namespace VR
     {
     }
 
-    TrackingPose VR::DerivedSpace::locate(const std::shared_ptr<Space>& reference) const
+    TrackingPose VR::DerivedSpace::locate(const Space& reference) const
     {
         auto tp = mReference->locate(reference);
         if (!!tp.status)

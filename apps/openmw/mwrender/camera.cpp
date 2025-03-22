@@ -5,10 +5,12 @@
 #include <components/misc/mathutil.hpp>
 #include <components/sceneutil/nodecallback.hpp>
 #include <components/sceneutil/positionattitudetransform.hpp>
+#include <components/sceneutil/visitor.hpp>
 
 #include "../mwbase/environment.hpp"
 #include "../mwbase/windowmanager.hpp"
 #include "../mwbase/world.hpp"
+#include "../mwbase/statemanager.hpp"
 
 #include "../mwworld/class.hpp"
 #include "../mwworld/ptr.hpp"
@@ -27,6 +29,7 @@
 #include <components/vr/viewer.hpp>
 #include <components/vr/vr.hpp>
 #include "../mwvr/openxrinput.hpp"
+#include "../mwvr/vranimation.hpp"
 //## VR_PATCH END
 
 namespace
@@ -470,6 +473,13 @@ namespace MWRender
 //## VR_PATCH BEGIN
         if (mMode == Mode::VR)
         {
+            //SceneUtil::FindByNameVisitor visitor("VrCamera");
+            //if (mAnimation && mAnimation->getObjectRoot())
+            //{
+            //    mAnimation->getObjectRoot()->accept(visitor);
+            //    mTrackingNode = visitor.mFoundNode;
+            //}
+            //mHeightScale = 1.f;
             mProcessViewChange = false;
             return;
         }
@@ -483,8 +493,6 @@ namespace MWRender
             mTrackingNode = mAnimation->getNode("Camera");
             if (!mTrackingNode)
                 mTrackingNode = mAnimation->getNode("Head");
-            else
-                Log(Debug::Verbose) << "Breakpoint";
             mHeightScale = 1.f;
         }
         else

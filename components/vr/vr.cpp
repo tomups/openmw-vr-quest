@@ -15,6 +15,7 @@ namespace VR
 {
     namespace
     {
+        bool sRecenterLua = true;
         bool sVRMode = false;
         bool sSteamVR = false;
         bool sSeatedPlay = false;
@@ -169,8 +170,19 @@ namespace VR
 
     void recenter() 
     {
+        sRecenterLua = true;
         if (sVRMode)
-            Session::instance().recenter();
+            Session::instance().requestRecenter();
+    }
+
+    bool getShouldRecenterLua()
+    {
+        return sRecenterLua;
+    }
+
+    void setShouldRecenterLua(bool arg) 
+    {
+        sRecenterLua = arg;
     }
 
     void resetEyeLevel()

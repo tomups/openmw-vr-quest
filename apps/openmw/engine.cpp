@@ -26,6 +26,7 @@
 #include "mwrender/camera.hpp"
 #include "mwvr/vrgui.hpp"
 #include "mwvr/vrinputmanager.hpp"
+#include "mwvr/vranimation.hpp"
 #include <components/misc/callbackmanager.hpp>
 #include <components/shader/shadermanager.hpp>
 #include <components/vr/session.hpp>
@@ -95,6 +96,7 @@
 #include "mwdialogue/scripttest.hpp"
 
 #include "mwmechanics/mechanicsmanagerimp.hpp"
+#include "mwmechanics/actorutil.hpp"
 
 #include "mwstate/statemanagerimp.hpp"
 
@@ -381,6 +383,16 @@ bool OMW::Engine::frame(unsigned frameNumber, float frametime)
 
     if (VR::getVR())
     {
+        if (mStateManager->getState() == MWBase::StateManager::State_Running)
+        {
+            auto playerPtr = MWMechanics::getPlayer();
+            auto playerAnim = MWBase::Environment::get().getWorld()->getAnimation(playerPtr);
+            if (playerAnim)
+                static_cast<MWVR::VRAnimation*>(playerAnim)->updateSpace();
+        }
+        if (VR::getShouldRecenterLua())
+            mLuaManager->vrRecentered();
+        VR::setShouldRecenterLua(false);
         mLuaManager->onVRFrame();
         VR::Session::instance().updateSpaces();
     }

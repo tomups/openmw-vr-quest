@@ -5,6 +5,8 @@
 
 #include <openxr/openxr.h>
 
+#include <optional>
+
 namespace XR
 {
     class Space : public VR::Space
@@ -13,12 +15,32 @@ namespace XR
         Space(XrSpace space);
         ~Space() override;
 
-        XrSpace xrSpace() const { return mSpace; }
+        virtual XrSpace xrSpace() const { return mSpace; }
 
+        VR::TrackingPose locate(const VR::Space& reference) const override;
+        VR::TrackingPose locateInWorld() const override;
     protected:
-        VR::TrackingPose locate(const std::shared_ptr<VR::Space>& reference) const override;
+
+        mutable XrSpace mSpace;
+    };
+
+    class ReferenceSpace : public XR::Space
+    {
+    public:
+        ReferenceSpace(VR::ReferenceSpace type, std::optional<VR::ReferenceSpace> recenterTo);
+        ~ReferenceSpace();
+
+        XrSpace xrSpace() const override;
+
+        void recreate() const;
+        void recenter();
+
+        VR::TrackingPose locate(const VR::Space& reference) const override;
         VR::TrackingPose locateInWorld() const override;
 
-        XrSpace mSpace;
+    private:
+        VR::ReferenceSpace mType;
+        std::optional<VR::ReferenceSpace> mRecenterTo;
+        mutable bool mRecenter;
     };
 }

@@ -8,7 +8,6 @@ end
 
 local UnitsPerMeter = 69.99125109
 local customSpaces = {
-    defaultMenu = "/default/ui/menu",
 }
 
 local actionSpaces = {
@@ -108,5 +107,6 @@ return {
         isReferenceSpace = isReferenceSpace,
         isSpaceActive = function(space) return vr.locateSpace(space) ~= nil end,
         locateSpace = vr._locateSpace,
+        recenter = vr._recenter,
     }
 }

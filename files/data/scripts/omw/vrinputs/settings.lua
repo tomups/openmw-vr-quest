@@ -46,8 +46,33 @@ end
 
 -- Temp: Reset every time cause i keep breaking stuff
 bindingSection:reset()
+local controlSection = storage.playerSection('SettingsOMWControlsVR')
+controlSection:reset()
 
 local recording = nil
+
+local function clearActive(paths)
+    for _, controller in pairs (common.controllers) do
+        local profile = vr.getInteractionProfileOfController(controller)
+        if profile and paths[profile] then
+            paths[profile][controller] = nil
+        end
+    end
+end
+
+local function setActivePath(paths, path)
+    local controller = common.controllers.RIGHT_HAND
+    if string.find(paths, '/left/') then
+        controller = common.controllers.LEFT_HAND
+    end
+    local profile = vr.getInteractionProfileOfController(controller)
+    if not profile then
+        print('Warning: Tried to bind to a non-existent controller')
+        return
+    end
+    paths[profile] = paths[profile] or {}
+    paths[profile][controller] = path
+end
 
 I.Settings.registerRenderer('inputBindingVR', function(value, set, arg)
     if type(value) ~= 'table' then error('inputBindingVR: must have a table default value, got '..tostring(type(value))..' instead') end
@@ -74,12 +99,14 @@ I.Settings.registerRenderer('inputBindingVR', function(value, set, arg)
         },
     }
 
-    local binding = bindingSection:get(value.id)
-    if not binding and value.path then
-        -- 
-        binding = {path = value.path, key = value.key, type = value.type}
+    local binding = bindingSection:getCopy(value.id)
+    if not binding and value.paths then
+        binding = {}
+        binding.key = value.key
+        binding.type = value.type
+        binding.paths = value.paths
         bindingSection:set(value.id, binding)
-        print(tostring(value.id)..': defaulted to '..tostring(binding.path))
+        print(tostring(value.id)..': set to defaults')
     end
     local label = bindingLabel(recording and recording.id == value.id, binding)
 
@@ -93,10 +120,9 @@ I.Settings.registerRenderer('inputBindingVR', function(value, set, arg)
             -- listening for a mouseclick here.
             mouseClick = async:callback(function()
                 if recording ~= nil then return end
-                if binding ~= nil then 
-                    -- binding is userdata, so binding.path = nil won't work
-                    -- have to remake the table instead
-                    binding = {key = value.key, type = value.type}
+                if binding ~= nil and not value.required then 
+                    -- clear any bound paths in active profiles
+                    clearActive(binding.paths)
                     bindingSection:set(value.id, binding) 
                 end
                 recording = {
@@ -139,11 +165,9 @@ local function bindInteraction(path)
         return
     end
     
-    local binding = {
-        path = path,
-        type = recording.value.type,
-        key = recording.value.key,
-    }
+    local binding = bindingSection:getCopy(recording.value.id)
+    binding.paths = binding.paths or {}
+    setActivePath(binding.paths, path)
     bindingSection:set(recording.value.id, binding)
     local refresh = recording.refresh
     recording = nil
@@ -160,24 +184,24 @@ end)
 -- Current .RC does not process actions during the main menu.
 -- So until a game has been loaded we have to manually deal with menu bindings.
 --input.registerActionHandler('PointerLeft', function(v)
-common.setManualActionCallback('PointerLeft', function(v)
+--common.setManualTriggerCallback('PointerLeft', function(v)
     -- Should be fixed to true engine-side during main menu
     --vr._setPointerLeft(v)
-    print('PointerLeft: '..tostring(v))
-end)
+--    print('PointerLeft: '..tostring(v))
+--end)
 --input.registerActionHandler('PointerRight', function(v)
-common.setManualActionCallback('PointerRight', function(v)
+--common.setManualTriggerCallback('PointerRight', function(v)
     -- Should be fixed to true engine-side during main menu
     --vr._setPointerRight(v)
-    print('PointerRight: '..tostring(v))
-end)
+--    print('PointerRight: '..tostring(v))
+--end)
 --input.registerActionHandler('PointerActivate', function(v)
-common.setManualActionCallback('PointerActivate', function(v)
-    print('PointerActivate: '..tostring(v))
-    vr._setPointerActivation(v)
+common.setManualTriggerCallback('PointerActivate', function()
+    print('PointerActivate')
+    vr._pointerActivate()
 end)
 
-common.setManualActionCallback('MenuBack', async:callback(function(v)
+common.setManualTriggerCallback('MenuBack', async:callback(function()
     -- There isn't a catch-all solution for closing the current menu item from lua.
     -- I.UI.removeMode can only remove modes, not dialogue boxes, the console, or the postprocessing hud.
     -- From VR I need a one click solution, so i am using this placeholder internal function.
@@ -191,13 +215,13 @@ local function onFrame(dt)
     if menu.getState() == menu.STATE.NoGame then
         common.onFrame(dt)
     end
-    
+
     if not gameLoaded and menu.getState() == menu.STATE.Running then
         -- Now managed by the Player script, we can disable this callback.
-        common.setManualActionCallback('PointerLeft', nil)
-        common.setManualActionCallback('PointerRight', nil)
-        common.setManualActionCallback('PointerActivate', nil)
-        common.setManualActionCallback('MenuBack', nil)
+        --common.setManualTriggerCallback('PointerLeft', nil)
+        --common.setManualTriggerCallback('PointerRight', nil)
+        common.setManualTriggerCallback('PointerActivate', nil)
+        common.setManualTriggerCallback('MenuBack', nil)
     end
 end
 

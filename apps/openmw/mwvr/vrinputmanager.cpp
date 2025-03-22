@@ -48,15 +48,14 @@ namespace MWVR
 {
     void VRInputManager::updateVRPointer(bool disableControls)
     {
-        std::shared_ptr<VR::Space> source = mXRInput->getSpace(OpenXRInput::DefaultReferenceSpaceView);
+        std::shared_ptr<VR::Space> source;
         if (VR::getLeftControllerActive() || VR::getRightControllerActive())
         {
             bool guiMode = MWBase::Environment::get().getWindowManager()->isGuiMode();
 
             if (!disableControls)
                 MWBase::Environment::get().getWorld()->enableVRPointer(
-                    mPointerLeft && VR::getLeftControllerActive(),
-                    mPointerRight && VR::getRightControllerActive());
+                    mPointerLeft && VR::getLeftControllerActive(), mPointerRight && VR::getRightControllerActive());
 
             bool leftHanded = Settings::Manager::getBool("left handed mode", "VR");
             std::string action = "";
@@ -67,13 +66,15 @@ namespace MWVR
                 else
                     action = VR::Paths::RIGHT_HAND_AIM;
             }
-            else if (mPointerLeft)
-                action = VR::Paths::RIGHT_HAND_AIM;
             else if (mPointerRight)
+                action = VR::Paths::RIGHT_HAND_AIM;
+            else if (mPointerLeft)
                 action = VR::Paths::LEFT_HAND_AIM;
             if (!action.empty())
                 source = mXRInput->getSpace(action);
         }
+        else
+            source = mXRInput->getSpace(OpenXRInput::DefaultReferenceSpaceView);
 
         if (!mVRPointer && !disableControls)
         {
@@ -341,12 +342,10 @@ namespace MWVR
         return mPointerRight;
     }
 
-    void VRInputManager::setPointerActivation(bool enabled) 
+    void VRInputManager::pointerActivate() 
     {
-        std::swap(mPointerActivation, enabled);
-        if (mPointerActivation != enabled)
-            pointActivation(mPointerActivation, true);
-
+        pointActivation(true, true);
+        pointActivation(false, true);
     }
 
     static VRInputManager* sInputManager;

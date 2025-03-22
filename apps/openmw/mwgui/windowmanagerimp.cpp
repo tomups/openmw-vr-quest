@@ -2598,4 +2598,44 @@ namespace MWGui
         }
         return res;
     }
+    const static std::map<MWGui::GuiMode, std::string_view> modeToName{
+        { MWGui::GM_Inventory, "Interface" },
+        { MWGui::GM_Container, "Container" },
+        { MWGui::GM_Companion, "Companion" },
+        { MWGui::GM_MainMenu, "MainMenu" },
+        { MWGui::GM_Journal, "Journal" },
+        { MWGui::GM_Scroll, "Scroll" },
+        { MWGui::GM_Book, "Book" },
+        { MWGui::GM_Alchemy, "Alchemy" },
+        { MWGui::GM_Repair, "Repair" },
+        { MWGui::GM_Dialogue, "Dialogue" },
+        { MWGui::GM_Barter, "Barter" },
+        { MWGui::GM_Rest, "Rest" },
+        { MWGui::GM_SpellBuying, "SpellBuying" },
+        { MWGui::GM_Travel, "Travel" },
+        { MWGui::GM_SpellCreation, "SpellCreation" },
+        { MWGui::GM_Enchanting, "Enchanting" },
+        { MWGui::GM_Recharge, "Recharge" },
+        { MWGui::GM_Training, "Training" },
+        { MWGui::GM_MerchantRepair, "MerchantRepair" },
+        { MWGui::GM_Levelup, "LevelUp" },
+        { MWGui::GM_Name, "ChargenName" },
+        { MWGui::GM_Race, "ChargenRace" },
+        { MWGui::GM_Birth, "ChargenBirth" },
+        { MWGui::GM_Class, "ChargenClass" },
+        { MWGui::GM_ClassGenerate, "ChargenClassGenerate" },
+        { MWGui::GM_ClassPick, "ChargenClassPick" },
+        { MWGui::GM_ClassCreate, "ChargenClassCreate" },
+        { MWGui::GM_Review, "ChargenClassReview" },
+        { MWGui::GM_Loading, "Loading" },
+        { MWGui::GM_LoadingWallpaper, "LoadingWallpaper" },
+        { MWGui::GM_Jail, "Jail" },
+        { MWGui::GM_QuickKeysMenu, "QuickKeysMenu" },
+        { MWGui::GM_RadialMenu, "VrRadialMenu" },
+        { MWGui::GM_VrMetaMenu, "VrMetaMenu" },
+    };
+    const std::map<MWGui::GuiMode, std::string_view>& WindowManager::guiModeToName() const
+    {
+        return modeToName;
+    }
 }

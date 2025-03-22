@@ -76,6 +76,7 @@ namespace MWBase
         virtual void questUpdated(const ESM::RefId& questId, int stage) = 0;
         // `arg` is either forwarded from MWGui::pushGuiMode or empty
         virtual void uiModeChanged(const MWWorld::Ptr& arg) = 0;
+        virtual void vrRecentered() = 0;
 
         // TODO: notify LuaManager about other events
         // virtual void objectOnHit(const MWWorld::Ptr &ptr, float damage, bool ishealth, const MWWorld::Ptr &object,
@@ -121,13 +122,6 @@ namespace MWBase
             float mPitchChange = 0;
             float mYawChange = 0;
             int mUse = 0;
-            struct
-            {
-                bool mPointerActivate = 0;
-                bool mPointerLeft = 0;
-                bool mPointerRight = 0;
-                MWWorld::Ptr mPointerTarget;
-            } vr;
         };
 
         virtual ActorControls* getActorControls(const MWWorld::Ptr&) const = 0;

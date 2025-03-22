@@ -21,47 +21,27 @@ local function controlsAllowed()
         and Player.getControlSwitch(self, Player.CONTROL_SWITCH.Controls)
         and not I.UI.getMode()
 end
-local function updatePointer()
-    if not controlsAllowed() then
-        self.controls.pointerLeft = true
-        self.controls.pointerRight = true
-    end
-end
 
-input.bindAction('PointerLeft', async:callback(function(dt, v)
-    -- Pointers should always be on during menus
-    return v or not controlsAllowed()
-end), {})
+local rightHanded = true
+local pointerRight = false
+local pointerLeft = false
 
-input.bindAction('PointerRight', async:callback(function(dt, v)
-    -- Pointers should always be on during menus
-    return v or not controlsAllowed()
-end), {})
-
-input.registerActionHandler('PointerLeft', async:callback(function(v)
-    self.controls.pointerLeft = v
-end))
-
-input.registerActionHandler('PointerRight', async:callback(function(v)
-    self.controls.pointerLeft = v
-end))
-
-input.registerActionHandler('PointerActivate', async:callback(function(v)
-    self.controls.pointerActivate = v
+input.registerTriggerHandler('PointerActivate', async:callback(function(v)
+    vr._pointerActivate()
 end))
 
 
 -- Note: 'MetaMenu' and 'MenuBack' are by default bound to the same key.
 -- Similar to how ESC by default opens the game menu, OR closes the current menu.
 -- The actions are disambiguated by the core.isWorldPaused check.
-input.registerActionHandler('MetaMenu', async:callback(function(v)
-    if v and not I.UI.getMode() and not core.isWorldPaused() then
+input.registerTriggerHandler('MetaMenu', async:callback(function()
+    if not I.UI.getMode() and not core.isWorldPaused() then
         I.UI.addMode(I.UI.MODE.VrMetaMenu)
     end
 end))
 
-input.registerActionHandler('MenuBack', async:callback(function(v)
-    if v and I.UI.getMode() and core.isWorldPaused() then
+input.registerTriggerHandler('MenuBack', async:callback(function()
+    if I.UI.getMode() and core.isWorldPaused() then
         -- There isn't a catch-all solution for closing the current menu item from lua.
         -- I.UI.removeMode can only remove modes, not dialogue boxes, the console, or the postprocessing hud.
         -- From VR I need a one click solution, so i am using this placeholder internal function.
@@ -79,9 +59,43 @@ common.setOnInputChangedBoolean(function(path, action)
     end
 end)
 
+local function updatePointer()
+    local pointerLeft = input.getBooleanActionValue('PointerLeft') and vr.isControllerActive(common.controllers.LEFT_HAND)
+    local pointerRight = input.getBooleanActionValue('PointerRight') and vr.isControllerActive(common.controllers.RIGHT_HAND)
+    
+    if pointerLeft and pointerRight then
+        -- Both pointers are being activated at the same time, but i only 
+        -- support one pointer at a time
+        if rightHanded then 
+            pointerLeft = false
+        else
+            pointerRight = false
+        end
+    end
+    
+    if not controlsAllowed() and not (pointerLeft or pointerRight) then
+        -- We're in a menu of some sort. At least one pointer should always be active in this mode.
+        if rightHanded then
+            pointerRight = true
+        else
+            pointerLeft = true
+        end
+    end
+    
+    vr._setPointerLeft(pointerLeft)
+    vr._setPointerRight(pointerRight)
+    
+end
+
 local function onFrame(dt)
+    
     common.onFrame(dt)
     updatePointer()
+    
+    local lookLeft = input.getRangeActionValue('LookLeft')
+    local lookRight = input.getRangeActionValue('LookRight')
+    
+    self.controls.yawChange = (lookRight - lookLeft) * dt
 end
 
 return {

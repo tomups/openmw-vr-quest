@@ -54,45 +54,130 @@
 
 namespace MWVR
 {
-    namespace Paths
+    namespace
     {
-        // const char* sMenuQuadStr = "/ui/menu_quad/pose";
-        // const char* sHUDTopLeftStr = "/ui/HUD/topleft";
-        // const char* sHUDTopRightStr = "/ui/HUD/topright";
-        // const char* sHUDBottomLeftStr = "/ui/HUD/bottomleft";
-        // const char* sHUDBottomRightStr = "/ui/HUD/bottomright";
-        // const char* sHUDMessageStr = "/ui/HUD/message";
-        // const char* sHUDKeyboardStr = "/ui/HUD/keyboard";
-        // const char* sWristTopLeftStr = "/ui/wrist_top/left/pose";
-        // const char* sWristTopRightStr = "/ui/wrist_top/right/pose";
-        // const char* sWristInnerLeftStr = "/ui/wrist_inner/left/pose";
-        // const char* sWristInnerRightStr = "/ui/wrist_inner/right/pose";
-        // VR::VRPath sMenuQuad;
-        // VR::VRPath sHUDTopLeft;
-        // VR::VRPath sHUDTopRight;
-        // VR::VRPath sHUDBottomLeft;
-        // VR::VRPath sHUDBottomRight;
-        // VR::VRPath sHUDMessage;
-        // VR::VRPath sHUDKeyboard;
-        // VR::VRPath sWristTopLeft;
-        // VR::VRPath sWristTopRight;
-        // VR::VRPath sWristInnerLeft;
-        // VR::VRPath sWristInnerRight;
+        // Translate a mode to the list of mygui layers that can be visible in that mode
+        // (Often differs from the list of windows)
+        const static std::map<std::string, std::vector<std::string>> modeToLayers = {
+            { "Interface", { "StatsWindow", "InventoryWindow", "MapWindow", "SpellWindow" } },
+            { "Container", { "InventoryWindow", "InventoryCompanionWindow" } },
+            { "Companion", { "InventoryWindow", "InventoryCompanionWindow" } },
+            { "MainMenu", { "Settings", "MainMenu", "MainMenuBackground" } },
+            { "Journal", { "JournalBooks" } },
+            { "Scroll", { "JournalBooks" } },
+            { "Book", { "JournalBooks" } },
+            { "Alchemy", { "Windows" } },
+            { "Repair", { "Windows" } },
+            { "Dialogue", { "DialogueWindow" } },
+            { "Barter", { "InventoryWindow", "InventoryCompanionWindow" } },
+            { "Rest", { "Windows" } },
+            { "SpellBuying", { "Windows" } },
+            { "Travel", { "Windows" } },
+            { "SpellCreation", { "Windows" } },
+            { "Enchanting", { "Windows" } },
+            { "Recharge", { "Windows" } },
+            { "Training", { "Windows" } },
+            { "MerchantRepair", { "Windows" } },
+            { "LevelUp", { "Windows" } },
+            { "ChargenName", { "Windows" } },
+            { "ChargenRace", { "Windows" } },
+            { "ChargenBirth", { "Windows" } },
+            { "ChargenClass", { "Windows" } },
+            { "ChargenClassGenerate", { "Windows" } },
+            { "ChargenClassPick", { "Windows" } },
+            { "ChargenClassCreate", { "Windows" } },
+            { "ChargenClassReview", { "Windows" } },
+            { "Loading", { "LoadingScreen" } },
+            { "LoadingWallpaper", { "LoadingScreen", "LoadingScreenBackground" } },
+            { "Jail", { "Windows" } },
+            { "QuickKeysMenu", { "Windows" } },
+            { "VrRadialMenu", { "RadialMenu" } },
+            { "VrMetaMenu", { "MainMenu", "MainMenuBackground" } }
+        };
 
-        // void init()
-        //{
-        //     sMenuQuad = VR::stringToVRPath(sMenuQuadStr);
-        //     sHUDTopLeft = VR::stringToVRPath(sHUDTopLeftStr);
-        //     sHUDTopRight = VR::stringToVRPath(sHUDTopRightStr);
-        //     sHUDBottomLeft = VR::stringToVRPath(sHUDBottomLeftStr);
-        //     sHUDBottomRight = VR::stringToVRPath(sHUDBottomRightStr);
-        //     sHUDKeyboard = VR::stringToVRPath(sHUDKeyboardStr);
-        //     sHUDMessage = VR::stringToVRPath(sHUDMessageStr);
-        //     sWristTopLeft = VR::stringToVRPath(sWristTopLeftStr);
-        //     sWristTopRight = VR::stringToVRPath(sWristTopRightStr);
-        //     sWristInnerLeft = VR::stringToVRPath(sWristInnerLeftStr);
-        //     sWristInnerRight = VR::stringToVRPath(sWristInnerRightStr);
-        // }
+        // Translate a window to its corresponding layer
+        const static std::map<std::string, std::string> windowToLayers = {
+            { "Alchemy", "Windows" },
+            { "Book", "JournalBooks" },
+            { "Companion", "InventoryCompanionWindow" },
+            { "Container", "InventoryCompanionWindow" },
+            { "Dialogue", "DialogueWindow" },
+            { "EnchantingDialog", "Windows" },
+            { "Inventory", "InventoryWindow" },
+            { "JailScreen", "Windows" },
+            { "Journal", "JournalBooks" },
+            { "LevelUpDialog", "Windows" },
+            { "Magic", "SpellWindow" },
+            { "Map", "MapWindow" },
+            { "MerchantRepair", "Windows" },
+            { "QuickKeys", "Windows" },
+            { "Recharge", "Windows" },
+            { "Repair", "Windows" },
+            { "Scroll", "JournalBooks" },
+            { "SpellBuying", "Windows" },
+            { "SpellCreationDialog", "Windows" },
+            { "Stats", "StatsWindow" },
+            { "Trade", "InventoryCompanionWindow" },
+            { "Training", "Windows" },
+            { "Travel", "Windows" },
+            { "WaitDialog", "Windows" },
+        };
+
+        const static std::set<std ::string> resizableWindowLayers = { "InventoryCompanionWindow", "DialogueWindow",
+            "InventoryWindow", "StatsWindow", "MapWindow", "SpellWindow" };
+
+        // Since the MODE stack cannot always inform us what should be in front, and MyGUI doesn't expose this information, i
+        // have to manually re-compute what the actual priorities are
+        std::map<std::string, int> autoLayerPriorities(const std::vector<std::string>& layers)
+        {
+            std::map<std::string, int> res;
+            int priority = 0;
+            for (auto layer : layers)
+                res[layer] = priority++;
+            return res;
+        }
+        std::map<std::string, int> layerPriorities = autoLayerPriorities({
+            "FadeToBlack",
+            "HitOverlay",
+            "HUD",
+            "InventoryCompanionWindow",
+            "InventoryWindow",
+            "SpellWindow",
+            "MapWindow",
+            "StatsWindow",
+            "DialogueWindow",
+            "ServiceWindow",
+            "JournalBooks",
+            "Windows",
+            "Debug",
+            "Tooltip",
+            "Notification",
+            "DragAndDrop",
+            "DrowningBar",
+            "MainMenuBackground",
+            "MainMenu",
+            "Settings",
+            "Console",
+            "RadialMenu",
+            "LoadingScreenBackground",
+            "LoadingScreen",
+            "Modal",
+            "ListBox",
+            "Popup",
+            "Video",
+            "InputBlocker",
+            "VideoPlayer",
+            "VirtualKeyboard",
+            "Pointer",
+        });
+
+        int getLayerPriority(const std::string& layer)
+        {
+            auto it = layerPriorities.find(layer);
+            if (it == layerPriorities.end())
+                return 0;
+            return it->second;
+        }
     }
 
     // When making a circle of a given radius of equally wide planes separated by a given angle, what is the width
@@ -153,9 +238,9 @@ namespace MWVR
 
     osg::ref_ptr<osg::Geometry> VRGUILayer::createLayerGeometry(osg::ref_ptr<osg::StateSet> stateset)
     {
-        float left = mConfig->center.x() - 0.5;
+        float left = activeConfig()->center.x() - 0.5;
         float right = left + 1.f;
-        float top = 0.5f + mConfig->center.y();
+        float top = 0.5f + activeConfig()->center.y();
         float bottom = top - 1.f;
 
         osg::ref_ptr<osg::Geometry> geometry = new osg::Geometry();
@@ -237,15 +322,30 @@ namespace MWVR
         // Define state set that allows rendering with transparency
     }
 
-    void VRGUILayer::setConfig(const LayerConfig& config)
+    void VRGUILayer::setConfig(const std::string& mode, const LayerConfig& config)
     {
-        mConfig = config;
-        mDirty = true;
+        mPerModeConfigs[mode] = config;
+        if (mode == mActiveMode)
+            mDirty = true;
+    }
+
+    void VRGUILayer::setMode(const std::string& mode) {
+        if (mode != mActiveMode)
+            mDirty = true;
+        mActiveMode = mode;
     }
 
     void VRGUILayer::clear()
     {
         removeFromSceneGraph();
+    }
+
+    const LayerConfig* VRGUILayer::activeConfig()
+    {
+        auto it = mPerModeConfigs.find(mActiveMode);
+        if (it == mPerModeConfigs.end())
+            return nullptr;
+        return &it->second;
     }
 
     VRGUILayer::~VRGUILayer()
@@ -274,15 +374,16 @@ namespace MWVR
 
     void VRGUILayer::blitLayer(osg::RenderInfo& info)
     {
-        if (mVrLayer && mConfig)
+        auto config = activeConfig();
+        if (mVrLayer && config)
         {
             auto* state = info.getState();
             auto texture = colorTexture();
             mVrLayer->colorSwapchain->beginFrame(state->getGraphicsContext());
             auto glImage = mVrLayer->colorSwapchain->image()->glImage();
 
-            int width = mConfig->pixelResolution.x();
-            int height = mConfig->pixelResolution.y();
+            int width = config->pixelResolution.x();
+            int height = config->pixelResolution.y();
 
             // TODO: Definitely cache fbos when we're done checking that it WORKS
             osg::ref_ptr<osg::FrameBufferObject> targetFbo = new osg::FrameBufferObject();
@@ -305,20 +406,35 @@ namespace MWVR
 
     void VRGUILayer::updatePose()
     {
-        if (!mSpace)
+        auto config = activeConfig();
+        if (!config)
             return;
-        auto tp = mSpace->locateInWorld();
-        if (!tp.status)
-            return;
-        auto pose = tp.pose + mPose;
 
-        if (mConfig->priority != 0)
+        Stereo::Pose pose = mPose;
+
+        if (mSpace)
+        {
+            auto tp = mSpace->locateInWorld();
+            if (!tp.status)
+                return;
+
+            // TODO: I do this multiple places, make a utils of it
+            float yaw = 0;
+            float pitch = 0;
+            float roll = 0;
+            Stereo::getEulerAngles(tp.pose.orientation, yaw, pitch, roll);
+            tp.pose.orientation.makeRotate(yaw, osg::Vec3f(0, 0, -1));
+
+            pose = tp.pose + pose;
+        }
+
+        if (auto priority = getLayerPriority(mLayerName))
         {
             // Implement priority by moving this UI quad slightly towards the viewer based on priority.
             auto view = OpenXRInput::instance().getSpace(OpenXRInput::DefaultReferenceSpaceView);
             auto diff = view->locateInWorld().pose.position - pose.position;
             diff = diff / 10000.f;
-            pose.position = pose.position + diff * mConfig->priority;
+            pose.position = pose.position + diff * priority;
         }
 
         if (mVrLayer)
@@ -382,11 +498,18 @@ namespace MWVR
 
     void VRGUILayer::update(osg::NodeVisitor* nv)
     {
-        if (mDirty && mConfig && OpenXRInput::instance().getSpace(mConfig->space))
+        auto config = activeConfig();
+        if (!config)
+        {
+            clear();
+            return;
+        }
+
+        if (mDirty)
         {
             clear();
 
-            auto extent_units = mConfig->extent * Constants::UnitsPerMeter;
+            auto extent_units = config->extent * Constants::UnitsPerMeter;
 
             // Create the camera that will render the menu texture
             std::string filter = mLayerName;
@@ -396,17 +519,18 @@ namespace MWVR
                 = static_cast<osgMyGUI::RenderManager&>(MyGUI::RenderManager::getInstance());
             mMyGUICamera = renderManager.createGUICamera(osg::Camera::NESTED_RENDER, filter);
 
-            auto* rttNode = new GUIRTT(mConfig->pixelResolution.x(), mConfig->pixelResolution.y(),
-                osg::Vec4(0, 0, 0, mConfig->opacity), mMyGUICamera);
+            auto* rttNode = new GUIRTT(config->pixelResolution.x(), config->pixelResolution.y(),
+                osg::Vec4(0, 0, 0, config->opacity), mMyGUICamera);
             mGUIRTT = rttNode;
 
-            mSpace = OpenXRInput::instance().getSpace(mConfig->space);
+            if (!config->space.empty())
+                mSpace = OpenXRInput::instance().getSpace(config->space);
 
             if (mVrLayer)
             {
-                mVrLayer->colorSwapchain = VR::Session::instance().createSwapchain(mConfig->pixelResolution.x(),
-                    mConfig->pixelResolution.y(), 1, 1, VR::Swapchain::Attachment::Color, mLayerName + "Swapchain");
-                mVrLayer->extent = mConfig->extent;
+                mVrLayer->colorSwapchain = VR::Session::instance().createSwapchain(config->pixelResolution.x(),
+                    config->pixelResolution.y(), 1, 1, VR::Swapchain::Attachment::Color, mLayerName + "Swapchain");
+                mVrLayer->extent = config->extent;
                 mVrLayer->space = XR_NULL_HANDLE;
             }
             else
@@ -447,7 +571,7 @@ namespace MWVR
                 mTransform->setScale(osg::Vec3(extent_units.x(), 1.f, extent_units.y()));
                 mTransform->setCullCallback(new CullVRGUILayerCallback(this));
                 mTransform->setCullingActive(false);
-                if (!mConfig->intersectable)
+                if (!config->intersectable)
                     mTransform->setNodeMask(MWRender::Mask_Effect);
                 // configureGeometry();
             }
@@ -455,9 +579,6 @@ namespace MWVR
             if (mVisible)
                 addToSceneGraph();
         }
-
-        if (!mConfig)
-            return;
 
         if (!mVrLayer)
         {
@@ -493,11 +614,11 @@ namespace MWVR
         updateRect();
 
         //// Pixels per unit
-        float res = static_cast<float>(mConfig->spatialResolution) / Constants::UnitsPerMeter;
+        float res = static_cast<float>(config->spatialResolution) / Constants::UnitsPerMeter;
         float w = static_cast<float>(mRect.right - mRect.left);
         float h = static_cast<float>(mRect.bottom - mRect.top);
 
-        if (mConfig->autoSize)
+        if (config->autoSize)
         {
             if (mVrLayer)
                 mVrLayer->extent = osg::Vec2f(w / res, h / res) / Constants::UnitsPerMeter;
@@ -599,17 +720,15 @@ namespace MWVR
             mGeometryRoot->addChild(mTransform);
     }
 
-    static const LayerConfig createDefaultConfig(
-        int priority, bool intersectable = true, bool background = true, bool autoSize = true)
+    static const LayerConfig createDefaultConfig(bool intersectable = true, bool background = true, bool autoSize = true)
     {
-        return LayerConfig{ priority,
-            background ? 0.75f : 0.f, // background
+        return LayerConfig{ background ? 0.75f : 0.f, // background
             // Stereo::Position::fromMeters(0.f, 0.66f, -.25f), // offset
             osg::Vec2(0.f, 0.f), // center (model space)
             osg::Vec2(1.f, 1.f), // extent (meters)
             1024, // Spatial resolution (pixels per meter)
             osg::Vec2i(1024, 1024), // Texture resolution
-            osg::Vec2(1, 1), autoSize, VRGUIManager::DefaultUiSpace, intersectable };
+            osg::Vec2(1, 1), autoSize, "", intersectable };
     }
 
     VRGUIManager* sManager = nullptr;
@@ -669,14 +788,11 @@ namespace MWVR
         //                mHUDKeyboardPose.pose.position.mZ = tp.pose.position.mZ
         //                    + (mHUDKeyboardPose.pose.orientation * Stereo::Position::fromMWUnits(osg::Vec3(0, 35,
         //                    -40))).mZ;
-        Stereo::Pose defaultUiPose = {};
-        defaultUiPose.position = Stereo::Position::fromMeters(0.f, 0.66f, -.25f);
         // Stereo::Pose defaultVKeyboardPose = {};
         // defaultVKeyboardPose.position = Stereo::Position::fromMWUnits(osg::Vec3(0, 35, -40));
         // defaultVKeyboardPose.orientation = osg::Quat(osg::PI_4 / 2.f, osg::Vec3(-1, 0, 0));
 
         // defaultVKeyboardPose.position
-        OpenXRInput::instance().createDerivedSpace(DefaultUiSpace, VR::ReferenceSpace::Local, defaultUiPose);
 
         readConfig();
     }
@@ -711,17 +827,17 @@ namespace MWVR
     {
         clear();
 
-        LayerConfig defaultConfig = createDefaultConfig(1);
-        LayerConfig loadingScreenConfig = createDefaultConfig(1, true, true, false);
-        LayerConfig mainMenuConfig = createDefaultConfig(1, true, true, true);
-        LayerConfig settingsConfig = createDefaultConfig(2, true, true, true);
+        LayerConfig defaultConfig = createDefaultConfig();
+        LayerConfig loadingScreenConfig = createDefaultConfig(true, true, false);
+        LayerConfig mainMenuConfig = createDefaultConfig(true, true, true);
+        LayerConfig settingsConfig = createDefaultConfig(true, true, true);
         // LayerConfig journalBooksConfig = createDefaultConfig(2, true, false, false);
-        LayerConfig defaultWindowsConfig = createDefaultConfig(3, true, true);
-        LayerConfig videoPlayerConfig = createDefaultConfig(4, true, true, false);
-        LayerConfig messageBoxConfig = createDefaultConfig(6, true, false, true);
+        LayerConfig defaultWindowsConfig = createDefaultConfig(true, true);
+        LayerConfig videoPlayerConfig = createDefaultConfig(true, true, false);
+        LayerConfig messageBoxConfig = createDefaultConfig(true, false, true);
         // LayerConfig notificationConfig = createDefaultConfig(7, false, false, false);
-        LayerConfig listBoxConfig = createDefaultConfig(10, true, true);
-        LayerConfig consoleConfig = createDefaultConfig(2, true, true);
+        LayerConfig listBoxConfig = createDefaultConfig(true, true);
+        LayerConfig consoleConfig = createDefaultConfig(true, true);
         // LayerConfig radialMenuConfig = createDefaultConfig(11, true, false);
         //  TODO: Track around wrist instead of being a regular menu quad?
         //  radialMenuConfig.offset = osg::Vec3(0.f, 0.66f, 0.f);
@@ -837,6 +953,16 @@ namespace MWVR
             { "LoadingScreen", loadingScreenConfig },
             //{ "VirtualKeyboard", virtualKeyboardConfig },
         };
+
+        
+        Stereo::Pose defaultUiPose = {};
+        defaultUiPose.position = Stereo::Position::fromMeters(0.f, 0.66f, -.25f);
+        // OpenXRInput::instance().createDerivedSpace(DefaultUiSpace, VR::ReferenceSpace::View, defaultUiPose);
+        for (auto& config : mDefaultLayerConfigs)
+        {
+            getLayer(config.first).setConfig("", config.second);
+            getLayer(config.first).mPose = defaultUiPose;
+        }
     }
 
     void VRGUIManager::clear()
@@ -1001,6 +1127,22 @@ namespace MWVR
     void VRGUIManager::onSpaceUpdate()
     {
         std::scoped_lock lock(mMutex);
+        auto wm = MWBase::Environment::get().getWindowManager();
+        for (MWGui::GuiMode m : wm->getGuiModeStack())
+        {
+            auto mode = wm->guiModeToName().at(m);
+            auto it = mModeConfigs.find(std::string(mode));
+            if (it == mModeConfigs.end())
+                continue;
+
+            auto windows = wm->getAllowedWindowIds(m);
+            for (auto window : windows)
+            {
+                auto layer = windowToLayers.at(std::string(window));
+                getLayer(layer).setMode(std::string(mode));
+            }
+        }
+
         for (auto& it : mLayers)
             it.second->updatePose();
     }
@@ -1075,7 +1217,7 @@ namespace MWVR
         mLayers[name] = layer;
         auto defaultConfig = mDefaultLayerConfigs.find(name);
         if (defaultConfig != mDefaultLayerConfigs.end())
-            layer->setConfig(defaultConfig->second);
+            layer->setConfig("", defaultConfig->second);
         return *layer;
     }
 
@@ -1178,24 +1320,45 @@ namespace MWVR
         getLayer(name).mPose = pose;
     }
 
-    // void VRGUIManager::setLayerSpace(const std::string& name, std::shared_ptr<VR::Space> space)
-    //{
-    //     getLayer(name).mSpace = space;
-    // }
-
     void VRGUIManager::setLayerConfig(const std::string& name, const LayerConfig& config)
     {
         std::scoped_lock lock(mMutex);
-        getLayer(name).setConfig(config);
+        getLayer(name).setConfig("", config);
+    }
+
+    void VRGUIManager::setModeConfig(const std::string& mode, const LayerConfig& config) 
+    {
+        auto it = modeToLayers.find(mode);
+        if (it == modeToLayers.end())
+        {
+            Log(Debug::Error) << "Mode not recognized: " << mode;
+            return;
+        }
+        mModeConfigs[mode] = config;
+        for (auto& layer : it->second)
+        {
+            getLayer(layer).setConfig(mode, config);
+        }
+    }
+
+    void VRGUIManager::setModePose(const std::string& mode, const Stereo::Pose& pose, const std::string window) 
+    {
+        if (window.empty())
+        {
+            for (auto& layer : modeToLayers.at(mode))
+                getLayer(layer).mPose = pose;
+        }
+        else
+            getLayer(windowToLayers.at(window)).mPose = pose;
     }
 
     void VRGUIManager::computeGuiCursor(osg::Vec3 hitPoint)
     {
         float x = 0;
         float y = 0;
-        if (mFocusLayer)
+        if (mFocusLayer && mFocusLayer->activeConfig())
         {
-            osg::Vec2 bottomLeft = mFocusLayer->mConfig->center - osg::Vec2(0.5f, 0.5f);
+            osg::Vec2 bottomLeft = mFocusLayer->activeConfig()->center - osg::Vec2(0.5f, 0.5f);
             x = hitPoint.x() - bottomLeft.x();
             y = hitPoint.z() - bottomLeft.y();
             auto rect = mFocusLayer->mRealRect;

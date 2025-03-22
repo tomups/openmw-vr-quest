@@ -389,14 +389,6 @@ namespace MWMechanics
                 stats.setAttackingOrSpell(attackType != AttackType::NoAttack);
                 stats.setAttackType(attackTypeName(attackType));
 
-                if (VR::getVR())
-                {
-                    MWVR::VRInputManager::instance().setPointerLeft(controls.vr.mPointerLeft);
-                    MWVR::VRInputManager::instance().setPointerRight(controls.vr.mPointerRight);
-                    MWVR::VRInputManager::instance().setPointerActivation(controls.vr.mPointerActivate);
-                    controls.vr.mPointerTarget = MWVR::VRInputManager::instance().getPointerTarget();
-                }
-
                 controls.mChanged = false;
             }
             // For the player we don't need to copy these values to Lua because mwinput doesn't change them.

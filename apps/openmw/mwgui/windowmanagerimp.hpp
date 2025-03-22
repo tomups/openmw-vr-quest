@@ -405,6 +405,7 @@ namespace MWGui
         bool isWindowVisible(std::string_view windowId) const override;
         std::vector<std::string_view> getAllWindowIds() const override;
         std::vector<std::string_view> getAllowedWindowIds(GuiMode mode) const override;
+        const std::map<MWGui::GuiMode, std::string_view>& guiModeToName() const override;
 
     private:
         unsigned int mOldUpdateMask;

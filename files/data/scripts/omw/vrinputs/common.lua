@@ -7,6 +7,7 @@ local input = require('openmw.input')
 local core = require('openmw.core')
 local async = require('openmw.async')
 
+local alias = {}
 
 local controllers = {
     LEFT_HAND = '/user/hand/left',
@@ -27,21 +28,17 @@ local interactionNames = {
     ['/user/hand/left/input/thumbrest/touch'] = 'Left Thumbrest Touch',
     ['/user/hand/left/input/thumbstick/click'] = 'Left Stick Click',
     ['/user/hand/left/input/thumbstick/touch'] = 'Left Stick Touch',
-    ['/user/hand/left/input/thumbstick/x'] = 'Left Stick X',
-    ['/user/hand/left/input/thumbstick/x/left'] = 'Left Stick Left',
-    ['/user/hand/left/input/thumbstick/x/right'] = 'Left Stick Right',
-    ['/user/hand/left/input/thumbstick/y'] = 'Left Stick Y',
-    ['/user/hand/left/input/thumbstick/y/down'] = 'Left Stick Down',
-    ['/user/hand/left/input/thumbstick/y/up'] = 'Left Stick Up',
+    ['/user/hand/left/input/thumbstick/left'] = 'Left Stick Left',
+    ['/user/hand/left/input/thumbstick/right'] = 'Left Stick Right',
+    ['/user/hand/left/input/thumbstick/down'] = 'Left Stick Down',
+    ['/user/hand/left/input/thumbstick/up'] = 'Left Stick Up',
     ['/user/hand/left/input/trackpad/click'] = 'Left Trackpad Click',
     ['/user/hand/left/input/trackpad/force'] = 'Left Trackpad Force',
     ['/user/hand/left/input/trackpad/touch'] = 'Left Trackpad Touch',
-    ['/user/hand/left/input/trackpad/x'] = 'Left Trackpad X',
-    ['/user/hand/left/input/trackpad/x/left'] = 'Left Trackpad X Left',
-    ['/user/hand/left/input/trackpad/x/right'] = 'Left Trackpad X Right',
-    ['/user/hand/left/input/trackpad/y'] = 'Left Trackpad Y',
-    ['/user/hand/left/input/trackpad/y/down'] = 'Left Trackpad Y Down',
-    ['/user/hand/left/input/trackpad/y/up'] = 'Left Trackpad Y Up',
+    ['/user/hand/left/input/trackpad/left'] = 'Left Trackpad X Left',
+    ['/user/hand/left/input/trackpad/right'] = 'Left Trackpad X Right',
+    ['/user/hand/left/input/trackpad/down'] = 'Left Trackpad Y Down',
+    ['/user/hand/left/input/trackpad/up'] = 'Left Trackpad Y Up',
     ['/user/hand/left/input/trigger/click'] = 'Left Trigger Touch',
     ['/user/hand/left/input/trigger/touch'] = 'Left Trigger Touch',
     ['/user/hand/left/input/trigger/value'] = 'Left Trigger Value',
@@ -62,21 +59,17 @@ local interactionNames = {
     ['/user/hand/right/input/thumbrest/touch'] = 'Right Thumbrest Touch',
     ['/user/hand/right/input/thumbstick/click'] = 'Right Thumbstick Click',
     ['/user/hand/right/input/thumbstick/touch'] = 'Right Thumbstick Touch',
-    ['/user/hand/right/input/thumbstick/x'] = 'Right Thumbstick X',
-    ['/user/hand/right/input/thumbstick/x/left'] = 'Right Thumbstick X Left',
-    ['/user/hand/right/input/thumbstick/x/right'] = 'Right Thumbstick X Right',
-    ['/user/hand/right/input/thumbstick/y'] = 'Right Thumbstick Y',
-    ['/user/hand/right/input/thumbstick/y/down'] = 'Right Thumbstick Y Down',
-    ['/user/hand/right/input/thumbstick/y/up'] = 'Right Thumbstick Y Up',
+    ['/user/hand/right/input/thumbstick/left'] = 'Right Thumbstick X Left',
+    ['/user/hand/right/input/thumbstick/right'] = 'Right Thumbstick X Right',
+    ['/user/hand/right/input/thumbstick/down'] = 'Right Thumbstick Y Down',
+    ['/user/hand/right/input/thumbstick/up'] = 'Right Thumbstick Y Up',
     ['/user/hand/right/input/trackpad/click'] = 'Right Trackpad Click',
     ['/user/hand/right/input/trackpad/force'] = 'Right Trackpad Force',
     ['/user/hand/right/input/trackpad/touch'] = 'Right Trackpad Touch',
-    ['/user/hand/right/input/trackpad/x'] = 'Right Trackpad X',
-    ['/user/hand/right/input/trackpad/x/left'] = 'Right Trackpad X Left',
-    ['/user/hand/right/input/trackpad/x/right'] = 'Right Trackpad X Right',
-    ['/user/hand/right/input/trackpad/y'] = 'Right Trackpad Y',
-    ['/user/hand/right/input/trackpad/y/down'] = 'Right Trackpad Y Down',
-    ['/user/hand/right/input/trackpad/y/up'] = 'Right Trackpad Y Up',
+    ['/user/hand/right/input/trackpad/left'] = 'Right Trackpad X Left',
+    ['/user/hand/right/input/trackpad/right'] = 'Right Trackpad X Right',
+    ['/user/hand/right/input/trackpad/down'] = 'Right Trackpad Y Down',
+    ['/user/hand/right/input/trackpad/up'] = 'Right Trackpad Y Up',
     ['/user/hand/right/input/trigger/click'] = 'Right Trigger Click',
     ['/user/hand/right/input/trigger/touch'] = 'Right Trigger Touch',
     ['/user/hand/right/input/trigger/value'] = 'Right Trigger Value',
@@ -134,6 +127,17 @@ local function registerAction(path, type, func)
     }
 end
 
+local function deadzone(v)
+    -- TODO: Configurable deadzone
+    -- for now use a deadzone of 20% off both ends
+    if (not v) or (math.abs(v) < 0.2) then
+        return 0
+    end
+    local absv = math.abs(v)
+    local sign = (v > 0) and 1 or -1
+    return sign * math.min(1, (absv - 0.2) / 0.6)
+end
+
 -- Register an action for every input
 for path, type in pairs(supportedInteractionPaths.input) do
     if type == vr.INTERACTION_VALUE_TYPES.Boolean then
@@ -149,48 +153,241 @@ for path, type in pairs(supportedInteractionPaths.input) do
             path, 
             input.ACTION_TYPE.Number,
             function() 
-                local v = vr.getActionValue(path) 
-                if not v then return 0 end
-                return v
+                return deadzone(vr.getActionValue(path))
             end
         )
     elseif type == vr.INTERACTION_VALUE_TYPES.Axis then
-        registerAction(
-            path, 
-            input.ACTION_TYPE.Number,
-            function() 
-                local v = vr.getActionValue(path) 
-                if not v then return 0 end
-                return v
-            end
-        )
+        -- It's easier to make a binding system for each individual direction than for whole axes.
+        -- So we split them apart into /x=/left,/right, and /y=/down,/up
+        --registerAction(
+        --    path, 
+        --    input.ACTION_TYPE.Number,
+        --    function() 
+        --        return deadzone(vr.getActionValue(path))
+        --    end
+        --)
         -- For Axis actions we want the option to assigning left/right/up/down as separate Number actions
         -- allowing thumbsticks or forcepads to be used as additional assignables
-        local neg = '/left'
-        local pos = '/right'
+        local parent = path:sub(1, -3)
+        local neg = parent..'/left'
+        local pos = parent..'/right'
         if path:sub(-2) == '/y' then
-            neg = '/down'
-            pos = '/up'
+            neg = parent..'/down'
+            pos = parent..'/up'
         end
         registerAction(
-            path..neg,
+            neg,
             input.ACTION_TYPE.Number,
             function() 
-                local v = vr.getActionValue(path) 
-                if not v or v > 0 then return 0 end
-                return -v
+                local v = deadzone(vr.getActionValue(path))
+                return (v < 0) and -v or 0
             end
         )
         registerAction(
-            path..pos,
+            pos,
             input.ACTION_TYPE.Number,
             function() 
-                local v = vr.getActionValue(path) 
-                if not v or v < 0 then return 0 end
-                return v
+                local v = deadzone(vr.getActionValue(path))
+                return (v > 0) and v or 0
             end
         )
     end
+end
+
+-- Because controllers can look wildly different in terms of available interactions,
+-- we need per-profile default bindings.
+local defaultBindings = require('scripts.omw.vrinputs.defaultBindings').defaultBindings
+
+local function getDefaultBindings(id)
+    local defaults = {}
+    id = alias[id] or id
+    -- This would be much easier/faster if the default bindings table was built in the inverse order (as in, bottom up)
+    -- but that would be incredibly obnoxious to write/read/maintain so i do it this way instead.
+    -- If this is an actual performance issue i'll write a function that inverts the table later...
+    for profile, controllers in pairs(defaultBindings) do
+        for controller, bindings in pairs(controllers) do
+            if bindings[id] then
+                defaults[profile] = defaults[profile] or {}
+                defaults[profile][controller] = bindings[id]
+            end
+        end
+    end
+    return defaults
+end
+
+local function getActiveProfileAndControllerFromPath(path)
+    local controller = controllers.RIGHT_HAND
+    if string.find(path, '/left') then
+        controller = controllers.LEFT_HAND
+    end
+    return vr.getInteractionProfileOfController(controller), controller
+end
+
+local bindingSection = storage.playerSection('OMWInputBindingsVR')
+
+local manualTriggerCallbacks = {}
+local boundActions = {}
+local actionBindings = {}
+local triggerBindings = {}
+local activeActionBindings = {}
+local activeTriggerBindings = {}
+
+local function getOrInitBindingsForProfile(tab, profile)
+    local bindings = tab[profile]
+    if not bindings then
+        bindings = {}
+        for name, controller in pairs(controllers) do
+            bindings[controller] = {}
+        end
+        tab[profile] = bindings
+    end
+    return bindings
+end
+
+local function getBindingsForController(tab, controller)
+    local profile = vr.getInteractionProfileOfController(controller)
+    if not profile then 
+        return {} 
+    end
+    return getOrInitBindingsForProfile(tab, profile)[controller]
+end
+
+local function getActionBindingsForController(controller)
+    return getBindingsForController(actionBindings, controller)
+end
+
+local function getTriggerBindingsForController(controller)
+    return getBindingsForController(triggerBindings, controller)
+end
+
+local function setManualTriggerCallback(key, callback)
+    manualTriggerCallbacks[key] = callback
+end
+
+local activeProfiles = {
+}
+
+local function updateActiveProfiles()
+
+    -- TODO: Make an engine handler for profile changes so i don't have to do this every frame
+    local changed = false
+    for name, controller in pairs(controllers) do
+        if activeProfiles[controller] ~= vr.getInteractionProfileOfController then
+            changed = true
+        end
+    end
+    
+    if not changed then return end
+
+    activeActionBindings = {}
+    activeTriggerBindings = {}
+    for name, controller in pairs(controllers) do
+        local profile = vr.getInteractionProfileOfController(controller) 
+        if profile then
+            activeActionBindings[controller] = getActionBindingsForController(controller)
+            for key, bindings in pairs(getTriggerBindingsForController(controller)) do
+                for id, path in pairs(bindings) do
+                    activeTriggerBindings[path] = activeTriggerBindings[path] or {}
+                    activeTriggerBindings[path][id] = key
+                end
+            end
+        end
+    end
+end
+
+local function getActionBindingValueBoolean(action, long)
+    local v = false
+    for controller, bindings in pairs(activeActionBindings) do
+        for id, path in pairs(bindings[action] or {}) do
+            v = inputActions[path].valueBoolean or v
+        end
+    end
+    return v
+end
+
+local function getActionBindingValueNumber(action)
+    local v = 0
+    for _, bindings in pairs(activeActionBindings) do
+        for _, path in pairs(bindings[action] or {}) do
+            local v2 = inputActions[path].valueNumber or 0
+            if math.abs(v2) > math.abs(v) then
+                v = v2
+            end
+        end
+    end
+    return v
+end
+
+-- Until actions work during the main menu, we have to manually fire some actions
+local function tryManualTriggers(path, value)
+    local once = {}
+    
+    for id, key in pairs(activeTriggerBindings[path] or {}) do            
+        if manualTriggerCallbacks[key] and not once[key] then
+            manualTriggerCallbacks[key](value)
+            once[key] = true
+        end
+    end
+end
+
+local function setupValueBinding(action, required, alias)
+    if not boundActions[action] then
+        boundActions[action] = true
+        if not input.actions[action] then
+            -- Some of upstream's actions/triggers aren't registered until a game is loaded
+            -- so we have to delay setup until the game IS loaded
+        else
+            if input.actions[action].type == input.ACTION_TYPE.Boolean then
+                input.bindAction(action, async:callback(function(dt)
+                    
+                    return getActionBindingValueBoolean(alias or action)
+                end), {})
+            else
+                input.bindAction(action, async:callback(function(dt)
+                    return getActionBindingValueNumber(alias or action)
+                end), {})
+            end
+        end
+    end
+end
+
+
+local function bindAction(binding, id)
+    local action = binding.key
+    for profile, controllers in pairs(binding.paths or {}) do
+        for controller, path in pairs(controllers or {}) do
+            local tab = getOrInitBindingsForProfile(actionBindings, profile)[controller]
+            tab[action] = tab[action] or {}
+            tab[action][id] = path
+        end
+    end
+    setupValueBinding(action)
+end
+
+local function bindTrigger(binding, id)
+    local trigger = binding.key
+    for profile, controllers in pairs(binding.paths or {}) do
+        for controller, path in pairs(controllers or {}) do
+            local tab = getOrInitBindingsForProfile(triggerBindings, profile)[controller]
+            tab[trigger] = tab[trigger] or {}
+            tab[trigger][id] = path
+        end
+    end
+end
+
+local function clearBindingForTable(tab, id)
+    for profile, controllers in pairs(tab) do
+        for controller, actionBindings in pairs(controllers) do
+            for _, bindings in pairs(actionBindings) do
+                bindings[id] = nil
+            end
+        end
+    end
+end
+
+local function clearBinding(id)
+    clearBindingForTable(actionBindings, id)
+    clearBindingForTable(triggerBindings, id)
 end
 
 
@@ -204,71 +401,6 @@ local function invalidBinding(binding)
     elseif binding.type == 'trigger' and not input.triggers[binding.key] then
         return string.format("trigger %s doesn't exist", binding.key)
     end
-end
-
-local bindingSection = storage.playerSection('OMWInputBindingsVR')
-local manualActionCallbacks = {}
-local actionBindings = {}
-local boundActions = {}
-local triggerBindings = {}
-
-local function setManualActionCallback(key, callback)
-    manualActionCallbacks[key] = callback
-end
-
--- Until actions work during the main menu, we have to manually fire some actions
--- This is TEMPORARY
-local function tryManualActions(path, action)
-    for key, cb in pairs(manualActionCallbacks) do
-        local once = false
-        for id, binding in pairs(actionBindings[key] or {}) do
-            if binding.path == path and not once then
-                cb(action.valueBoolean)
-                once = true
-            end
-        end
-    end
-end
-
-local function setupValueBinding(action)
-    if not boundActions[action] then
-        boundActions[action] = true
-        if input.actions[action].type == input.ACTION_TYPE.Boolean then
-            input.bindAction(action, async:callback(function(dt)
-                local v = false
-                for _, binding in pairs(actionBindings[action] or {}) do
-                    v = inputActions[binding.path].valueBoolean or v
-                end
-                return v
-            end), {})
-        else
-            input.bindAction(action, async:callback(function(dt)
-                local v = 0
-                for _, binding in pairs(actionBindings[action] or {}) do
-                    local v2 = inputActions[binding.path].valueNumber
-                    v = math.max(math.abs(v or 0), math.abs(v2 or 0))
-                end
-                return v
-            end), {})
-        end
-    end
-end
-
-local function bindAction(binding, id)
-    local action = binding.key
-    actionBindings[action] = actionBindings[action] or {}
-    actionBindings[action][id] = binding
-    setupValueBinding(action)
-end
-
-local function bindTrigger(binding, id)
-    triggerBindings[binding.path] = triggerBindings[binding.path] or {}
-    triggerBindings[binding.path][id] = binding
-end
-
-local function clearBinding(id)
-    actionBindings[id] = nil
-    triggerBindings[id] = nil
 end
 
 local function registerBinding(binding, id)
@@ -287,17 +419,19 @@ bindingSection:subscribe(async:callback(function(_, id)
     if id == 'version' then return end
     local binding = bindingSection:get(id)
     clearBinding(id)
-    if binding ~= nil and binding.path then
+    if binding ~= nil and binding.paths then
+        print('registering binding for id = '..id)
         registerBinding(binding, id)
     end
     return id
 end))
 
-local function registerTriggers()
-end
-
-local function bindSetting(key, type, default, long)
-    return {
+local settings = {
+    }
+    
+local function bindSetting(key, type, default, required)
+    if not default then print('error default nil') end
+    settings[#settings+1] = {
         key = key..'Key',
         renderer = 'inputBindingVR',
         name = key..'Key',
@@ -305,51 +439,97 @@ local function bindSetting(key, type, default, long)
         default = {
             id = key..'_VR',
             key = key,
-            path = default,
+            paths = default,
             type = type,
-            long = long,
+            required = required
         },
     }
 end
 
-local settings = {
-    }
 
+local function registerTriggers()
+    local reg = function(key, required)
+        if not input.triggers[key] then
+            input.registerTrigger {
+                key = key,
+                l10n = 'OMWControlsVR',
+                name = key .. '_name',
+                description = key .. '_description',
+            }
+            bindSetting(key, 'trigger', getDefaultBindings(key..'_VR'), required)
+        end
+    end
+
+    reg('PointerActivate', true)
+    reg('Recenter')
+    reg('MetaMenu', true)
+    --reg('MenuSelect')
+    reg('MenuBack')
+    
+    local regExisting = function(key, required)
+        bindSetting(key, 'trigger', getDefaultBindings(key..'_VR'), required)
+    end
+    regExisting('ToggleSneak')
+    regExisting('ToggleWeapon')
+    regExisting('ToggleSpell')
+end
 local function registerActions()
-    local reg = function(key, default, long, type)
-        input.registerAction {
-            key = key,
-            type = type,
-            l10n = 'OMWControlsVR',
-            name = key..'_Name',
-            description = key..'_Description',
-            defaultValue = false,
-        }
-        settings[#settings + 1] = bindSetting(key, 'action', default)
+    local reg = function(key, type, value, required)
+        if not input.actions[key] then
+            input.registerAction {
+                key = key,
+                type = type,
+                l10n = 'OMWControlsVR',
+                name = key..'_Name',
+                description = key..'_Description',
+                defaultValue = value,
+            }
+        end
+        bindSetting(key, 'action', getDefaultBindings(key..'_VR'), required)
         -- Make sure our bindings are always fired first by setting up the binding right away
-        setupValueBinding(key)
+        setupValueBinding(key, required)
     end
-    local regBool = function(key, default, long)
-        reg(key, default, long, input.ACTION_TYPE.Boolean)
+    local regBool = function(key, required)
+        reg(key, input.ACTION_TYPE.Boolean, false, required)
     end
-    local regFloat = function(key, default, long)
-        reg(key, default, long, input.ACTION_TYPE.Number)
+    local regRange = function(key, required)
+        reg(key, input.ACTION_TYPE.Range, 0, required)
     end
-    regBool('PointerLeft', '/user/hand/left/input/squeeze/value')
-    regBool('PointerRight', '/user/hand/right/input/squeeze/value')
-    regBool('PointerActivate', '/user/hand/right/input/a/click')
-    regBool('Recenter', '/user/hand/left/input/menu/click', true)
-    regBool('MetaMenu', '/user/hand/left/input/menu/click')
-    --regBool('MenuSelect', '/user/hand/right/input/b/click')
-    regBool('MenuBack', '/user/hand/left/input/menu/click')
+    regBool('PointerLeft')
+    regBool('PointerRight')
+    regRange('LookLeft')
+    regRange('LookRight')
+    
+    -- Existing actions.
+    -- The intent is to only add bindings for these,
+    -- but the upstream scripts don't define them until a game is loaded, which doesn't work for me.
+    local regExisting = function(f, key, required)
+        local key2 = key..'_Alias'
+        alias[key2..'_VR'] = key..'_VR'
+        f(key2, required)
+        --bindSetting(key, 'action', getDefaultBindings(key..'_VR'), required)
+        setupValueBinding(key, required, key2)
+    end
+    local regExistingBool = function(key, required)
+        regExisting(regBool, key, required)
+    end
+    local regExistingRange = function(key, required)
+        regExisting(regRange, key, required)
+    end
+    -- For now, registering existing doesn't work
+    regExistingRange('MoveLeft')
+    regExistingRange('MoveRight')
+    regExistingRange('MoveForward')
+    regExistingRange('MoveBackward')
+    regExistingBool('Sneak')
 end
 
 -- The current .49 RC has a bug where actions defined during main menu won't transfer to in-game
 -- So we re-register actions when loading the player script but only if they don't already exist.
-if not input.actions['PointerActivate'] then
+--if not input.actions['PointerLeft'] then
     registerActions()
     registerTriggers()
-end
+--end
     
 local settingsGroup = 'SettingsOMWControlsVR'
 
@@ -380,7 +560,7 @@ local function init()
     for id, binding in pairs(bindingSection:asTable()) do
         if id ~= 'version' then
             clearBinding(id)
-            if binding.path then
+            if binding.paths then
                 registerBinding(binding, id)
             end
         end
@@ -391,15 +571,15 @@ local onInputChangedBoolean = nil
 
 local function inputChangedBoolean(path, action)
     if action.valueBoolean then
-        for _, binding in pairs (triggerBindings[path] or {}) do
-            input.activateTrigger(binding.key)
+        for id, key in pairs (activeTriggerBindings[path] or {}) do
+            input.activateTrigger(key)
         end
+        tryManualTriggers(path, action.valueBoolean)
     end
     
     if onInputChangedBoolean then
         onInputChangedBoolean(path, action)
     end
-    tryManualActions(path, action)
 end
 
 local function updateInputs()
@@ -431,6 +611,7 @@ local function getInteractionName(interactionPath)
 end
 
 local function onFrame(dt)
+    updateActiveProfiles()
     if not initialized then 
         init() 
         initialized = true
@@ -447,6 +628,7 @@ return {
     setOnInputChangedBoolean = function(func) onInputChangedBoolean = func end,
     interactionNames = interactionNames,
     getInteractionName = getInteractionName,
-    setManualActionCallback = setManualActionCallback,
+    setManualTriggerCallback = setManualTriggerCallback,
     controllers = controllers,
+    getActiveProfileAndControllerFromPath = getActiveProfileAndControllerFromPath,
 }

@@ -163,7 +163,7 @@ namespace XR
                     case VR::Layer::Type::ProjectionLayer:
                     {
                         VR::ProjectionLayer* projectionLayer = static_cast<VR::ProjectionLayer*>(layer.get());
-                        xrProjectionLayer.space = static_cast<XR::Space*>(projectionLayer->space.get())->xrSpace();
+                        xrProjectionLayer.space = dynamic_cast<XR::Space*>(projectionLayer->space.get())->xrSpace();
                         xrProjectionLayer.viewCount = 2;
                         xrProjectionLayer.views = compositionLayerProjectionViews.data();
 
@@ -411,6 +411,12 @@ namespace XR
         return true;
     }
 
+    void Session::recenter() 
+    {
+        mReferenceSpaces[static_cast<int>(VR::ReferenceSpace::Local) - 1]->recreate();
+        VR::Session::recenter();
+    }
+
     bool Session::checkStopCondition()
     {
         return mAcquiredResources == 0;
@@ -587,7 +593,7 @@ namespace XR
         Log(Debug::Verbose) << ss.str();
     }
 
-    std::shared_ptr<XR::Space> Session::createReferenceSpace(VR::ReferenceSpace reference, Stereo::Pose pose)
+    XrSpace Session::createReferenceSpace(VR::ReferenceSpace reference, Stereo::Pose pose)
     {
         XrReferenceSpaceCreateInfo createInfo{};
         createInfo.type = XR_TYPE_REFERENCE_SPACE_CREATE_INFO;
@@ -596,16 +602,18 @@ namespace XR
         XrSpace space = XR_NULL_HANDLE;
         createInfo.referenceSpaceType = static_cast<XrReferenceSpaceType>(reference);
         CHECK_XRCMD(xrCreateReferenceSpace(mXrSession, &createInfo, &space));
-        Debugging::setName(
-            space, "Created OpenMW XR Reference Space " + std::string(to_string(createInfo.referenceSpaceType)));
         if (space)
-            return std::make_shared<Space>(space);
-        return nullptr;
+        {
+            Debugging::setName(
+                space, "Created OpenMW XR Reference Space " + std::string(to_string(createInfo.referenceSpaceType)));
+        }
+        return space;
     }
 
     void Session::createReferenceSpaces() { 
         for (auto ref : getSupportedReferenceSpaceTypes())
-            mReferenceSpaces[static_cast<int>(ref) - 1] = createReferenceSpace(ref, {});
+            mReferenceSpaces[static_cast<int>(ref) - 1]
+                = std::make_shared<ReferenceSpace>(ref, VR::ReferenceSpace::View);
     }
 
     std::vector<VR::ReferenceSpace> Session::getSupportedReferenceSpaceTypes() const
@@ -639,7 +647,7 @@ namespace XR
         viewLocateInfo.type = XR_TYPE_VIEW_LOCATE_INFO;
         viewLocateInfo.viewConfigurationType = mViewConfigType;
         viewLocateInfo.displayTime = predictedDisplayTime;
-        viewLocateInfo.space = static_cast<Space&>(reference).xrSpace();
+        viewLocateInfo.space = static_cast<ReferenceSpace&>(reference).xrSpace();
         CHECK_XRCMD(xrLocateViews(mXrSession, &viewLocateInfo, &viewState, viewCount, &viewCount, xrViews.data()));
 
         std::array<Stereo::View, 2> vrViews{};
@@ -653,7 +661,7 @@ namespace XR
 
     VR::TrackingPose Session::locateSpaceInWorld(XrSpace space) const
     {
-        auto tp = locateSpace(space, static_cast<Space*>(mReferenceSpaces[static_cast<int>(VR::ReferenceSpace::Local) - 1].get())->xrSpace());
+        auto tp = locateSpace(space, mReferenceSpaces[static_cast<int>(VR::ReferenceSpace::Local) - 1]->xrSpace());
         tp.pose = mReferenceWorldPose + tp.pose;
         return tp;
     }

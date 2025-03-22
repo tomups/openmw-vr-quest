@@ -92,7 +92,7 @@ namespace VR
 
         bool handDirectedMovement() const { return mHandDirectedMovement; }
 
-        void recenter();
+        void requestRecenter() { mRecenter = true; }
         void resetEyeLevel();
 
         void instantTransition();
@@ -120,6 +120,7 @@ namespace VR
         virtual std::shared_ptr<Space> getReferenceSpace(ReferenceSpace space) = 0;
 
     protected:
+        virtual void recenter();
         void readSettings();
 
         //! Called once when initializing a new frame. The implementation *must* set shouldSyncFrame and
@@ -145,6 +146,7 @@ namespace VR
     protected:
         bool mAppShouldShareDepthBuffer = false;
         bool mHandDirectedMovement = false;
+        bool mRecenter = true;
 
         float mPlayerScale = 1.f;
         Stereo::Unit mCharHeight = Stereo::Unit::fromMeters(1.f);

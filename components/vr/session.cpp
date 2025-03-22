@@ -68,6 +68,8 @@ namespace VR
             listener->onFrameUpdate(frame);
         VR::setLocatingSpacesAllowed(true);
         //updateSpaces();
+        if (mRecenter)
+            recenter();
     }
 
     void Session::updateSpaces()
@@ -146,6 +148,7 @@ namespace VR
     {
         for (auto& listener : mListeners)
             listener->onRecenter();
+        mRecenter = false;
     }
 
     void Session::resetEyeLevel()

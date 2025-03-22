@@ -65,13 +65,13 @@ namespace MWVR
 
         virtual void addAnimSource(std::string_view model, const std::string& baseModel) override;
 
+        void updateSpace();
+
     protected:
 
         void updateCrosshairs() override;
 
         void updateCharHeight();
-
-        void onSpaceUpdate() override;
 
         void recenter();
         void onRecenter() override { recenter(); };
@@ -98,6 +98,7 @@ namespace MWVR
         float mCharHeight = 120.f;
         Stereo::Pose mHeadPoseInLocalSpace;
         Stereo::Pose mCharLocalSpacePose;
+        float mCharacterYaw = 0.f;
         std::unique_ptr<MWVR::Crosshair> mCrosshairAmmo;
         std::unique_ptr<MWVR::Crosshair> mCrosshairThrown;
         std::unique_ptr<MWVR::Crosshair> mCrosshairSpell;

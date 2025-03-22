@@ -45,8 +45,6 @@ namespace MWVR
     /// Configuration of a VRGUILayer
     struct LayerConfig
     {
-        int priority; //!< Higher priority shows over lower priority windows by moving higher priority layers slightly
-                      //!< closer to the player.
         float opacity; //!< Background color of layer
         osg::Vec2 center; //!< Model space centerpoint of menu geometry. All menu geometries have model space lengths of
                           //!< 1 in each dimension. Use this to affect how geometries grow with changing size.
@@ -59,9 +57,14 @@ namespace MWVR
         std::string space;
         //std::string extraLayers; //!< Additional layers to draw (list separated by any non-alphabetic)
         bool intersectable;
-
-        bool operator<(const LayerConfig& rhs) const { return priority < rhs.priority; }
     };
+
+    //struct ModeConfig
+    //{
+    //    LayerConfig layerConfig;
+    //    std::map<std::string, Stereo::Pose> layerPoses;
+    //    bool dirty = true;
+    //};
 
     //class VRGUITracking
     //{
@@ -116,7 +119,7 @@ namespace MWVR
         void insertWidget(MWGui::Layout* widget);
         void removeWidget(MWGui::Layout* widget);
         int widgetCount() { return mWidgets.size(); }
-        bool operator<(const VRGUILayer& rhs) const { return mConfig->priority < rhs.mConfig->priority; }
+        //bool operator<(const VRGUILayer& rhs) const { return mConfig->priority < rhs.mConfig->priority; }
         void cull(osgUtil::CullVisitor* cv);
         void setVisible(bool visible);
         void removeFromSceneGraph();
@@ -133,7 +136,8 @@ namespace MWVR
 
         bool visible() const { return mVisible; }
 
-        void setConfig(const LayerConfig& config);
+        void setConfig(const std::string& mode, const LayerConfig& config);
+        void setMode(const std::string& mode);
 
         void clear();
 
@@ -142,7 +146,11 @@ namespace MWVR
         //Stereo::Pose mTrackedPose{};
         //osg::Quat mRotation{ 0, 0, 0, 1 };
 
-        std::optional<LayerConfig> mConfig;
+        const LayerConfig* activeConfig();
+
+        std::map<std::string, LayerConfig> mPerModeConfigs;
+        std::string mActiveMode;
+
         std::string mLayerName;
         std::vector<MWGui::Layout*> mWidgets;
         osg::ref_ptr<osg::Group> mGeometryRoot;
@@ -220,9 +228,10 @@ namespace MWVR
 
         static void setPick(MWGui::Layout* widget, bool pick);
 
-        void setLayerPose(const std::string& layer, const Stereo::Pose& pose);
-        void setLayerSpace(const std::string& layer, std::shared_ptr<VR::Space> space);
         void setLayerConfig(const std::string& layer, const LayerConfig& config);
+        void setLayerPose(const std::string& layer, const Stereo::Pose& pose);
+        void setModeConfig(const std::string& mode, const LayerConfig& config);
+        void setModePose(const std::string& mode, const Stereo::Pose& pose, const std::string window = "");
 
     private:
         // Not used: void removeLayer(const std::string& name);
@@ -241,13 +250,14 @@ namespace MWVR
         osg::ref_ptr<osg::Group> mGeometries = new osg::Group;
         osg::ref_ptr<osg::Group> mGUICameras = new osg::Group;
 
-        std::map<std::string, osg::ref_ptr<VRGUILayer>> mLayers{};
-        std::vector<osg::ref_ptr<VRGUILayer>> mSideBySideLayers{};
+        std::map<std::string, LayerConfig> mModeConfigs;
+        std::map<std::string, osg::ref_ptr<VRGUILayer>> mLayers;
+        std::vector<osg::ref_ptr<VRGUILayer>> mSideBySideLayers;
 
-        osg::Vec2i mGuiCursor = osg::Vec2i();
+        osg::Vec2i mGuiCursor;
         osg::ref_ptr<VRGUILayer> mFocusLayer = nullptr;
         MyGUI::Widget* mFocusWidget = nullptr;
-        std::map<std::string, LayerConfig> mDefaultLayerConfigs{};
+        std::map<std::string, LayerConfig> mDefaultLayerConfigs;
 
         std::shared_ptr<VR::Session::Listener> mSessionListener;
         std::mutex mMutex;

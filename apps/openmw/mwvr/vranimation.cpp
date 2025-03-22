@@ -722,11 +722,11 @@ namespace MWVR
         recenter();
     }
 
-    void VRAnimation::onSpaceUpdate()
+    void VRAnimation::updateSpace()
     {
         auto localRef = OpenXRInput::instance().getSpace(OpenXRInput::DefaultReferenceSpaceLocal);
         auto viewRef = OpenXRInput::instance().getSpace(OpenXRInput::DefaultReferenceSpaceView);
-        auto pose = localRef->locate(viewRef).pose;
+        auto pose = viewRef->locate(*localRef).pose;
         float newYaw = 0.f;
         float oldYaw = 0.f;
         float pitch = 0.f;
@@ -734,20 +734,29 @@ namespace MWVR
         Stereo::getEulerAngles(mHeadPoseInLocalSpace.orientation, oldYaw, pitch, roll);
         Stereo::getEulerAngles(pose.orientation, newYaw, pitch, roll);
         mHeadPoseInLocalSpace = pose;
-        // Slightly awkward because I want to adjust yaw, but set pitch absolutely
-        float yaw = oldYaw - newYaw + mPtr.getRefData().getPosition().rot[2];
+        float characterYaw = mPtr.getRefData().getPosition().rot[2];
+        float characterYawDiff = characterYaw - mCharacterYaw;
+
+        // Slightly awkward because pitch needs to be absolute, while yaw needs to be relative.
+        mCharacterYaw = newYaw - oldYaw + characterYaw;
         auto world = MWBase::Environment::get().getWorld();
-        world->rotateObject(mPtr, osg::Vec3f(pitch, 0.f, yaw), MWBase::RotationFlag_none);
+        world->rotateObject(mPtr, osg::Vec3f(pitch, 0.f, mCharacterYaw), MWBase::RotationFlag_none);
 
         if (mRecenter)
         {
             // Recompute mCharLocalSpacePose so that view->locateInWorld() = mObjectRoot's pose + mCharHeight
-            pose.orientation = osg::Quat(yaw, osg::Vec3d(0, 0, 1));
+            pose.orientation = osg::Quat(mCharacterYaw, osg::Vec3d(0, 0, -1));
             mCharLocalSpacePose = pose;
             mRecenter = false;
         }
-
+        else
+        {
+            // Something else rotated the character. Modify the local space pose accordingly.
+            mCharLocalSpacePose.orientation
+                = osg::Quat(characterYawDiff, osg::Vec3d(0, 0, -1)) * mCharLocalSpacePose.orientation;
+        }
         updateLocalSpaceWorldPose();
+
         for (auto& it : mVrControllers)
         {
             if (auto* bone = getBoneByName(it.first))
