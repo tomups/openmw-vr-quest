@@ -40,12 +40,14 @@ PLAYER: scripts/omw/music/music.lua
 MENU: scripts/omw/music/settings.lua
 NPC,CREATURE: scripts/omw/music/actor.lua
 
-# VR Bindings
-MENU: scripts/omw/vrinputs/settings.lua
-PLAYER: scripts/omw/vrinputs/bindings.lua
-
 # VR
 PLAYER, MENU: scripts/omw/vr/spaces.lua
-PLAYER, MENU: scripts/omw/vr/vrui.lua
-MENU: scripts/omw/vr/menus_init.lua
-PLAYER: scripts/omw/vr/menus.lua
+
+# VR Bindings
+MENU: scripts/omw/vr/inputs/menu.lua
+PLAYER: scripts/omw/vr/inputs/player.lua
+
+# VR UI
+PLAYER, MENU: scripts/omw/vr/ui/interface.lua
+MENU: scripts/omw/vr/ui/menu.lua
+PLAYER: scripts/omw/vr/ui/player.lua

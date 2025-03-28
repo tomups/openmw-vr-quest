@@ -24,6 +24,7 @@
 //## VR_PATCH BEGIN
 #include <components/vr/vr.hpp>
 #include "../mwvr/vrinputmanager.hpp"
+#include "../mwvr/vrgui.hpp"
 //## VR_PATCH END
 
 namespace MWInput
@@ -176,16 +177,19 @@ namespace MWInput
         if (id == SDL_BUTTON_LEFT || id == SDL_BUTTON_RIGHT) // MyGUI only uses these mouse events
         {
             guiMode = MWBase::Environment::get().getWindowManager()->isGuiMode();
-            guiMode = MyGUI::InputManager::getInstance().injectMousePress(static_cast<int>(mGuiCursorX),
-                          static_cast<int>(mGuiCursorY), SDLUtil::sdlMouseButtonToMyGui(id))
-                && guiMode;
-            if (MyGUI::InputManager::getInstance().getMouseFocusWidget() != nullptr)
+            if (!(guiMode && VR::getVR() && MWVR::VRGUIManager::instance().injectMouseClick()))
             {
-                MyGUI::Button* b
-                    = MyGUI::InputManager::getInstance().getMouseFocusWidget()->castType<MyGUI::Button>(false);
-                if (b && b->getEnabled() && id == SDL_BUTTON_LEFT)
+                guiMode = MyGUI::InputManager::getInstance().injectMousePress(static_cast<int>(mGuiCursorX),
+                              static_cast<int>(mGuiCursorY), SDLUtil::sdlMouseButtonToMyGui(id))
+                    && guiMode;
+                if (MyGUI::InputManager::getInstance().getMouseFocusWidget() != nullptr)
                 {
-                    MWBase::Environment::get().getWindowManager()->playSound(ESM::RefId::stringRefId("Menu Click"));
+                    MyGUI::Button* b
+                        = MyGUI::InputManager::getInstance().getMouseFocusWidget()->castType<MyGUI::Button>(false);
+                    if (b && b->getEnabled() && id == SDL_BUTTON_LEFT)
+                    {
+                        MWBase::Environment::get().getWindowManager()->playSound(ESM::RefId::stringRefId("Menu Click"));
+                    }
                 }
             }
             MWBase::Environment::get().getWindowManager()->setCursorActive(true);

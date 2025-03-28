@@ -20,7 +20,7 @@ namespace MWLua
             : LocalScripts(lua, obj)
             , mInputProcessor(this)
         {
-            registerEngineHandlers({ &mConsoleCommandHandlers, &mOnFrameHandlers, &mOnVRFrameHandlers, &mOnRecenter,
+            registerEngineHandlers({ &mConsoleCommandHandlers, &mOnFrameHandlers, &mOnVRFrameHandlers, &mOnVRRecenter,
                 &mQuestUpdate, &mUiModeChanged });
         }
 
@@ -31,7 +31,7 @@ namespace MWLua
 
         void onFrame(float dt) { callEngineHandlers(mOnFrameHandlers, dt); }
         void onVRFrame() { callEngineHandlers(mOnVRFrameHandlers); }
-        void onVRRecenter() { callEngineHandlers(mOnVRFrameHandlers); }
+        void onVRRecenter() { callEngineHandlers(mOnVRRecenter); }
         void onQuestUpdate(std::string_view questId, int stage) { callEngineHandlers(mQuestUpdate, questId, stage); }
 
         bool consoleCommand(
@@ -56,7 +56,7 @@ namespace MWLua
         EngineHandlerList mConsoleCommandHandlers{ "onConsoleCommand" };
         EngineHandlerList mOnFrameHandlers{ "onFrame" };
         EngineHandlerList mOnVRFrameHandlers{ "onVRFrame" };
-        EngineHandlerList mOnRecenter{ "onRecenter" };
+        EngineHandlerList mOnVRRecenter{ "onVRRecenter" };
         EngineHandlerList mQuestUpdate{ "onQuestUpdate" };
         EngineHandlerList mUiModeChanged{ "_onUiModeChanged" };
     };

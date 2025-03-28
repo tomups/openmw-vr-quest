@@ -219,7 +219,7 @@ namespace MWVR
         osg::Vec2i guiCursor() { return mGuiCursor; }
 
         /// Inject mouse click if applicable
-        bool injectMouseClick(bool onPress);
+        bool injectMouseClick();
 
         /// Update settings where applicable
         void processChangedSettings(const std::set<std::pair<std::string, std::string>>& changed);

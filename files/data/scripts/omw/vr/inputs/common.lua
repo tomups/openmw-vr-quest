@@ -295,8 +295,7 @@ local function updateActiveProfiles()
     end
 end
 
-local function getActionBindingValueBoolean(action, long)
-    local v = false
+local function getActionBindingValueBoolean(action, v)
     for controller, bindings in pairs(activeActionBindings) do
         for id, path in pairs(bindings[action] or {}) do
             v = inputActions[path].valueBoolean or v
@@ -305,8 +304,7 @@ local function getActionBindingValueBoolean(action, long)
     return v
 end
 
-local function getActionBindingValueNumber(action)
-    local v = 0
+local function getActionBindingValueNumber(action, v)
     for _, bindings in pairs(activeActionBindings) do
         for _, path in pairs(bindings[action] or {}) do
             local v2 = inputActions[path].valueNumber or 0
@@ -338,13 +336,14 @@ local function setupValueBinding(action, required, alias)
             -- so we have to delay setup until the game IS loaded
         else
             if input.actions[action].type == input.ACTION_TYPE.Boolean then
-                input.bindAction(action, async:callback(function(dt)
-                    
-                    return getActionBindingValueBoolean(alias or action)
+                input.bindAction(action, async:callback(function(dt, v)
+                    -- If this is an aliased action, that implies the value v is from an existing built-in action so we want to keep
+                    -- the existing value (v), otherwise (v) will be last frame's value and we should discard it.
+                    return getActionBindingValueBoolean(alias or action, alias and v or false)
                 end), {})
             else
-                input.bindAction(action, async:callback(function(dt)
-                    return getActionBindingValueNumber(alias or action)
+                input.bindAction(action, async:callback(function(dt, v)
+                    return getActionBindingValueNumber(alias or action, alias and v or 0)
                 end), {})
             end
         end

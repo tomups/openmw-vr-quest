@@ -1221,13 +1221,12 @@ namespace MWVR
         return *layer;
     }
 
-    bool VRGUIManager::injectMouseClick(bool onPress)
+    bool VRGUIManager::injectMouseClick()
     {
         // TODO: This relies on a MyGUI internal functions and may break un any future version.
-        if (mFocusWidget)
+        if (hasFocus() && mFocusWidget != nullptr)
         {
-            if (onPress)
-                mFocusWidget->_riseMouseButtonClick();
+            mFocusWidget->_riseMouseButtonClick();
             return true;
         }
         return false;

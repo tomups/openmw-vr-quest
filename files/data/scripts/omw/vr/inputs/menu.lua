@@ -12,7 +12,7 @@ local input = require('openmw.input')
 local menu = require('openmw.menu')
 local core = require('openmw.core')
 local async = require('openmw.async')
-local common = require('scripts.omw.vrinputs.common')
+local common = require('scripts.omw.vr.inputs.common')
 
 local inputTypes = {
     action = input.actions,

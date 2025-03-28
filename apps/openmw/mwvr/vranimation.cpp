@@ -736,6 +736,8 @@ namespace MWVR
         mHeadPoseInLocalSpace = pose;
         float characterYaw = mPtr.getRefData().getPosition().rot[2];
         float characterYawDiff = characterYaw - mCharacterYaw;
+        //Log(Debug::Verbose) << "Why: " << characterYaw << " - " << mCharacterYaw << " = " << characterYawDiff;
+        //Log(Debug::Verbose) << "Why1: " << mPtr.getRefData().getPosition().rot[0] << ", " << mPtr.getRefData().getPosition().rot[1] << ", " << mPtr.getRefData().getPosition().rot[2];
 
         // Slightly awkward because pitch needs to be absolute, while yaw needs to be relative.
         mCharacterYaw = newYaw - oldYaw + characterYaw;

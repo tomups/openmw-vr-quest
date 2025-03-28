@@ -2030,6 +2030,8 @@ namespace MWMechanics
             }
 
             osg::Vec3f rot = cls.getRotationVector(mPtr);
+            //if ((rot.x() != 0 || rot.y() != 0 || rot.z() != 0) && isPlayer)
+            //    Log(Debug::Verbose) << "breakpoint";
             osg::Vec3f vec(movementSettings.asVec3());
             movementSettings.mSpeedFactor = std::min(vec.length(), 1.f);
             vec.normalize();
@@ -2438,7 +2440,11 @@ namespace MWMechanics
                 if (!isKnockedDown() && !isKnockedOut())
                 {
                     if (rot != osg::Vec3f())
+                    {
+                        if (isPlayer)
+                            Log(Debug::Verbose) << "WTF: " << rot[0] << ", " << rot[1] << ", " << rot[2];
                         world->rotateObject(mPtr, rot, true);
+                    }
                 }
                 else // avoid z-rotating for knockdown
                 {

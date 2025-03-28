@@ -37,6 +37,7 @@ local referenceSpaceToEnum = {
 
 local supportedReferenceSpaces = {}
 for _, refSpace in pairs(vr.availableReferenceSpaces) do
+    print('Supporting reference space: '..refSpace)
     supportedReferenceSpaces[refSpace] = true
 end
 

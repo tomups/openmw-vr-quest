@@ -14,7 +14,7 @@ local async = require('openmw.async')
 local types = require('openmw.types')
 local Player = types.Player
 local self = require('openmw.self')
-local common = require('scripts.omw.vrinputs.common')
+local common = require('scripts.omw.vr.inputs.common')
 
 local function controlsAllowed()
     return not core.isWorldPaused()
@@ -25,10 +25,6 @@ end
 local rightHanded = true
 local pointerRight = false
 local pointerLeft = false
-
-input.registerTriggerHandler('PointerActivate', async:callback(function(v)
-    vr._pointerActivate()
-end))
 
 
 -- Note: 'MetaMenu' and 'MenuBack' are by default bound to the same key.
@@ -59,9 +55,12 @@ common.setOnInputChangedBoolean(function(path, action)
     end
 end)
 
+local pointerLeft = false
+local pointerRight = false
+
 local function updatePointer()
-    local pointerLeft = input.getBooleanActionValue('PointerLeft') and vr.isControllerActive(common.controllers.LEFT_HAND)
-    local pointerRight = input.getBooleanActionValue('PointerRight') and vr.isControllerActive(common.controllers.RIGHT_HAND)
+    pointerLeft = input.getBooleanActionValue('PointerLeft') and vr.isControllerActive(common.controllers.LEFT_HAND)
+    pointerRight = input.getBooleanActionValue('PointerRight') and vr.isControllerActive(common.controllers.RIGHT_HAND)
     
     if pointerLeft and pointerRight then
         -- Both pointers are being activated at the same time, but i only 
@@ -87,20 +86,50 @@ local function updatePointer()
     
 end
 
+local function use()
+    vr._pointerActivate()
+end
+
+input.registerTriggerHandler('PointerActivate', async:callback(use))
+input.registerActionHandler('Use', async:callback(function(v)
+    if v then use() end
+end))
+
+local initialized = false
+
+local function init()
+    initialized = true
+end
+
+local yawChanged = false
+input.registerActionHandler('LookLeft', async:callback(function(v)
+    yawChanged = true
+end))
+input.registerActionHandler('LookRight', async:callback(function(v)
+    yawChanged = true
+end))
+
 local function onFrame(dt)
     
     common.onFrame(dt)
     updatePointer()
     
-    local lookLeft = input.getRangeActionValue('LookLeft')
-    local lookRight = input.getRangeActionValue('LookRight')
-    
-    self.controls.yawChange = (lookRight - lookLeft) * dt
+    -- It's important to only update this value when these actions changed
+    -- otherwise we'll cancel out the yaw change from mouse movement, which are still handled engine-side.
+    if yawChanged then
+        local lookLeft = input.getRangeActionValue('LookLeft')
+        local lookRight = input.getRangeActionValue('LookRight')
+        local yawChange = (lookRight - lookLeft) * dt
+        self.controls.yawChange = yawChange
+    end
+
+    local use = input.getBooleanActionValue('Use')
 end
 
 return {
     engineHandlers = {
         onFrame = onFrame,
+
     },
     
     eventHandlers = {
