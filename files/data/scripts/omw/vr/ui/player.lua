@@ -26,11 +26,12 @@ local function onVRFrame()
     
     -- We only want to update the reference poses when the user enters GUI mode. Otherwise, the windows will be actively tracking
     -- them which is weird, uncomfortable, and impractical.
-    if (core.isWorldPaused() and not wasPaused) or common.updateVisibleWindows() then
+    local isPaused = core.isWorldPaused()
+    if (isPaused and not wasPaused) or common.updateVisibleWindows() then
         update()
     end
 
-    wasPaused = core.isWorldPaused()
+    wasPaused = isPaused
 end
 
 return {

@@ -183,19 +183,6 @@ end)
 
 -- Current .RC does not process actions during the main menu.
 -- So until a game has been loaded we have to manually deal with menu bindings.
---input.registerActionHandler('PointerLeft', function(v)
---common.setManualTriggerCallback('PointerLeft', function(v)
-    -- Should be fixed to true engine-side during main menu
-    --vr._setPointerLeft(v)
---    print('PointerLeft: '..tostring(v))
---end)
---input.registerActionHandler('PointerRight', function(v)
---common.setManualTriggerCallback('PointerRight', function(v)
-    -- Should be fixed to true engine-side during main menu
-    --vr._setPointerRight(v)
---    print('PointerRight: '..tostring(v))
---end)
---input.registerActionHandler('PointerActivate', function(v)
 common.setManualTriggerCallback('PointerActivate', function()
     print('PointerActivate')
     vr._pointerActivate()

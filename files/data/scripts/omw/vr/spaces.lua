@@ -80,14 +80,7 @@ local function createDerivedSpace(name, reference, pose)
     customSpaces[name] = name
 end
 
-local function onFrame(dt)
-end
-
 return {
-    engineHandlers = {
-        onFrame = onFrame,
-    },
-
     interfaceName = 'vrspaces',
     ---
     -- 3D menus

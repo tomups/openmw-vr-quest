@@ -86,13 +86,13 @@ local function updatePointer()
     
 end
 
-local function use()
-    vr._pointerActivate()
-end
-
-input.registerTriggerHandler('PointerActivate', async:callback(use))
+input.registerTriggerHandler('PointerActivate', async:callback(function() vr._pointerActivate() end))
+input.registerTriggerHandler('Activate', async:callback(function() vr._pointerActivate() end))
 input.registerActionHandler('Use', async:callback(function(v)
-    if v then use() end
+    -- Use should double as menu interactions when in GUI mode or the pointer is active.
+    if v and (core.isWorldPaused() or pointerLeft or pointerRight) then 
+        vr._pointerActivate() 
+    end
 end))
 
 local initialized = false
@@ -122,8 +122,6 @@ local function onFrame(dt)
         local yawChange = (lookRight - lookLeft) * dt
         self.controls.yawChange = yawChange
     end
-
-    local use = input.getBooleanActionValue('Use')
 end
 
 return {
