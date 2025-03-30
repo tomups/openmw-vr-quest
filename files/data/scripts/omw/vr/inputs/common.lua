@@ -196,7 +196,7 @@ end
 
 -- Because controllers can look wildly different in terms of available interactions,
 -- we need per-profile default bindings.
-local defaultBindings = require('scripts.omw.vrinputs.defaultBindings').defaultBindings
+local defaultBindings = require('scripts.omw.vr.inputs.defaultBindings').defaultBindings
 
 local function getDefaultBindings(id)
     local defaults = {}

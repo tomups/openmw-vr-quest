@@ -194,6 +194,7 @@ set(BUILTIN_DATA_FILES
     mygui/openmw_trade_window.layout
     mygui/openmw_spell_buying_window.layout
     mygui/openmw_windows.skin.xml
+    mygui/openmw_windows_vr.skin.xml
     mygui/openmw_quickkeys_menu.layout
     mygui/openmw_quickkeys_menu_assign.layout
     mygui/openmw_itemselection_dialog.layout
@@ -224,6 +225,7 @@ set(BUILTIN_DATA_FILES
     mygui/openmw_jail_screen.layout
     mygui/OpenMWResourcePlugin.xml
     mygui/skins.xml
+    mygui/skins_vr.xml
 	
     mygui/core_vr.xml
     mygui/openmw_alchemy_window_vr.layout

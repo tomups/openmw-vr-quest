@@ -223,10 +223,7 @@ local function updateWindowArrangement(modes)
         local windows = modeWindowsForArrangement[mode]
         if windows then
             for _, window in pairs(windows) do
-                if not windowPoses[window] then
-                    print('critical: '..window..' somehow got skipped, its visibility is: '..tostring(I.UI.isWindowVisible(window)))
-                else
-                    print('Setting mode pose for '..mode..' to '..tostring(windowPoses[window].position))
+                if windowPoses[window] then
                     I.vrui.setModePose(mode, windowPoses[window], window)
                 end
             end

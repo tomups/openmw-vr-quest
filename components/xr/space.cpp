@@ -57,11 +57,12 @@ namespace XR
             auto tp = other->locate(*this);
             if (!!tp.status)
             {
-                float yaw = 0;
-                float pitch = 0;
-                float roll = 0;
-                Stereo::getEulerAngles(tp.pose.orientation, yaw, pitch, roll);
-                tp.pose.orientation.makeRotate(yaw, osg::Vec3f(0, 0, -1));
+                //float yaw = 0;
+                //float pitch = 0;
+                //float roll = 0;
+                //Stereo::getEulerAngles(tp.pose.orientation, yaw, pitch, roll);
+                //tp.pose.orientation.makeRotate(yaw, osg::Vec3f(0, 0, -1));
+                tp.pose.orientation = osg::Quat();
                 mSpace = session.createReferenceSpace(mType, tp.pose);
             }
         }

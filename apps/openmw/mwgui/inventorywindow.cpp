@@ -196,6 +196,12 @@ namespace MWGui
         const WindowSettingValues settings = getModeSettings(mGuiMode);
         const WindowRectSettingValues& rect = settings.mIsMaximized ? settings.mRegular : settings.mMaximized;
 
+        // ## VR_PATCH BEGIN
+        //  Windows are always maximized in VR
+        if (VR::getVR() && settings.mIsMaximized)
+            return;
+        // ## VR_PATCH END
+
         MyGUI::IntSize viewSize = MyGUI::RenderManager::getInstance().getViewSize();
         const float x = rect.mX * viewSize.width;
         const float y = rect.mY * viewSize.height;
@@ -214,7 +220,7 @@ namespace MWGui
     {
         mGuiMode = mode;
         const WindowSettingValues settings = getModeSettings(mGuiMode);
-        setPinButtonVisible(mode != GM_Container && mode != GM_Companion && mode != GM_Barter);
+        setPinButtonVisible(mode != GM_Container && mode != GM_Companion && mode != GM_Barter && !VR::getVR());
 
         const WindowRectSettingValues& rect = settings.mIsMaximized ? settings.mMaximized : settings.mRegular;
 

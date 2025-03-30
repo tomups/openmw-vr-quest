@@ -177,16 +177,20 @@ void NoDrop::onFrame(float dt)
         // These makes focus null, which messes up the logic for VR
         // since i reset mTransparent to false every update.
         // TODO: Is there a cleaner way?
-        if(!VR::getVR())
+        if (!VR::getVR())
+        {
             mWidget->setNeedMouseFocus(false); // Allow click-through
-        setAlpha(std::max(0.13f, mWidget->getAlpha() - dt * 5));
+            setAlpha(std::max(0.13f, mWidget->getAlpha() - dt * 5));
+        }
     }
     else
     {
-        if(!VR::getVR())
+        if (!VR::getVR())
+        {
             mWidget->setNeedMouseFocus(true); // Allow click-through
-//## VR_PATCH END
-        setAlpha(std::min(1.0f, mWidget->getAlpha() + dt * 5));
+            setAlpha(std::min(1.0f, mWidget->getAlpha() + dt * 5));
+        }
+// ## VR_PATCH END
     }
 }
 

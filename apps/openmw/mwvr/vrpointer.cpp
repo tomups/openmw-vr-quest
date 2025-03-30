@@ -116,7 +116,7 @@ namespace MWVR
 
     void UserPointer::activate()
     {
-        if (mPointerRay.mHit)
+        if (mPointerRay.mHit && !(MWVR::VRGUIManager::instance().hasFocus()))
         {
             MWWorld::Ptr target = mPointerRay.mHitObject;
             auto wm = MWBase::Environment::get().getWindowManager();

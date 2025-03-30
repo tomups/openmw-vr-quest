@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <MyGUI>
     <MyGUI type="List">
-        <List file="skins.xml" />
+        <List file="skins_vr.xml" />
         <List file="openmw_layers_vr.xml" />
         <List file="openmw_pointer.xml" />
         <List file="openmw_settings.xml" />

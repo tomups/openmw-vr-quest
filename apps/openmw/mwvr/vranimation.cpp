@@ -718,8 +718,6 @@ namespace MWVR
             }
             removeIndividualPart(ESM::PRT_Head);
         }
-
-        recenter();
     }
 
     void VRAnimation::updateSpace()
@@ -746,18 +744,29 @@ namespace MWVR
 
         if (mRecenter)
         {
+            Log(Debug::Verbose) << "VRAnimation: Recenter()";
             // Recompute mCharLocalSpacePose so that view->locateInWorld() = mObjectRoot's pose + mCharHeight
-            pose.orientation = osg::Quat(mCharacterYaw, osg::Vec3d(0, 0, -1));
-            mCharLocalSpacePose = pose;
+            //pose.orientation = osg::Quat(mCharacterYaw, osg::Vec3d(0, 0, -1));
+            mCharLocalSpacePose.position = pose.position;
             mRecenter = false;
         }
-        else
+        //else
         {
             // Something else rotated the character. Modify the local space pose accordingly.
+            Log(Debug::Verbose) << "VRAnimation: characterYawDiff: " << characterYawDiff;
             mCharLocalSpacePose.orientation
                 = osg::Quat(characterYawDiff, osg::Vec3d(0, 0, -1)) * mCharLocalSpacePose.orientation;
         }
         updateLocalSpaceWorldPose();
+        auto worldViewPose
+            = MWVR::OpenXRInput::instance().getSpace(MWVR::OpenXRInput::DefaultReferenceSpaceView)->locateInWorld();
+        float worldYaw = 0.f;
+        float worldYaw2 = 0.f;
+        Stereo::getEulerAngles(pose.orientation, worldYaw, pitch, roll);
+        auto origin = mObjectRoot->getParent(0);
+        auto worldMatrix = osg::computeLocalToWorld(origin->getParentalNodePaths()[0]);
+        Stereo::getEulerAngles(worldMatrix.getRotate(), worldYaw2, pitch, roll);
+        Log(Debug::Verbose) << "VRAnimation: worldYaw: " << worldYaw << ", worldYaw2: " << worldYaw2 << ", charYaw: " <<mCharacterYaw;
 
         for (auto& it : mVrControllers)
         {
@@ -908,8 +917,4 @@ namespace MWVR
         Animation::addAnimSource(model, baseModel);
         updateCharHeight();
     }
-
-    //void VRAnimation::attachReferenceSpaceToBone(XrSpace space, const std::string& bone) 
-    //{
-    //}
 }

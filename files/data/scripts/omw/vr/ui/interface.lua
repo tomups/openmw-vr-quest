@@ -28,6 +28,7 @@ local secretItems = {
     'MainMenuBackground',
     'LoadingScreen',
     'LoadingScreenBackground',
+    'Debug',
 }
 
 return {
