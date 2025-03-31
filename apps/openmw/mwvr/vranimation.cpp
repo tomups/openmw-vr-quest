@@ -73,7 +73,7 @@ namespace MWVR
     class FingerController : public osg::NodeCallback
     {
     public:
-        FingerController(){}
+        FingerController() {}
         void setEnabled(bool enabled) { mEnabled = enabled; }
         void operator()(osg::Node* node, osg::NodeVisitor* nv);
 
@@ -395,14 +395,11 @@ namespace MWVR
         bool mLeft;
     };
 
-
     VRAnimation::VRAnimation(const MWWorld::Ptr& ptr, osg::ref_ptr<osg::Group> parentNode,
         Resource::ResourceSystem* resourceSystem, bool disableSounds, osg::ref_ptr<osg::Group> sceneRoot)
         // Note that i let it construct as 3rd person and then later update it to VM_VRFirstPerson
         // when the character controller updates
         : MWRender::NpcAnimation(ptr, parentNode, resourceSystem, disableSounds, VM_Normal, 55.f)
-        , mLeftIndexFingerControllers{ nullptr, nullptr }
-        , mRightIndexFingerControllers{ nullptr, nullptr }
         // The player model needs to be pushed back a little to make sure the player's view point is naturally
         // protruding Pushing the camera forward instead would produce an unnatural extra movement when rotating the
         // player model.
@@ -410,14 +407,9 @@ namespace MWVR
         , mCrosshairsEnabled(false)
         , mSceneRoot(sceneRoot)
     {
-        //mReferenceSpace = XR::Session::instance().getReferenceSpace(XR_REFERENCE_SPACE_TYPE_LOCAL);
-
-        for (int i = 0; i < 2; i++)
-        {
-            mHandControllers[i] = new HandController;
-            mLeftIndexFingerControllers[i] = new FingerController;
-            mRightIndexFingerControllers[i] = new FingerController;
-        }
+        // mReferenceSpace = XR::Session::instance().getReferenceSpace(XR_REFERENCE_SPACE_TYPE_LOCAL);
+        mLeftHandPath = VR::stringToXrPath(VR::Paths::LEFT_HAND);
+        mRightHandPath = VR::stringToXrPath(VR::Paths::RIGHT_HAND);
 
         mWeaponDirectionTransform = new osg::MatrixTransform();
         mWeaponDirectionTransform->setName("Weapon Direction");
@@ -430,17 +422,28 @@ namespace MWVR
         mWeaponPointerTransform->setName("Weapon Pointer");
         mWeaponPointerTransform->setUpdateCallback(new WeaponPointerController);
         // mWeaponDirectionTransform->addChild(mWeaponPointerTransform);
-        
 
         auto& xrInput = OpenXRInput::instance();
 
         // Morrowind's meshes do not point forward by default and need re-positioning and orientation.
         osg::Vec3 offset{ 15, 0, 0 };
 
-        mVrControllers.emplace("bip01 r forearm",
-            std::make_unique<TrackingController>(xrInput.getSpace(OpenXRInput::RightHandAim), offset, false));
-        mVrControllers.emplace("bip01 l forearm",
-            std::make_unique<TrackingController>(xrInput.getSpace(OpenXRInput::LeftHandAim), offset, true));
+        for (int i = 0; i < 2; i++)
+        {
+            XrPath path = i == 0 ? mLeftHandPath : mRightHandPath;
+            auto& ctx = mVrControllers[path] = {};
+            ctx.topLevelPath = path;
+            ctx.spaceName = i == 0 ? OpenXRInput::LeftHandAim : OpenXRInput::RightHandAim;
+            ctx.forearmBone = i == 0 ? "bip01 l forearm" : "bip01 r forearm";
+            ctx.forearmController
+                = std::make_unique<TrackingController>(xrInput.getSpace(ctx.spaceName), offset, i == 0);
+            ctx.handBone = i == 0 ? "Bip01 L Hand" : "Bip01 R Hand";
+            ctx.handController = new HandController;
+            ctx.indexFingerBone[0] = i == 0 ? "bip01 l finger1" : "bip01 r finger1";
+            ctx.indexFingerControllers[0] = new FingerController;
+            ctx.indexFingerBone[1] = i == 0 ? "bip01 l finger2" : "bip01 r finger2";
+            ctx.indexFingerControllers[1] = new FingerController;
+        }
     }
 
     VRAnimation::~VRAnimation() {}
@@ -499,10 +502,10 @@ namespace MWVR
         updateCharHeight();
     }
 
-    //void VRAnimation::onTrackingUpdated(VR::TrackingManager& manager)
+    // void VRAnimation::onTrackingUpdated(VR::TrackingManager& manager)
     //{
-    //    if (mSkeleton)
-    //        mSkeleton->markBoneMatriceDirty();
+    //     if (mSkeleton)
+    //         mSkeleton->markBoneMatriceDirty();
 
     //    auto tp = manager.locate(mWorldHeadPath);
 
@@ -686,20 +689,20 @@ namespace MWVR
         }
     }
 
-    void VRAnimation::updateCharHeight() 
+    void VRAnimation::updateCharHeight()
     {
         // Compute an approximate character height (eye level)
-        //auto playerPtr = MWMechanics::getPlayer();
-        //const MWWorld::LiveCellRef<ESM::NPC>* ref = playerPtr.get<ESM::NPC>();
-        //const ESM::Race* race
+        // auto playerPtr = MWMechanics::getPlayer();
+        // const MWWorld::LiveCellRef<ESM::NPC>* ref = playerPtr.get<ESM::NPC>();
+        // const ESM::Race* race
         //    = MWBase::Environment::get().getWorld()->getStore().get<ESM::Race>().find(ref->mBase->mRace);
-        //bool isMale = ref->mBase->isMale();
-        //float charHeightFactor = isMale ? race->mData.mMaleHeight : race->mData.mFemaleHeight;
-        //auto charHeightBase
+        // bool isMale = ref->mBase->isMale();
+        // float charHeightFactor = isMale ? race->mData.mMaleHeight : race->mData.mFemaleHeight;
+        // auto charHeightBase
         //    = Stereo::Unit::fromMeters(Settings::Manager::getFloat("character base height", "VR Debug"));
-        //auto charHeight = charHeightBase * charHeightFactor;
-        //VR::Session::instance().setCharHeight(charHeight);
-        //Log(Debug::Verbose) << "Calculated character height: " << charHeight.asMeters();
+        // auto charHeight = charHeightBase * charHeightFactor;
+        // VR::Session::instance().setCharHeight(charHeight);
+        // Log(Debug::Verbose) << "Calculated character height: " << charHeight.asMeters();
 
         // Use the actual animation to directly get the character's height
         auto root = mObjectRoot;
@@ -734,8 +737,9 @@ namespace MWVR
         mHeadPoseInLocalSpace = pose;
         float characterYaw = mPtr.getRefData().getPosition().rot[2];
         float characterYawDiff = characterYaw - mCharacterYaw;
-        //Log(Debug::Verbose) << "Why: " << characterYaw << " - " << mCharacterYaw << " = " << characterYawDiff;
-        //Log(Debug::Verbose) << "Why1: " << mPtr.getRefData().getPosition().rot[0] << ", " << mPtr.getRefData().getPosition().rot[1] << ", " << mPtr.getRefData().getPosition().rot[2];
+        // Log(Debug::Verbose) << "Why: " << characterYaw << " - " << mCharacterYaw << " = " << characterYawDiff;
+        // Log(Debug::Verbose) << "Why1: " << mPtr.getRefData().getPosition().rot[0] << ", " <<
+        // mPtr.getRefData().getPosition().rot[1] << ", " << mPtr.getRefData().getPosition().rot[2];
 
         // Slightly awkward because pitch needs to be absolute, while yaw needs to be relative.
         mCharacterYaw = newYaw - oldYaw + characterYaw;
@@ -746,11 +750,11 @@ namespace MWVR
         {
             Log(Debug::Verbose) << "VRAnimation: Recenter()";
             // Recompute mCharLocalSpacePose so that view->locateInWorld() = mObjectRoot's pose + mCharHeight
-            //pose.orientation = osg::Quat(mCharacterYaw, osg::Vec3d(0, 0, -1));
+            // pose.orientation = osg::Quat(mCharacterYaw, osg::Vec3d(0, 0, -1));
             mCharLocalSpacePose.position = pose.position;
             mRecenter = false;
         }
-        //else
+        // else
         {
             // Something else rotated the character. Modify the local space pose accordingly.
             Log(Debug::Verbose) << "VRAnimation: characterYawDiff: " << characterYawDiff;
@@ -766,13 +770,17 @@ namespace MWVR
         auto origin = mObjectRoot->getParent(0);
         auto worldMatrix = osg::computeLocalToWorld(origin->getParentalNodePaths()[0]);
         Stereo::getEulerAngles(worldMatrix.getRotate(), worldYaw2, pitch, roll);
-        Log(Debug::Verbose) << "VRAnimation: worldYaw: " << worldYaw << ", worldYaw2: " << worldYaw2 << ", charYaw: " <<mCharacterYaw;
+        Log(Debug::Verbose) << "VRAnimation: worldYaw: " << worldYaw << ", worldYaw2: " << worldYaw2
+                            << ", charYaw: " << mCharacterYaw;
 
         for (auto& it : mVrControllers)
         {
-            if (auto* bone = getBoneByName(it.first))
+            if (!it.second.enabled)
+                continue;
+
+            if (auto* bone = getBoneByName(it.second.forearmBone))
             {
-                it.second->update(*bone->asTransform()->asMatrixTransform());
+                it.second.forearmController->update(*bone->asTransform()->asMatrixTransform());
             }
         }
         if (mSkeleton)
@@ -789,41 +797,17 @@ namespace MWVR
     void VRAnimation::addControllers()
     {
         NpcAnimation::addControllers();
+        updateTrackingControllers();
+        mSkeleton->setIsTracked(true);
+    }
 
-        for (int i = 0; i < 2; ++i)
+    void VRAnimation::updateTrackingControllers()
+    {
+        for (auto& it : mVrControllers)
         {
-            auto forearm = mNodeMap.find(i == 0 ? "Bip01 L Forearm" : "Bip01 R Forearm");
-            if (forearm != mNodeMap.end())
-            {
-                auto controller = mVrControllers.find(forearm->first);
-                if (controller != mVrControllers.end())
-                {
-                    controller->second->setTransform(forearm->second);
-                }
-            }
-
-            auto hand = mNodeMap.find(i == 0 ? "Bip01 L Hand" : "Bip01 R Hand");
-            if (hand != mNodeMap.end())
-            {
-                auto node = hand->second;
-                node->removeUpdateCallback(mHandControllers[i]);
-                node->addUpdateCallback(mHandControllers[i]);
-            }
-
-            auto finger1 = mNodeMap.find(i == 0 ? "bip01 l finger1" : "bip01 r finger1");
-            auto* indexFingerControllers = i == 0 ? mLeftIndexFingerControllers : mRightIndexFingerControllers;
-
-            if (finger1 != mNodeMap.end())
-            {
-                auto& base_joint = finger1->second;
-                auto second_joint = base_joint->getChild(0)->asTransform()->asMatrixTransform();
-                assert(second_joint);
-
-                base_joint->removeUpdateCallback(indexFingerControllers[0]);
-                base_joint->addUpdateCallback(indexFingerControllers[0]);
-                second_joint->removeUpdateCallback(indexFingerControllers[1]);
-                second_joint->addUpdateCallback(indexFingerControllers[1]);
-            }
+            disableTracking(it.second.topLevelPath);
+            if (VR::getControllerActive(it.second.topLevelPath))
+                enableTracking(it.second.topLevelPath);
         }
 
         // TODO: Allow left-hand weapons?
@@ -833,8 +817,68 @@ namespace MWVR
             hand->second->removeChild(mWeaponDirectionTransform);
             hand->second->addChild(mWeaponDirectionTransform);
         }
+    }
 
-        mSkeleton->setIsTracked(true);
+    void VRAnimation::enableTracking(XrPath path)
+    {
+        auto& ctx = mVrControllers[path];
+        auto forearm = mNodeMap.find(ctx.forearmBone);
+        if (forearm != mNodeMap.end())
+            ctx.forearmController->setTransform(forearm->second);
+
+        auto hand = mNodeMap.find(ctx.handBone);
+        if (hand != mNodeMap.end())
+        {
+            auto node = hand->second;
+            node->addUpdateCallback(ctx.handController);
+        }
+
+        auto finger1 = mNodeMap.find(ctx.indexFingerBone[0]);
+
+        if (finger1 != mNodeMap.end())
+        {
+            auto& base_joint = finger1->second;
+            auto second_joint = base_joint->getChild(0)->asTransform()->asMatrixTransform();
+
+            base_joint->addUpdateCallback(ctx.indexFingerControllers[0]);
+            if (second_joint)
+                second_joint->addUpdateCallback(ctx.indexFingerControllers[1]);
+        }
+
+        ctx.enabled = true;
+    }
+
+    void VRAnimation::disableTracking(XrPath path) {
+        auto& ctx = mVrControllers[path];
+        ctx.forearmController->setTransform(nullptr);
+
+        auto hand = mNodeMap.find(ctx.handBone);
+        if (hand != mNodeMap.end())
+        {
+            auto node = hand->second;
+            node->removeUpdateCallback(ctx.handController);
+        }
+
+        auto finger1 = mNodeMap.find(ctx.indexFingerBone[0]);
+
+        if (finger1 != mNodeMap.end())
+        {
+            auto& base_joint = finger1->second;
+            auto second_joint = base_joint->getChild(0)->asTransform()->asMatrixTransform();
+
+            base_joint->removeUpdateCallback(ctx.indexFingerControllers[0]);
+            if (second_joint)
+                second_joint->removeUpdateCallback(ctx.indexFingerControllers[1]);
+        }
+        ctx.enabled = false;
+    }
+
+    void VRAnimation::enablePointer(XrPath topLevelPath, bool enable) 
+    {
+        auto& ctx = mVrControllers[topLevelPath];
+        ctx.handController->setFingerPointingMode(enable);
+        ctx.indexFingerControllers[0]->setEnabled(enable);
+        ctx.indexFingerControllers[1]->setEnabled(enable);
     }
 
     void VRAnimation::enableHeadAnimation(bool)
@@ -849,12 +893,8 @@ namespace MWVR
 
     void VRAnimation::enablePointers(bool left, bool right)
     {
-        mHandControllers[0]->setFingerPointingMode(left);
-        mHandControllers[1]->setFingerPointingMode(right);
-        mLeftIndexFingerControllers[0]->setEnabled(left);
-        mLeftIndexFingerControllers[1]->setEnabled(left);
-        mRightIndexFingerControllers[0]->setEnabled(right);
-        mRightIndexFingerControllers[1]->setEnabled(right);
+        enablePointer(mLeftHandPath, left);
+        enablePointer(mRightHandPath, left);
     }
 
     void VRAnimation::setEnableCrosshairs(bool enable)
@@ -883,7 +923,7 @@ namespace MWVR
             mCrosshairSpell->show();
 
             mKBMouseCrosshairTransform = new VR::SpaceTransform(OpenXRInput::instance().getSpace(OpenXRInput::DefaultReferenceSpaceView));
-            mKBMouseCrosshairTransform->setReferenceFrame(osg::Transform::ABSOLUTE_RF);
+            //mKBMouseCrosshairTransform->setReferenceFrame(osg::Transform::ABSOLUTE_RF);
             mSceneRoot->addChild(mKBMouseCrosshairTransform);
         }
         else
@@ -910,6 +950,11 @@ namespace MWVR
     void VRAnimation::recenter()
     {
         mRecenter = true;
+    }
+
+    void VRAnimation::onInteractionProfileActiveChanged(XrPath topLevelPath, bool isActive) 
+    {
+        updateTrackingControllers();
     }
 
     void VRAnimation::addAnimSource(std::string_view model, const std::string& baseModel) 

@@ -75,25 +75,38 @@ namespace MWVR
 
         void recenter();
         void onRecenter() override { recenter(); };
+        void onInteractionProfileActiveChanged(XrPath topLevelPath, bool isActive) override;
+
+        void updateTrackingControllers();
+
+        void enableTracking(XrPath path);
+        void disableTracking(XrPath path);
+        void enablePointer(XrPath topLevelPath, bool enable);
+
+        struct TrackingContext
+        {
+            bool enabled = false;
+            XrPath topLevelPath;
+            std::string spaceName;
+            std::string forearmBone;
+            std::unique_ptr<TrackingController> forearmController;
+            std::string handBone;
+            osg::ref_ptr<HandController> handController;
+            std::string indexFingerBone[2];
+            osg::ref_ptr<FingerController> indexFingerControllers[2];
+        };
 
     protected:
 
-        std::map<std::string, std::shared_ptr<VR::Space>> mBoneToSpaceAttachments;
-        std::string mReferenceAttachmentBone;
-        //XrSpace mReferenceSpace;
-
-        typedef std::unordered_map<std::string, std::unique_ptr<TrackingController>, Misc::StringUtils::CiHash,
-            Misc::StringUtils::CiEqual>
-            TrackingControllerMap;
-        TrackingControllerMap mVrControllers;
-        osg::ref_ptr<HandController> mHandControllers[2];
-        osg::ref_ptr<FingerController> mLeftIndexFingerControllers[2];
-        osg::ref_ptr<FingerController> mRightIndexFingerControllers[2];
+        typedef std::map<XrPath, TrackingContext> TrackingContextMap;
+        TrackingContextMap mVrControllers;
         osg::ref_ptr<osg::MatrixTransform> mModelOffset;
         osg::ref_ptr<osg::MatrixTransform> mWeaponDirectionTransform;
         osg::ref_ptr<osg::MatrixTransform> mWeaponPointerTransform;
 
         bool mRecenter = false;
+        XrPath mLeftHandPath = XR_NULL_PATH;
+        XrPath mRightHandPath = XR_NULL_PATH;
         bool mCrosshairsEnabled;
         float mCharHeight = 120.f;
         Stereo::Pose mHeadPoseInLocalSpace;
