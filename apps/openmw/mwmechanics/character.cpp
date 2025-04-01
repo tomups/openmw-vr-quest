@@ -2441,8 +2441,6 @@ namespace MWMechanics
                 {
                     if (rot != osg::Vec3f())
                     {
-                        if (isPlayer)
-                            Log(Debug::Verbose) << "WTF: " << rot[0] << ", " << rot[1] << ", " << rot[2];
                         world->rotateObject(mPtr, rot, true);
                     }
                 }

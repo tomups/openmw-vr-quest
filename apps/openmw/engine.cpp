@@ -720,7 +720,7 @@ void OMW::Engine::createWindow()
             settings.mCustomView = Stereo::CustomView{
                 .mLeft = Stereo::View{
                     .pose = Stereo::Pose{
-                        .position = Stereo::Position::fromMeters(leftEyeOffset),
+                        .position = Stereo::Position::fromMWUnits(leftEyeOffset),
                         .orientation = leftEyeOrientation,
                     },
                     .fov = Stereo::FieldOfView{
@@ -732,7 +732,7 @@ void OMW::Engine::createWindow()
                 },
                 .mRight = Stereo::View{
                     .pose = Stereo::Pose{
-                        .position = Stereo::Position::fromMeters(rightEyeOffset),
+                        .position = Stereo::Position::fromMWUnits(rightEyeOffset),
                         .orientation = rightEyeOrientation,
                     },
                     .fov = Stereo::FieldOfView{

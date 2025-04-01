@@ -95,40 +95,31 @@ namespace Stereo
         const float tanDown = tanf(fov.angleDown);
         const float tanUp = tanf(fov.angleUp);
 
-        const float tanWidth = tanRight - tanLeft;
-        const float tanHeight = tanUp - tanDown;
-
+        float depth = far - near;
         float matrix[16] = {};
 
-        matrix[0] = 2 / tanWidth;
-        matrix[4] = 0;
-        matrix[8] = (tanRight + tanLeft) / tanWidth;
-        matrix[12] = 0;
+        float left = near * tanLeft;
+        float right = near * tanRight;
+        float bottom = near * tanDown;
+        float top = near * tanUp;
+        float width = right - left;
+        float height = top - bottom;
 
-        matrix[1] = 0;
-        matrix[5] = 2 / tanHeight;
-        matrix[9] = (tanUp + tanDown) / tanHeight;
-        matrix[13] = 0;
-
+        matrix[0] = 2 * near / width;
+        matrix[8] = (right + left) / width;
+        matrix[5] = 2 * near / height;
+        matrix[9] = (top + bottom) / height;
         if (reverseZ)
         {
-            matrix[2] = 0;
-            matrix[6] = 0;
-            matrix[10] = (2.f * near) / (far - near);
-            matrix[14] = ((2.f * near) * far) / (far - near);
+            matrix[10] = near / depth;
+            matrix[14] = near * far / depth;
         }
         else
         {
-            matrix[2] = 0;
-            matrix[6] = 0;
-            matrix[10] = -(far + near) / (far - near);
-            matrix[14] = -(far * (2.f * near)) / (far - near);
+            matrix[10] = -(far + near) / depth;
+            matrix[14] = -(far * (2.f * near)) / depth;
         }
-
-        matrix[3] = 0;
-        matrix[7] = 0;
         matrix[11] = -1;
-        matrix[15] = 0;
 
         return osg::Matrix(matrix);
     }
