@@ -167,7 +167,7 @@ namespace SceneUtil
 
         void apply(osg::State& state) const override;
 
-        auto& getLightBuffer(size_t frameNum) { return mLightBuffers[frameNum % 2]; }
+        auto& getLightBuffer() { return mLightBuffer; }
 
     private:
         std::string generateDummyShader(int maxLightsInScene);
@@ -175,8 +175,8 @@ namespace SceneUtil
 
         osg::ref_ptr<osg::Program> mDummyProgram;
         mutable bool mInitLayout;
-        mutable std::array<osg::ref_ptr<LightBuffer>, 2> mLightBuffers;
-        mutable std::array<bool, 2> mDirty;
+        mutable osg::ref_ptr<LightBuffer> mLightBuffer;
+        mutable bool mDirty;
         osg::ref_ptr<LightBuffer> mTemplate;
     };
 
@@ -194,6 +194,24 @@ namespace SceneUtil
     class LightManager : public osg::Group
     {
     public:
+
+        using LightIdList = std::vector<int>;
+        struct HashLightIdList
+        {
+            size_t operator()(const LightIdList&) const;
+        };
+        using LightStateSetMap = std::unordered_map<LightIdList, osg::ref_ptr<osg::StateSet>, HashLightIdList>;
+        // < Light ID , Buffer Index >
+        using LightIndexMap = std::unordered_map<int, int>;
+
+        struct ViewDependentData
+        {
+            osg::ref_ptr<UBOManager> mUBOManager;
+            LightIndexMap mLightIndexMap;
+            osg::Matrixf mSunlightBuffers;
+            LightStateSetMap mStateSetCache;
+        };
+
         static LightingMethod getLightingMethodFromString(const std::string& value);
         /// Returns string as used in settings file, or the empty string if the method is undefined
         static std::string getLightingMethodString(LightingMethod method);
@@ -238,10 +256,10 @@ namespace SceneUtil
         void addLight(LightSource* lightSource, const osg::Matrixf& worldMat, size_t frameNum);
 
         const std::vector<LightSourceViewBound>& getLightsInViewSpace(
-            osgUtil::CullVisitor* cv, const osg::RefMatrix* viewMatrix, size_t frameNum);
+            osgUtil::CullVisitor* cv, const osg::Matrix& viewMatrix, size_t frameNum);
 
-        osg::ref_ptr<osg::StateSet> getLightListStateSet(
-            const LightList& lightList, size_t frameNum, const osg::RefMatrix* viewMatrix);
+        osg::ref_ptr<osg::StateSet> getLightListStateSet(const LightList& lightList, const osgUtil::CullVisitor* cv,
+            size_t frameNum, const osg::Matrix& viewMatrix);
 
         void setSunlight(osg::ref_ptr<osg::Light> sun);
         osg::ref_ptr<osg::Light> getSunlight();
@@ -256,12 +274,18 @@ namespace SceneUtil
 
         auto& getDummies() { return mDummies; }
 
-        auto& getLightIndexMap(size_t frameNum) { return mLightIndexMaps[frameNum % 2]; }
+        auto& getLightIndexMap(const osgUtil::CullVisitor* cv) { return getViewDependentData(cv).mLightIndexMap; }
 
-        auto& getUBOManager() { return mUBOManager; }
+        auto& getUBOManager(const osgUtil::CullVisitor* cv) { return getViewDependentData(cv).mUBOManager; };
 
-        osg::Matrixf getSunlightBuffer(size_t frameNum) const { return mSunlightBuffers[frameNum % 2]; }
-        void setSunlightBuffer(const osg::Matrixf& buffer, size_t frameNum) { mSunlightBuffers[frameNum % 2] = buffer; }
+        osg::Matrixf getSunlightBuffer(const osgUtil::CullVisitor* cv) const
+        {
+            return getViewDependentData(cv).mSunlightBuffers;
+        }
+        void setSunlightBuffer(const osg::Matrixf& buffer, const osgUtil::CullVisitor* cv)
+        {
+            getViewDependentData(cv).mSunlightBuffers = buffer;
+        }
 
         SupportedMethods getSupportedLightingMethods() { return mSupported; }
 
@@ -279,6 +303,8 @@ namespace SceneUtil
 
         std::shared_ptr<PPLightBuffer> getPPLightsBuffer() { return mPPLightBuffer; }
 
+        ViewDependentData& getViewDependentData(const osgUtil::CullVisitor* cv) const;
+
     private:
         void initFFP(int targetLights);
         void initPerObjectUniform(int targetLights);
@@ -290,20 +316,12 @@ namespace SceneUtil
         void setMaxLights(int value);
 
         void updateGPUPointLight(
-            int index, LightSource* lightSource, size_t frameNum, const osg::RefMatrix* viewMatrix);
+            int index, LightSource* lightSource, const osgUtil::CullVisitor* cv, size_t frameNum, const osg::Matrix& viewMatrix);
 
         std::vector<LightSourceTransform> mLights;
 
         using LightSourceViewBoundCollection = std::vector<LightSourceViewBound>;
         std::map<osg::observer_ptr<osg::Camera>, LightSourceViewBoundCollection> mLightsInViewSpace;
-
-        using LightIdList = std::vector<int>;
-        struct HashLightIdList
-        {
-            size_t operator()(const LightIdList&) const;
-        };
-        using LightStateSetMap = std::unordered_map<LightIdList, osg::ref_ptr<osg::StateSet>, HashLightIdList>;
-        LightStateSetMap mStateSetCache[2];
 
         std::vector<osg::ref_ptr<osg::StateAttribute>> mDummies;
 
@@ -313,15 +331,9 @@ namespace SceneUtil
 
         osg::ref_ptr<osg::Light> mSun;
 
-        osg::Matrixf mSunlightBuffers[2];
-
-        // < Light ID , Buffer Index >
-        using LightIndexMap = std::unordered_map<int, int>;
-        LightIndexMap mLightIndexMaps[2];
+        mutable std::map<const osgUtil::CullVisitor*, ViewDependentData> mViewDependentData;
 
         std::unique_ptr<StateSetGenerator> mStateSetGenerator;
-
-        osg::ref_ptr<UBOManager> mUBOManager;
 
         LightingMethod mLightingMethod;
 
@@ -373,10 +385,8 @@ namespace SceneUtil
     private:
         LightManager* mLightManager;
         size_t mLastFrameNumber;
+        osgUtil::CullVisitor* mLastCV = nullptr;
         LightManager::LightList mLightList;
-//## VR_PATCH BEGIN
-        LightManager::LightList mLightListCropped;
-//## VR_PATCH END
         std::set<SceneUtil::LightSource*> mIgnoredLightSources;
     };
 
