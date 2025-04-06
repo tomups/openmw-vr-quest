@@ -424,7 +424,7 @@ namespace MWLua
 
     void LuaManager::vrRecentered()
     {
-        mMenuScripts;
+        mMenuScripts.onVRRecenter();
         if (mPlayer.isEmpty())
             return;
         PlayerScripts* playerScripts = dynamic_cast<PlayerScripts*>(mPlayer.getRefData().getLuaScripts());

@@ -88,6 +88,7 @@ end
 
 input.registerTriggerHandler('PointerActivate', async:callback(function() vr._pointerActivate() end))
 input.registerTriggerHandler('Activate', async:callback(function() vr._pointerActivate() end))
+input.registerTriggerHandler('Recenter', async:callback(function() vr._recenter() end))
 input.registerActionHandler('Use', async:callback(function(v)
     -- Use should double as menu interactions when in GUI mode or the pointer is active.
     if v and (core.isWorldPaused() or pointerLeft or pointerRight) then 

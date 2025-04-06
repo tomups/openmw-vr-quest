@@ -38,6 +38,6 @@ return {
 
     engineHandlers = {
         onVRFrame = onVRFrame,
-        onVRRecenter = updatePoses,
+        onVRRecenter = update,
     },
 }

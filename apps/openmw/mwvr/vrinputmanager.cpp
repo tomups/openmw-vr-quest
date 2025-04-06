@@ -128,16 +128,15 @@ namespace MWVR
 
     void VRInputManager::pointActivation(bool onPress, bool injectMousePress)
     {
-        if (controlsDisabled() && injectMousePress)
+        if ((controlsDisabled() || MWBase::Environment::get().getStateManager()->getState() != MWBase::StateManager::State_Running) && injectMousePress)
         {
-            if (MWVR::VRGUIManager::instance().hasFocus())
+            float passToMouseManager = true;
+            if (MWVR::VRGUIManager::instance().hasFocus() && onPress)
             {
-                if (onPress)
-                {
-                    MWVR::VRGUIManager::instance().injectMouseClick();
-                }
+                passToMouseManager = !MWVR::VRGUIManager::instance().injectMouseClick();
             }
-            else
+            
+            if (passToMouseManager)
             {
                 SDL_MouseButtonEvent arg;
                 if (onPress)

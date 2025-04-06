@@ -105,6 +105,7 @@ I.Settings.registerRenderer('inputBindingVR', function(value, set, arg)
         binding.key = value.key
         binding.type = value.type
         binding.paths = value.paths
+        binding.long = value.long
         bindingSection:set(value.id, binding)
         print(tostring(value.id)..': set to defaults')
     end
@@ -184,7 +185,6 @@ end)
 -- Current .RC does not process actions during the main menu.
 -- So until a game has been loaded we have to manually deal with menu bindings.
 common.setManualTriggerCallback('PointerActivate', function()
-    print('PointerActivate')
     vr._pointerActivate()
 end)
 
@@ -193,6 +193,11 @@ common.setManualTriggerCallback('MenuBack', async:callback(function()
     -- I.UI.removeMode can only remove modes, not dialogue boxes, the console, or the postprocessing hud.
     -- From VR I need a one click solution, so i am using this placeholder internal function.
     ui._menuBack()
+end))
+
+common.setManualTriggerCallback('Recenter', async:callback(function()
+    print('Recenter')
+    vr._recenter()
 end))
 
 local gameLoaded = false
@@ -209,6 +214,7 @@ local function onFrame(dt)
         --common.setManualTriggerCallback('PointerRight', nil)
         common.setManualTriggerCallback('PointerActivate', nil)
         common.setManualTriggerCallback('MenuBack', nil)
+        common.setManualTriggerCallback('Recenter', nil)
     end
 end
 

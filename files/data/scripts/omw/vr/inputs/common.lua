@@ -231,6 +231,7 @@ local actionBindings = {}
 local triggerBindings = {}
 local activeActionBindings = {}
 local activeTriggerBindings = {}
+local isLong = {}
 
 local function getOrInitBindingsForProfile(tab, profile)
     local bindings = tab[profile]
@@ -317,12 +318,12 @@ local function getActionBindingValueNumber(action, v)
 end
 
 -- Until actions work during the main menu, we have to manually fire some actions
-local function tryManualTriggers(path, value)
+local function tryManualTriggers(path)
     local once = {}
     
     for id, key in pairs(activeTriggerBindings[path] or {}) do            
         if manualTriggerCallbacks[key] and not once[key] then
-            manualTriggerCallbacks[key](value)
+            manualTriggerCallbacks[key]()
             once[key] = true
         end
     end
@@ -372,6 +373,7 @@ local function bindTrigger(binding, id)
             tab[trigger][id] = path
         end
     end
+    isLong[id] = binding.long
 end
 
 local function clearBindingForTable(tab, id)
@@ -387,6 +389,7 @@ end
 local function clearBinding(id)
     clearBindingForTable(actionBindings, id)
     clearBindingForTable(triggerBindings, id)
+    isLong[id] = nil
 end
 
 
@@ -428,7 +431,7 @@ end))
 local settings = {
     }
     
-local function bindSetting(key, type, default, required)
+local function bindSetting(key, type, default, required, long)
     if not default then print('error default nil') end
     settings[#settings+1] = {
         key = key..'Key',
@@ -440,14 +443,15 @@ local function bindSetting(key, type, default, required)
             key = key,
             paths = default,
             type = type,
-            required = required
+            required = required,
+            long = long
         },
     }
 end
 
 
 local function registerTriggers()
-    local reg = function(key, required)
+    local reg = function(key, required, long)
         if not input.triggers[key] then
             input.registerTrigger {
                 key = key,
@@ -455,12 +459,12 @@ local function registerTriggers()
                 name = key .. '_name',
                 description = key .. '_description',
             }
-            bindSetting(key, 'trigger', getDefaultBindings(key..'_VR'), required)
+            bindSetting(key, 'trigger', getDefaultBindings(key..'_VR'), required, long)
         end
     end
 
     reg('PointerActivate', true)
-    reg('Recenter')
+    reg('Recenter', false, true)
     reg('MetaMenu', true)
     --reg('MenuSelect')
     reg('MenuBack')
@@ -568,12 +572,27 @@ end
 
 local onInputChangedBoolean = nil
 
-local function inputChangedBoolean(path, action)
-    if action.valueBoolean then
-        for id, key in pairs (activeTriggerBindings[path] or {}) do
+local inputHoldTime = {}
+local longPressTime = 2.0 / 3.0
+
+local function tryTriggers(path, long)
+    for id, key in pairs (activeTriggerBindings[path] or {}) do
+        if (isLong[id] and long) or (not isLong[id] and not long) then
             input.activateTrigger(key)
         end
-        tryManualTriggers(path, action.valueBoolean)
+    end
+    tryManualTriggers(path)
+end
+
+local function inputChangedBoolean(path, action)
+    -- In order to accomodate long presses, triggers react on release.
+    if action.valueBoolean then
+        inputHoldTime[path] = 0
+    else
+        if inputHoldTime[path] ~= nil and inputHoldTime[path] < longPressTime then
+            tryTriggers(path, false)
+            inputHoldTime[path] = nil
+        end
     end
     
     if onInputChangedBoolean then
@@ -581,7 +600,7 @@ local function inputChangedBoolean(path, action)
     end
 end
 
-local function updateInputs()
+local function updateInputs(dt)
     for path, action in pairs(inputActions) do
         local prevBoolean = action.valueBoolean
         value = action.func()
@@ -600,6 +619,15 @@ local function updateInputs()
             inputChangedBoolean(path, action)
         end
     end
+    for path, time in pairs(inputHoldTime) do
+        local newTime = time + dt
+        if newTime > longPressTime then
+            tryTriggers(path, true)
+            inputHoldTime[path] = nil
+        else
+            inputHoldTime[path] = newTime
+        end
+    end
 end
 
 local function getInteractionName(interactionPath)
@@ -609,18 +637,27 @@ local function getInteractionName(interactionPath)
     return interactionPath
 end
 
-local function onFrame(dt)
+local lt = nil
+
+local function onFrame()
     updateActiveProfiles()
     if not initialized then 
         init() 
         initialized = true
     end
-    updateInputs()
+    local t = core.getRealTime()
+    local dt = 0
+    if lt then
+        dt = t - lt
+    end
+    lt = t
+    updateInputs(dt)
 end
 
 return {
     updateInputs = updateInputs,
     onFrame = onFrame,
+    onUpdate= onUpdate,
     settings = settings,
     registerSettingsGroup = registerSettingsGroup,
     registerSettingsPage = registerSettingsPage,
