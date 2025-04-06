@@ -66,13 +66,6 @@ namespace MWVR
         bool getPointerRight() const;
         void pointerActivate();
 
-        // void mouseMove(float x);
-        // void turnLeftRight(float value, float previousValue, float dt);
-
-        // void processUtilityStickX(float value, bool disableControls);
-        // void processUtilityStickY(float value, bool disableControls);
-        void pointActivation(bool onPress, bool injectMousePress = true);
-
         MWWorld::Ptr getPointerTarget() const;
 
     protected:
