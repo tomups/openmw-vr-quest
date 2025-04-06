@@ -43,9 +43,6 @@ namespace MWVR
         /// Overridden to always be false
         void setAccurateAiming(bool enabled) override;
 
-        /// Overridden, implementation tbd
-        osg::Vec3f runAnimation(float timepassed) override;
-
         /// Overriden to always be a variant of VM_VR*
         void setViewMode(ViewMode viewMode) override;
 

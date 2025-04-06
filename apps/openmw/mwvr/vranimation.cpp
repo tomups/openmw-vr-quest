@@ -176,6 +176,21 @@ namespace MWVR
         setNestedCallback(ncb);
     }
 
+    class ConfigureCullVisitor : public osg::NodeVisitor
+    {
+    public:
+        ConfigureCullVisitor(bool enable)
+            : osg::NodeVisitor(TRAVERSE_ALL_CHILDREN)
+            , mEnable(enable)
+        {
+        }
+
+        void apply(osg::Drawable& node) override { node.setCullingActive(mEnable); }
+        void apply(osg::Geometry& node) override { node.setCullingActive(mEnable); }
+
+        bool mEnable;
+    };
+
     /// Implements control of weapon direction
     class WeaponDirectionController : public osg::NodeCallback
     {
@@ -386,7 +401,13 @@ namespace MWVR
             mTransform->setMatrix(worldReference * worldToLimb * mTransform->getMatrix());
         }
 
-        void setTransform(osg::MatrixTransform* transform) { mTransform = transform; }
+        void setTransform(osg::MatrixTransform* transform) {
+            if (mTransform)
+                mTransform->setCullingActive(true);
+            mTransform = transform;
+            if (mTransform)
+                mTransform->setCullingActive(false);
+        }
 
         std::shared_ptr<VR::Space> mSpace;
         osg::ref_ptr<osg::MatrixTransform> mTransform;
@@ -500,6 +521,8 @@ namespace MWVR
         }
 
         updateCharHeight();
+
+        //mObjectRoot->setCullingActive(false);
     }
 
     // void VRAnimation::onTrackingUpdated(VR::TrackingManager& manager)
@@ -786,16 +809,14 @@ namespace MWVR
         }
     }
 
-    osg::Vec3f VRAnimation::runAnimation(float timepassed)
-    {
-        return NpcAnimation::runAnimation(timepassed);
-    }
-
     void VRAnimation::addControllers()
     {
         NpcAnimation::addControllers();
         updateTrackingControllers();
         mSkeleton->setIsTracked(true);
+
+        ConfigureCullVisitor configureCullVisitor(false);
+        mObjectRoot->accept(configureCullVisitor);
     }
 
     void VRAnimation::updateTrackingControllers()
@@ -819,9 +840,12 @@ namespace MWVR
     void VRAnimation::enableTracking(XrPath path)
     {
         auto& ctx = mVrControllers[path];
+
         auto forearm = mNodeMap.find(ctx.forearmBone);
         if (forearm != mNodeMap.end())
+        {
             ctx.forearmController->setTransform(forearm->second);
+        }
 
         auto hand = mNodeMap.find(ctx.handBone);
         if (hand != mNodeMap.end())
@@ -848,6 +872,12 @@ namespace MWVR
     void VRAnimation::disableTracking(XrPath path) {
         auto& ctx = mVrControllers[path];
         ctx.forearmController->setTransform(nullptr);
+        auto forearm = mNodeMap.find(ctx.forearmBone);
+        if (forearm != mNodeMap.end())
+        {
+            ConfigureCullVisitor configureCullVisitor(true);
+            forearm->second->accept(configureCullVisitor);
+        }
 
         auto hand = mNodeMap.find(ctx.handBone);
         if (hand != mNodeMap.end())
