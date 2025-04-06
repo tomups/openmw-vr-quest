@@ -20,24 +20,31 @@ local inputTypes = {
 }
 local interfaceL10n = core.l10n('interface')
 
+local activeProfiles = {}
+
+for _, controller in pairs (common.controllers) do
+    activeProfiles[controller] = vr.getInteractionProfileOfController(controller)
+end
+
 local function getActive(paths)
     for _, controller in pairs (common.controllers) do
         local profile = vr.getInteractionProfileOfController(controller)
-        if profile and paths[profile] then
+        if profile and paths[profile] and paths[profile][controller] then
             return paths[profile][controller]
         end
     end
-    return 
+    return nil
 end
 
 local function bindingLabel(isRecording, binding)
     if isRecording then
         return interfaceL10n('N/A')
     elseif binding and binding.paths then
-        return common.getInteractionName(getActive(binding.paths))
-    else
-        return interfaceL10n('None')
+        local activePath = getActive(binding.paths)
+        if activePath then return common.getInteractionName(activePath) end
     end
+    
+    return interfaceL10n('None')
 end
 
 local bindingsVersion = 1
@@ -95,19 +102,19 @@ I.Settings.registerRenderer('inputBindingVR', function(value, set, arg)
    
     local l10n = core.l10n(info.l10n)
 
-    local name = {
-        template = I.MWUI.templates.textNormal,
-        props = {
-            text = l10n(info.name),
-        },
-    }
+    --local name = {
+    --    template = I.MWUI.templates.textNormal,
+    --    props = {
+    --        text = l10n(info.name),
+    --    },
+    --}
 
-    local description = {
-        template = I.MWUI.templates.textNormal,
-        props = {
-            text = l10n(info.description),
-        },
-    }
+    --local description = {
+    --    template = I.MWUI.templates.textNormal,
+    --    props = {
+    --        text = l10n(info.description),
+    --    },
+    --}
 
     local binding = bindingSection:getCopy(value.id)
     if not binding and value.paths then
@@ -213,6 +220,14 @@ end))
 local gameLoaded = false
 
 local function onFrame(dt)
+    for _, controller in pairs (common.controllers) do
+        local profile = vr.getInteractionProfileOfController(controller)
+        if profile ~= activeProfiles[controller] then
+            I.Settings.updateRender('OMWControlsVR')
+        end
+        activeProfiles[controller] = profile
+    end
+
     -- Only want to process inputs/actions in this script during pre-game.
     if menu.getState() == menu.STATE.NoGame then
         common.onFrame(dt)

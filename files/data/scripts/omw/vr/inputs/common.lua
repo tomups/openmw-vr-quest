@@ -477,7 +477,7 @@ local function registerTriggers()
     regExisting('ToggleSpell')
 end
 local function registerActions()
-    local reg = function(key, type, value, required)
+    local reg = function(key, type, value, required, default)
         if not input.actions[key] then
             input.registerAction {
                 key = key,
@@ -488,15 +488,15 @@ local function registerActions()
                 defaultValue = value,
             }
         end
-        bindSetting(key, 'action', getDefaultBindings(key..'_VR'), required)
+        bindSetting(key, 'action', default, required)
         -- Make sure our bindings are always fired first by setting up the binding right away
         setupValueBinding(key, required)
     end
     local regBool = function(key, required)
-        reg(key, input.ACTION_TYPE.Boolean, false, required)
+        reg(key, input.ACTION_TYPE.Boolean, false, required, getDefaultBindings(key..'_VR'))
     end
     local regRange = function(key, required)
-        reg(key, input.ACTION_TYPE.Range, 0, required)
+        reg(key, input.ACTION_TYPE.Range, 0, required, getDefaultBindings(key..'_VR'))
     end
     regBool('PointerLeft')
     regBool('PointerRight')
@@ -506,18 +506,19 @@ local function registerActions()
     -- Existing actions.
     -- The intent is to only add bindings for these,
     -- but the upstream scripts don't define them until a game is loaded, which doesn't work for me.
-    local regExisting = function(f, key, required)
+    local regExistingBool = function(key, required)
         local key2 = key..'_Alias'
         alias[key2..'_VR'] = key..'_VR'
-        f(key2, required)
         --bindSetting(key, 'action', getDefaultBindings(key..'_VR'), required)
+        reg(key2, input.ACTION_TYPE.Boolean, false, required, getDefaultBindings(key..'_VR'))
         setupValueBinding(key, required, key2)
     end
-    local regExistingBool = function(key, required)
-        regExisting(regBool, key, required)
-    end
     local regExistingRange = function(key, required)
-        regExisting(regRange, key, required)
+        local key2 = key..'_Alias'
+        alias[key2..'_VR'] = key..'_VR'
+        --bindSetting(key, 'action', getDefaultBindings(key..'_VR'), required)
+        reg(key2, input.ACTION_TYPE.Range, 0, required, getDefaultBindings(key..'_VR'))
+        setupValueBinding(key, required, key2)
     end
     -- For now, registering existing doesn't work
     regExistingRange('MoveLeft')

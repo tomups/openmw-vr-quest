@@ -499,6 +499,18 @@ local function registerPage(options)
     ui.registerSettingsPage(pageOptions[page.key])
 end
 
+local function updateRender(pageKey)
+    if pageKey then
+        groupElements[pageKey] = {}
+        renderPage(pages[pageKey], pageOptions[pageKey])
+    else
+        for key, page in pairs(pages) do
+            groupElements[key] = {}
+            renderPage(page, pageOptions[key])
+        end
+    end
+end
+
 updatePlayerGroups()
 if menu.getState() == menu.STATE.Running then -- handle reloadlua correctly
     updateGlobalGroups()
@@ -521,6 +533,7 @@ return {
             menuGroups[options.key] = true
         end,
         updateRendererArgument = common.updateRendererArgument,
+        updateRender = updateRender
     },
     engineHandlers = {
         onStateChanged = function()
