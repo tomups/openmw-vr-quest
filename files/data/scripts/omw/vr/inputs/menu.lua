@@ -20,11 +20,21 @@ local inputTypes = {
 }
 local interfaceL10n = core.l10n('interface')
 
+local function getActive(paths)
+    for _, controller in pairs (common.controllers) do
+        local profile = vr.getInteractionProfileOfController(controller)
+        if profile and paths[profile] then
+            return paths[profile][controller]
+        end
+    end
+    return 
+end
+
 local function bindingLabel(isRecording, binding)
     if isRecording then
         return interfaceL10n('N/A')
-    elseif binding and  binding.path then
-        return common.getInteractionName(binding.path)
+    elseif binding and binding.paths then
+        return common.getInteractionName(getActive(binding.paths))
     else
         return interfaceL10n('None')
     end
@@ -141,8 +151,8 @@ I.Settings.registerRenderer('inputBindingVR', function(value, set, arg)
             horizontal = true,
         },
         content = ui.content {
-            name,
-            { props = { size = util.vector2(10, 0) } },
+            --name,
+            --{ props = { size = util.vector2(10, 0) } },
             recorder,
         },
     }
@@ -150,7 +160,7 @@ I.Settings.registerRenderer('inputBindingVR', function(value, set, arg)
         type = ui.TYPE.Flex,
         content = ui.content {
             row,
-            description,
+            --description,
         },
     }
 
