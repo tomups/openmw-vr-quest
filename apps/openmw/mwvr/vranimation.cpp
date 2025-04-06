@@ -921,7 +921,7 @@ namespace MWVR
     void VRAnimation::enablePointers(bool left, bool right)
     {
         enablePointer(mLeftHandPath, left);
-        enablePointer(mRightHandPath, left);
+        enablePointer(mRightHandPath, right);
     }
 
     void VRAnimation::setEnableCrosshairs(bool enable)
