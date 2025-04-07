@@ -110,6 +110,14 @@ input.registerActionHandler('LookRight', async:callback(function(v)
     yawChanged = true
 end))
 
+local yawSensitivity = 1.0
+local function updateControlsSettings()
+    yawSensitivity = common.controlsSection:get('SmoothTurnSensitivity')
+    print('SmoothTurnSensitivity updated to '..tostring(yawSensitivity))
+end
+updateControlsSettings()
+common.controlsSection:subscribe(async:callback(updateControlsSettings))
+
 local function onFrame(dt)
     
     common.onFrame(dt)
@@ -120,7 +128,7 @@ local function onFrame(dt)
     if yawChanged then
         local lookLeft = input.getRangeActionValue('LookLeft')
         local lookRight = input.getRangeActionValue('LookRight')
-        local yawChange = (lookRight - lookLeft) * dt
+        local yawChange = (lookRight - lookLeft) * dt * yawSensitivity
         self.controls.yawChange = yawChange
     end
 end

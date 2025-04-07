@@ -49,7 +49,7 @@ end
 
 local bindingsVersion = 1
 local bindingsVersionMinSupported = 1
-local bindingSection = storage.playerSection('OMWInputBindingsVR')
+local bindingSection = common.bindingSection
 local version = bindingSection:get('version') or 0
 if version < bindingsVersion then
     if version < bindingsVersionMinSupported then
@@ -63,8 +63,10 @@ end
 
 -- Temp: Reset every time cause i keep breaking stuff
 bindingSection:reset()
-local controlSection = storage.playerSection('SettingsOMWControlsVR')
-controlSection:reset()
+local userBindingsSection = common.userBindingsSection
+userBindingsSection:reset()
+local controlsSection = common.controlsSection
+controlsSection:reset()
 
 local recording = nil
 
@@ -223,7 +225,7 @@ local function onFrame(dt)
     for _, controller in pairs (common.controllers) do
         local profile = vr.getInteractionProfileOfController(controller)
         if profile ~= activeProfiles[controller] then
-            I.Settings.updateRender('OMWControlsVR')
+            I.Settings.updateRender(common.settingsPageKey)
         end
         activeProfiles[controller] = profile
     end

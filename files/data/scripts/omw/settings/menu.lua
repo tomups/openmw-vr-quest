@@ -501,8 +501,12 @@ end
 
 local function updateRender(pageKey)
     if pageKey then
-        groupElements[pageKey] = {}
-        renderPage(pages[pageKey], pageOptions[pageKey])
+        if pages[pageKey] then
+            groupElements[pageKey] = {}
+            renderPage(pages[pageKey], pageOptions[pageKey])
+        else
+            print('Warning: Tried to update nonexistent page: '..pageKey)
+        end
     else
         for key, page in pairs(pages) do
             groupElements[key] = {}

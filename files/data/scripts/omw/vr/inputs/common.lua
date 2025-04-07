@@ -223,7 +223,19 @@ local function getActiveProfileAndControllerFromPath(path)
     return vr.getInteractionProfileOfController(controller), controller
 end
 
-local bindingSection = storage.playerSection('OMWInputBindingsVR')
+local settingsPageKey = 'OMWVRInput'
+local l10nKey = settingsPageKey
+local controlsGroupKey = settingsPageKey..'Controls'
+local controlsSection = storage.playerSection(controlsGroupKey)
+
+-- userBinding and binding are separate groups because bindingSection is the section
+-- used by the bindings renderer and doens't correspond to any entres in the settings page, 
+-- while userBindingsGroup is where we register the settings that appear on the page.
+local userBindingsGroupKey = settingsPageKey..'UserBindings'
+local userBindingsSection = storage.playerSection(userBindingsGroupKey)
+
+local bindingSectionKey = settingsPageKey..'Bindings'
+local bindingSection = storage.playerSection(bindingSectionKey)
 
 local manualTriggerCallbacks = {}
 local boundActions = {}
@@ -428,16 +440,39 @@ bindingSection:subscribe(async:callback(function(_, id)
     return id
 end))
 
-local settings = {
+local function boolSetting(key, default)
+    return {
+        key = key,
+        renderer = 'checkbox',
+        name = key,
+        description = key .. 'Description',
+        default = default,
+    }
+end
+
+local function floatSetting(key, default)
+    return {
+        key = key,
+        renderer = 'number',
+        name = key,
+        description = key .. 'Description',
+        default = default,
+    }
+end
+
+local controlsSettings = {
+    }
+
+local bindingsSettings = {
     }
     
 local function bindSetting(key, type, default, required, long)
     if not default then print('error default nil') end
-    settings[#settings+1] = {
-        key = key..'Key',
+    bindingsSettings[#bindingsSettings+1] = {
+        key = key..'_SettingKey',
         renderer = 'inputBindingVR',
-        name = key..'Key',
-        description = key .. 'KeyDescription',
+        name = key..'_SettingName',
+        description = key .. '_SettingDescription',
         default = {
             id = key..'_VR',
             key = key,
@@ -455,7 +490,7 @@ local function registerTriggers()
         if not input.triggers[key] then
             input.registerTrigger {
                 key = key,
-                l10n = 'OMWControlsVR',
+                l10n = l10nKey,
                 name = key .. '_name',
                 description = key .. '_description',
             }
@@ -482,7 +517,7 @@ local function registerActions()
             input.registerAction {
                 key = key,
                 type = type,
-                l10n = 'OMWControlsVR',
+                l10n = l10nKey,
                 name = key..'_Name',
                 description = key..'_Description',
                 defaultValue = value,
@@ -534,13 +569,11 @@ end
     registerActions()
     registerTriggers()
 --end
-    
-local settingsGroup = 'SettingsOMWControlsVR'
 
 local function registerSettingsPage()
     I.Settings.registerPage({
-        key = 'OMWControlsVR',
-        l10n = 'OMWControlsVR',
+        key = settingsPageKey,
+        l10n = l10nKey,
         name = 'ControlsPage',
         description = 'ControlsPageDescription',
     })
@@ -548,12 +581,22 @@ end
 
 local function registerSettingsGroup()
     I.Settings.registerGroup({
-        key = settingsGroup,
-        page = 'OMWControlsVR',
-        l10n = 'OMWControlsVR',
-        name = 'MovementSettingsVR',
+        key = userBindingsGroupKey,
+        page = settingsPageKey,
+        l10n = l10nKey,
+        name = 'UserBindingsGroup',
         permanentStorage = true,
-        settings = settings,
+        settings = bindingsSettings,
+    })
+    I.Settings.registerGroup({
+        key = controlsGroupKey,
+        page = settingsPageKey,
+        l10n = l10nKey,
+        name = 'ControlsGroup',
+        permanentStorage = true,
+        settings = {
+            floatSetting('SmoothTurnSensitivity', 2.0),
+        },
     })
 end
 
@@ -668,4 +711,11 @@ return {
     setManualTriggerCallback = setManualTriggerCallback,
     controllers = controllers,
     getActiveProfileAndControllerFromPath = getActiveProfileAndControllerFromPath,
+    settingsPageKey = settingsPageKey,
+    bindingSectionKey = bindingSectionKey,
+    bindingSection = bindingSection,
+    userBindingsGroupKey = userBindingsGroupKey,
+    userBindingsSection = userBindingsSection,
+    controlsGroupKey = controlsGroupKey,
+    controlsSection = controlsSection,
 }
