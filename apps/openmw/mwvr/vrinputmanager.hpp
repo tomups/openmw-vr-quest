@@ -6,6 +6,7 @@
 #include <vector>
 
 #include <components/vr/trackinglistener.hpp>
+#include <components/vr/session.hpp>
 #include <components/vr/vr.hpp>
 
 #include "../mwworld/ptr.hpp"
@@ -27,7 +28,7 @@ namespace MWVR
     }
 
     /// Extension of the input manager to include VR inputs
-    class VRInputManager : public MWInput::InputManager
+    class VRInputManager : public MWInput::InputManager, private VR::Session::Listener
     {
     public:
         VRInputManager(SDL_Window* window, osg::ref_ptr<osgViewer::Viewer> viewer,
@@ -48,11 +49,11 @@ namespace MWVR
         /// Overriden to update XR inputs
         void update(float dt, bool disableControls = false, bool disableEvents = false) override;
 
+        /// Update realistic combat
+        void onSpaceUpdate() override;
+
         /// OpenXR input interface
         OpenXRInput& xrInput() { return *mXRInput; }
-
-        void calibrate();
-        void calibratePlayerHeight();
 
         UserPointer* vrPointer() { return mVRPointer.get(); }
         const UserPointer* vrPointer() const { return mVRPointer.get(); }
@@ -69,29 +70,12 @@ namespace MWVR
         MWWorld::Ptr getPointerTarget() const;
 
     protected:
-        //void processAction(const class XR::InputAction* action, float dt, bool disableControls);
-        //void processMovementStick(const class XR::InputAction* action, float dt, bool disableControls);
-        //void toggleUtilityDown(bool disableControls);
-        //void toggleUtilityUp(bool disableControls);
-        //void onActivateAction(int actionId, bool disableControls);
-        //void onDeactivateAction(int actionId, bool disableControls);
-
         void updateVRPointer(bool disableControls);
-        void updateCombat(float dt);
         void updateRealisticCombat(float dt);
 
         void injectChannelValue(MWInput::Actions action, float value);
 
-        //void applyHapticsLeftHand(float intensity) override;
-        //void applyHapticsRightHand(float intensity) override;
-        void processChangedSettings(const std::set<std::pair<std::string, std::string>>& changed) override;
-
-        //void setThumbstickDeadzone(float deadzoneRadius);
-
-        //float smoothTurnRate(float dt) const;
-
         int interactiveMessageBox(const std::string& message, const std::vector<std::string>& buttons);
-        //void updatePhysicalSneak(Stereo::Unit headsetHeight);
 
     private:
         osg::observer_ptr<osgViewer::Viewer> mOSGViewer;
@@ -101,6 +85,7 @@ namespace MWVR
         bool mPointerActivation = false;
         bool mPointerLeft = true;
         bool mPointerRight = true;
+        float mDt = 0.f;
 
         osg::ref_ptr<osg::Node> mVRAimNode;
     };

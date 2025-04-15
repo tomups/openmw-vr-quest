@@ -164,6 +164,7 @@ namespace MWVR
         osg::ref_ptr<osg::Camera> mMyGUICamera{ nullptr };
         bool mVisible = false;
         bool mDirty = false;
+        bool mSpaceIsLost = false;
         std::shared_ptr<VR::QuadLayer> mVrLayer;
         std::shared_ptr<VR::Space> mSpace;
         Stereo::Pose mPose;

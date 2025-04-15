@@ -93,12 +93,6 @@ namespace MWVR
         }
     }
 
-    void VRInputManager::updateCombat(float dt)
-    {
-        //if (!VR::getKBMouseModeActive())
-        //    return updateRealisticCombat(dt);
-    }
-
     void VRInputManager::updateRealisticCombat(float dt)
     {
         bool guiMode = MWBase::Environment::get().getWindowManager()->isGuiMode();
@@ -146,91 +140,6 @@ namespace MWVR
         channel->setEnabled(true);
     }
 
-    void VRInputManager::processChangedSettings(const std::set<std::pair<std::string, std::string>>& changed)
-    {
-        MWInput::InputManager::processChangedSettings(changed);
-
-        for (Settings::CategorySettingVector::const_iterator it = changed.begin(); it != changed.end(); ++it)
-        {
-            //if (it->first == "VR" && it->second == "snap angle")
-            //{
-            //    mSnapAngle = Settings::Manager::getFloat("snap angle", "VR");
-            //    Log(Debug::Verbose) << "Snap angle set to: " << mSnapAngle;
-            //}
-            //if (it->first == "VR" && it->second == "smooth turn rate")
-            //{
-            //    mSmoothTurnRate = Settings::Manager::getFloat("smooth turn rate", "VR");
-            //    Log(Debug::Verbose) << "Smooth turning rate set to: " << mSmoothTurnRate;
-            //}
-            //if (it->first == "VR" && it->second == "smooth turning")
-            //{
-            //    mSmoothTurning = Settings::Manager::getBool("smooth turning", "VR");
-            //    Log(Debug::Verbose) << "Smooth turning set to: " << mSmoothTurning;
-            //}
-            //if (it->first == "VR" && it->second == "haptics enabled")
-            //{
-            //    mHapticsEnabled = Settings::Manager::getBool("haptics enabled", "VR");
-            //}
-            //if (it->first == "VR" && it->second == "physical sneak enabled")
-            //{
-            //    mPhysicalSneakEnabled = Settings::Manager::getBool("physical sneak enabled", "VR");
-            //}
-            //if (it->first == "VR" && it->second == "physical sneak height offset")
-            //{
-            //    mPhysicalSneakHeightOffset
-            //        = Stereo::Unit::fromMeters(Settings::Manager::getFloat("physical sneak height offset", "VR"));
-            //}
-            //if (it->first == "Input" && it->second == "joystick dead zone")
-            //{
-            //    setThumbstickDeadzone(Settings::Manager::getFloat("joystick dead zone", "Input"));
-            //}
-        }
-    }
-
-    //void VRInputManager::setThumbstickDeadzone(float deadzoneRadius)
-    //{
-    //    // TODO: Process deadzones in lua
-    //    mXRInput->setThumbstickDeadzone(deadzoneRadius);
-    //}
-
-    //void VRInputManager::mouseMove(float x)
-    //{
-    //    // TODO: Process in lua?
-    //    auto path = VR::stringToVRPath("/world/user");
-    //    auto* stageToWorldBinding
-    //        = static_cast<VR::StageToWorldBinding*>(VR::TrackingManager::instance().getTrackingSource(path));
-    //    stageToWorldBinding->setWorldOrientation(x, true);
-    //}
-
-    // TODO: Process in lua?
-    //void VRInputManager::turnLeftRight(float value, float previousValue, float dt)
-    //{
-    //    auto path = VR::stringToVRPath("/world/user");
-    //    auto* stageToWorldBinding
-    //        = static_cast<VR::StageToWorldBinding*>(VR::TrackingManager::instance().getTrackingSource(path));
-    //    if (mSmoothTurning)
-    //    {
-    //        float yaw = osg::DegreesToRadians(value) * smoothTurnRate(dt);
-    //        stageToWorldBinding->setWorldOrientation(yaw, true);
-    //    }
-    //    else
-    //    {
-    //        if (value > 0.9f && previousValue < 0.9f)
-    //        {
-    //            stageToWorldBinding->setWorldOrientation(osg::DegreesToRadians(mSnapAngle), true);
-    //        }
-    //        if (value < -0.9f && previousValue > -0.9f)
-    //        {
-    //            stageToWorldBinding->setWorldOrientation(-osg::DegreesToRadians(mSnapAngle), true);
-    //        }
-    //    }
-    //}
-
-    //float VRInputManager::smoothTurnRate(float dt) const
-    //{
-    //    return 360.f * mSmoothTurnRate * dt;
-    //}
-
     int VRInputManager::interactiveMessageBox(const std::string& message, const std::vector<std::string>& buttons)
     {
         auto wm = MWBase::Environment::get().getWindowManager();
@@ -250,59 +159,9 @@ namespace MWVR
     //    const auto playerHeight = VR::Session::instance().playerHeight();
     //    if (mPhysicalSneakEnabled && VR::getStandingPlay() && playerHeight.asMeters() > 0.0f)
     //    {
-    //        // MERGETODO: Expose to Lua
     //        mIsPhysicalSneak = headsetHeight < playerHeight - mPhysicalSneakHeightOffset;
     //    }
     //}
-
-    void VRInputManager::calibrate()
-    {
-        updateVRPointer(false);
-
-        if (!Settings::Manager::getBool("intro sequence complete", "VR"))
-        {
-            calibratePlayerHeight();
-        }
-    }
-    void VRInputManager::calibratePlayerHeight()
-    {
-
-        // TODO: Probably wanna rethink all of this
-        //struct HeightListener : public VR::TrackingListener
-        //{
-        //    Stereo::Unit height = Stereo::Unit::fromMeters(1.8);
-        //    bool receivedTrackingData = false;
-        //    VR::VRPath path = VR::stringToVRPath("/stage/user/head/input/pose");
-
-        //    void onTrackingUpdated(VR::TrackingManager& manager) override
-        //    {
-        //        auto pose = manager.locate(path);
-        //        if (static_cast<int>(pose.status) > 0)
-        //        {
-        //            receivedTrackingData = true;
-        //            height = pose.pose.position.mZ;
-        //            Log(Debug::Verbose) << "Height Calibration: " << height.asMeters();
-        //        }
-        //    }
-        //} heightListener;
-
-        //Stereo::Unit height = Stereo::Unit::fromMeters(1.8);
-
-        //int option = interactiveMessageBox(
-        //    "To be able to accurately scale your height to the height of your character, OpenMW-VR needs to know how "
-        //    "tall you are. Stand up straight, and then press the OK button to proceed. Or press cancel to use a "
-        //    "default height of 1.8 meters. You can redo this calibration later in VR tab of the settings menu",
-        //    { "OK", "Cancel" });
-
-        //if (option == 0)
-        //{
-        //    height = heightListener.height;
-        //}
-
-        //Settings::Manager::setFloat("player height", "VR", height.asMeters());
-        //Settings::Manager::setBool("intro sequence complete", "VR", true);
-        //VR::Session::instance().computePlayerScale();
-    }
 
     void VRInputManager::setPointerLeft(bool enabled)
     {
@@ -353,13 +212,6 @@ namespace MWVR
         , mOSGViewer(viewer)
         , mVRPointer(nullptr)
         , mXRInput(new OpenXRInput(xrControllerSuggestionsFile, defaultXrControllerSuggestionsFile))
-        //, mHapticsEnabled{ Settings::Manager::getBool("haptics enabled", "VR") }
-        //, mSmoothTurning{ Settings::Manager::getBool("smooth turning", "VR") }
-        //, mSnapAngle{ Settings::Manager::getFloat("snap angle", "VR") }
-        //, mSmoothTurnRate{ Settings::Manager::getFloat("smooth turn rate", "VR") }
-        //, mPhysicalSneakHeightOffset(
-        //      Stereo::Unit::fromMeters(Settings::Manager::getFloat("physical sneak height offset", "VR")))
-        //, mPhysicalSneakEnabled(Settings::Manager::getBool("physical sneak enabled", "VR"))
     {
 
         sInputManager = this;
@@ -383,7 +235,7 @@ namespace MWVR
 
     void VRInputManager::update(float dt, bool disableControls, bool disableEvents)
     {
-
+        mDt = dt;
         updateVRPointer(disableControls);
 
         if (MWVR::VRGUIManager::instance().hasFocus())
@@ -409,8 +261,12 @@ namespace MWVR
         // OpenMW assumes all input will come via SDL which i often violate.
         // This keeps player controls correctly enabled for my purposes.
         mBindingsManager->setPlayerControlsEnabled(!guiMode);
+    }
 
-        updateCombat(dt);
+    void VRInputManager::onSpaceUpdate() 
+    {
+        if (!VR::getKBMouseModeActive())
+            updateRealisticCombat(mDt);
     }
 
 }

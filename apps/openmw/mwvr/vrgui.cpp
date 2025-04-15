@@ -416,15 +416,14 @@ namespace MWVR
         {
             auto tp = mSpace->locateInWorld();
             if (!tp.status)
+            {
+                if (!mSpaceIsLost)
+                    Log(Debug::Warning) << "Layer " << mLayerName
+                                        << " unable to track space: " << static_cast<int>(tp.status);
+                mSpaceIsLost = true;
                 return;
-
-            // TODO: I do this multiple places, make a utils of it
-            float yaw = 0;
-            float pitch = 0;
-            float roll = 0;
-            Stereo::getEulerAngles(tp.pose.orientation, yaw, pitch, roll);
-            tp.pose.orientation.makeRotate(yaw, osg::Vec3f(0, 0, -1));
-
+            }
+            mSpaceIsLost = false;
             pose = tp.pose + pose;
         }
 

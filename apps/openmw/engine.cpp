@@ -1090,9 +1090,6 @@ void OMW::Engine::go()
     {
         // Mask_GUI gets re-enabled at some point.
         mViewer->getCamera()->setCullMask(mViewer->getCamera()->getCullMask() & ~(MWRender::VisMask::Mask_GUI));
-
-               // Run through height calibration if the user has not already done so
-        static_cast<MWVR::VRInputManager*>(mInputManager.get())->calibrate();
     }
 
            // ## VR_PATCH END

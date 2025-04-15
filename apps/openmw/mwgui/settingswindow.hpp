@@ -80,21 +80,9 @@ namespace MWGui
         void highlightCurrentResolution();
 
 //## VR_PATCH BEGIN
-        MyGUI::ComboBox* mVRHudPosition;
-        MyGUI::ComboBox* mVRTooltipPosition;
         MyGUI::ComboBox* mVRMirrorTextureEye;
-        MyGUI::ComboBox* mVRSnapAngle;
-        MyGUI::ComboBox* mVRThumbstickUp;
-        MyGUI::ComboBox* mVRThumbstickDown;
-        MyGUI::Button* mVRHeightCalibButton;
 
         void onVRMirrorTextureEyeChanged(MyGUI::ComboBox* _sender, size_t pos);
-        void onVRHudPositionChanged(MyGUI::ComboBox* _sender, size_t pos);
-        void onVRTooltipPositionChanged(MyGUI::ComboBox* _sender, size_t pos);
-        void onVRSnapAngleChanged(MyGUI::ComboBox* _sender, size_t pos);
-        void onVRThumbstickUpChanged(MyGUI::ComboBox* _sender, size_t pos);
-        void onVRThumbstickDownChanged(MyGUI::ComboBox* _sender, size_t pos);
-        void onVRHeightCalibButtonClicked(MyGUI::Widget* _sender);
 //## VR_PATCH END
 
         void onRefractionButtonClicked(MyGUI::Widget* _sender);

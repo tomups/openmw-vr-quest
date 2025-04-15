@@ -1,7 +1,9 @@
-local util = require('openmw.util')
+local async = require('openmw.async')
 local core = require('openmw.core')
-local vr = require('openmw.vr')
 local I = require('openmw.interfaces')
+local storage = require('openmw.storage')
+local util = require('openmw.util')
+local vr = require('openmw.vr')
 local function createDerivedSpaces()
 
     I.vrspaces.createDerivedSpace(
@@ -98,6 +100,17 @@ local function createDerivedSpaces()
     )
 end
 
+local HUDpaces = {
+    'LeftWristInner',
+    'LeftWristTop',
+    'RightWristInner',
+    'RightWristTop',
+    'HUDTopLeft',
+    'HUDTopRight',
+    'HUDBottomLeft',
+    'HUDBottomRight',
+}
+
 local function createDefaultConfig(intersectable, backgroundOpacity, autosize)
     return {
         backgroundOpacity = backgroundOpacity,
@@ -134,8 +147,93 @@ local modeWindowsForArrangement = {
 
 local modeConfig = {}
 
+local settingsPageKey = 'OMWVRUI'
+local l10nKey = settingsPageKey
+local spacesGroupKey = 'SpacesGroup'
+local spacesSection = storage.playerSection(spacesGroupKey)
+
+local function registerSettingsPage()
+    I.Settings.registerPage({
+        key = settingsPageKey,
+        l10n = l10nKey,
+        name = 'UiPage',
+        description = 'UiPageDescription',
+    })
+end
+
+local function boolSetting(key, default, argument)
+    return {
+        key = key,
+        renderer = 'checkbox',
+        name = key,
+        description = key .. 'Description',
+        default = default,
+        argument = argument,
+    }
+end
+
+local function floatSetting(key, default, argument)
+    return {
+        key = key,
+        renderer = 'number',
+        name = key,
+        description = key .. 'Description',
+        default = default,
+        argument = argument,
+    }
+end
+
+local function selectSetting(key, items, default)
+    if not default then default = items[1] end
+    return {
+        key = key,
+        renderer = 'select',
+        name = key,
+        description = key .. 'Description',
+        default = default,
+        argument = {
+            l10n = l10nKey,
+            items = items
+        }
+    }
+end
+
+local function registerSettingsGroup()
+    I.Settings.registerGroup({
+        key = spacesGroupKey,
+        page = settingsPageKey,
+        l10n = l10nKey,
+        name = 'SpacesGroup',
+        permanentStorage = true,
+        settings = {
+            selectSetting('HUDSpace', HUDpaces),
+            selectSetting('TooltipSpace', HUDpaces),
+        },
+    })
+end
+
+local configHUD = createDefaultConfig(true, 0, true)
+configHUD.extent = util.vector2(0.033, 0.033) -- Hud is generally very close to the viewer, and so must have a very small extent
+configHUD.center = util.vector2(0, 0.5) -- Offset center so that the HUD stays in-place when it expands with spell effect icons
+configHUD.space = 'LeftWristTop'
+
+local configTooltip = createDefaultConfig(true, 0, true)
+configTooltip.extent = util.vector2(0.033, 0.033)
+configTooltip.space = 'RightWristTop'
+
+local function updateSpacesSettings()
+    configHUD.space = spacesSection:get('HUDSpace')
+    I.vrui.setHUDConfig(configHUD)
+    
+    configTooltip.space = spacesSection:get('TooltipSpace')
+    I.vrui.setTooltipConfig(configTooltip)
+end
+updateSpacesSettings()
+spacesSection:subscribe(async:callback(updateSpacesSettings))
+
+
 local function setupDefaults(modes)
-    for _, mode in pairs(modes) do
+    for _, mode in pairs(modes or {}) do
         modeConfig[mode] = createDefaultConfig(true, 0.7, true)
     end
 
@@ -153,17 +251,6 @@ local function setupDefaults(modes)
     local configNotification = createDefaultConfig(false, 0, false)
     configNotification.space = 'DefaultWindow'
     I.vrui.setNotificationConfig(configNotification)
-
-    local configHUD = createDefaultConfig(true, 0, true)
-    configHUD.extent = util.vector2(0.033, 0.033) -- Hud is generally very close to the viewer, and so must have a very small extent
-    configHUD.center = util.vector2(0, 0.5) -- Offset center so that the HUD stays in-place when it expands with spell effect icons
-    configHUD.space = 'LeftWristTop'
-    I.vrui.setHUDConfig(configHUD)
-
-    local configTooltip = createDefaultConfig(true, 0, false)
-    configTooltip.extent = util.vector2(0.33, 0.33)
-    configTooltip.space = 'RightWristTop'
-    I.vrui.setTooltipConfig(configTooltip)
 
     local configDefault = createDefaultConfig(true, 0.7, true)
     I.vrui.setDefaultWindowConfig(configDefault)
@@ -290,4 +377,6 @@ return {
     updateModes = updateModes,
     updateVisibleWindows = updateVisibleWindows,
     updateWindowArrangement = updateWindowArrangement,
+    registerSettingsPage = registerSettingsPage,
+    registerSettingsGroup = registerSettingsGroup,
 }

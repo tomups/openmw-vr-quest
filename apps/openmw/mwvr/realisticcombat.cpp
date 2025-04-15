@@ -57,11 +57,11 @@ namespace MWVR
             }
         }
 
-        StateMachine::StateMachine(MWWorld::Ptr ptr, std::string_view trackingAction)
+        StateMachine::StateMachine(MWWorld::Ptr ptr, std::string_view space)
             : mPtr(ptr)
             , mMinVelocity(Settings::Manager::getFloat("realistic combat minimum swing velocity", "VR"))
             , mMaxVelocity(Settings::Manager::getFloat("realistic combat maximum swing velocity", "VR"))
-            , mTrackingAction(trackingAction)
+            , mSpace(space)
         {
             Log(Debug::Verbose) << "realistic combat minimum swing velocity: " << mMinVelocity;
             Log(Debug::Verbose) << "realistic combat maximum swing velocity: " << mMaxVelocity;
@@ -129,7 +129,7 @@ namespace MWVR
 
         void StateMachine::update(float dt, bool enabled)
         {
-            auto tp = MWVR::Util::getXrPose(mTrackingAction);
+            auto tp = MWVR::Util::getXrPose(mSpace);
             auto& pose = tp.pose;
             auto weaponType = MWBase::Environment::get().getWorld()->getActiveWeaponType();
 

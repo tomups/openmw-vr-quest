@@ -14,6 +14,8 @@ common.createDerivedSpaces()
 -- Anything not configured here is configured in the PLAYER script menus.lua
 local modes = {"Loading", "LoadingWallpaper", "MainMenu"}
 common.setupDefaults(modes)
+common.registerSettingsPage()
+common.registerSettingsGroup()
 
 local initialized = false
 local function init()

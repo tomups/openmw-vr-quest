@@ -86,9 +86,43 @@ local function updatePointer()
     
 end
 
-input.registerTriggerHandler('PointerActivate', async:callback(function() vr._pointerActivate() end))
-input.registerTriggerHandler('Activate', async:callback(function() vr._pointerActivate() end))
-input.registerTriggerHandler('Recenter', async:callback(function() vr._recenter() end))
+local smoothTurn= false
+local smoothTurnSensitivity = 2.0
+local snapTurnRate = 30.0 * math.pi / 180
+local function updateControlsSettings()
+    smoothTurn = common.controlsSection:get('SmoothTurn')
+    smoothTurnSensitivity = common.controlsSection:get('SmoothTurnSensitivity')
+    snapTurnRate = common.controlsSection:get('SnapTurnRate') * math.pi / 180
+end
+updateControlsSettings()
+common.controlsSection:subscribe(async:callback(updateControlsSettings))
+
+
+
+input.registerTriggerHandler('PointerActivate', async:callback(function() 
+    vr._pointerActivate() 
+end))
+
+input.registerTriggerHandler('Activate', async:callback(function() 
+    vr._pointerActivate() 
+end))
+
+input.registerTriggerHandler('Recenter', async:callback(function() 
+    vr._recenter() 
+end))
+
+input.registerActionHandler('SnapTurnLeft', async:callback(function(v) 
+    if v and not smoothTurn then
+        self.controls.yawChange = -snapTurnRate
+    end
+end))
+
+input.registerActionHandler('SnapTurnRight', async:callback(function(v) 
+    if v and not smoothTurn then
+        self.controls.yawChange = snapTurnRate
+    end
+end))
+
 input.registerActionHandler('Use', async:callback(function(v)
     -- Use should double as menu interactions when in GUI mode or the pointer is active.
     if v and (core.isWorldPaused() or pointerLeft or pointerRight) then 
@@ -110,14 +144,6 @@ input.registerActionHandler('LookRight', async:callback(function(v)
     yawChanged = true
 end))
 
-local yawSensitivity = 1.0
-local function updateControlsSettings()
-    yawSensitivity = common.controlsSection:get('SmoothTurnSensitivity')
-    print('SmoothTurnSensitivity updated to '..tostring(yawSensitivity))
-end
-updateControlsSettings()
-common.controlsSection:subscribe(async:callback(updateControlsSettings))
-
 local function onFrame(dt)
     
     common.onFrame(dt)
@@ -125,10 +151,10 @@ local function onFrame(dt)
     
     -- It's important to only update this value when these actions changed
     -- otherwise we'll cancel out the yaw change from mouse movement, which are still handled engine-side.
-    if yawChanged then
+    if smoothTurn and yawChanged then
         local lookLeft = input.getRangeActionValue('LookLeft')
         local lookRight = input.getRangeActionValue('LookRight')
-        local yawChange = (lookRight - lookLeft) * dt * yawSensitivity
+        local yawChange = (lookRight - lookLeft) * dt * smoothTurnSensitivity
         self.controls.yawChange = yawChange
     end
 end

@@ -46,7 +46,6 @@ namespace VR
 
             virtual void onInstantTransition(){}
             virtual void onRecenter(){}
-            virtual void onEyeLevelReset(){}
             virtual void onSeatedModeChanged() {}
             virtual void onFrameUpdate(VR::Frame&) {}
             virtual void onSpaceUpdate() {}
@@ -93,7 +92,6 @@ namespace VR
         bool handDirectedMovement() const { return mHandDirectedMovement; }
 
         void requestRecenter() { mRecenter = true; }
-        void resetEyeLevel();
 
         void instantTransition();
 

@@ -67,7 +67,6 @@ namespace VR
         for (auto& listener : mListeners)
             listener->onFrameUpdate(frame);
         VR::setLocatingSpacesAllowed(true);
-        //updateSpaces();
         if (mRecenter)
             recenter();
     }
@@ -112,15 +111,6 @@ namespace VR
 
     void Session::readSettings()
     {
-        auto seatedPlay = Settings::Manager::getBool("seated play", "VR");
-        if (VR::getSeatedPlay() != seatedPlay)
-        {
-            VR::setSeatedPlay(seatedPlay);
-            for (auto& listener : mListeners)
-                listener->onSeatedModeChanged();
-            resetEyeLevel();
-        }
-
         mHandDirectedMovement = Settings::Manager::getBool("hand directed movement", "VR");
 
         mHandsOffset.x() = (Settings::Manager::getFloat("hands offset x", "VR") - 0.5) * Constants::UnitsPerMeter;
@@ -141,7 +131,6 @@ namespace VR
         Log(Debug::Verbose) << "Set char height: " << height.asMeters();
         mCharHeight = height;
         computePlayerScale();
-        resetEyeLevel();
     }
 
     void Session::recenter()
@@ -149,12 +138,6 @@ namespace VR
         for (auto& listener : mListeners)
             listener->onRecenter();
         mRecenter = false;
-    }
-
-    void Session::resetEyeLevel()
-    {
-        for (auto& listener : mListeners)
-            listener->onEyeLevelReset();
     }
 
     void Session::instantTransition()

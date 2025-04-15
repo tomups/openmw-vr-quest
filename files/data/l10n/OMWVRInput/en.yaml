@@ -1,0 +1,86 @@
+InputPage: "OpenMW VR Input settings"
+InputPageDescription: "Additional settings related to VR."
+
+ControlsGroup: "VR Input Settings"
+
+SmoothTurn: "Smooth Turn"
+SmoothTurnDescription: |
+    Turn smoothly instead of in increments.
+
+SmoothTurnSensitivity: "Smooth Turn Sensitivity"
+SmoothTurnSensitivityDescription: |
+    Bigger number = turn faster
+    
+SnapTurnRate: "Snap Turn Rate"
+SnapTurnRateDescription: |
+    Number of degrees to turn per input.
+    
+UserBindingsGroup: "VR Input Bindings"
+UserBindingsGroupDescription: |
+    Click the binding on the right hand side to rebind. Note these bindings apply to motion controllers and are only possible to rebind when at least one motion controller is active.
+
+    
+PointerLeft_SettingName: "Left Hand Pointer"
+PointerLeft_SettingDescription: |
+    When held, activates the 3d pointer from the left hand
+
+PointerRight_SettingName: "Right Hand Pointer"
+PointerRight_SettingDescription: |
+    When held, activates the 3d pointer from the right hand
+
+LookLeft_SettingName: "Look Left"
+LookLeft_SettingDescription: |
+    Turns you left.
+
+LookRight_SettingName: "Look Right"
+LookRight_SettingDescription: |
+    Turns you right.
+
+MoveLeft_Alias_SettingName: "Move Left"
+MoveLeft_Alias_SettingDescription: |
+    Strafes you left
+
+MoveRight_Alias_SettingName: "Move Right"
+MoveRight_Alias_SettingDescription: |
+    Strafes you right
+
+MoveForward_Alias_SettingName: "Move Forward"
+MoveForward_Alias_SettingDescription: |
+    Moves you forward
+
+MoveBackward_Alias_SettingName: "Move Backward"
+MoveBackward_Alias_SettingDescription: |
+    Moves you forward
+
+Sneak_Alias_SettingName: "Sneak"
+Sneak_Alias_SettingDescription: |
+    Makes you sneak
+
+PointerActivate_SettingName: "3D Pointer Click"
+PointerActivate_SettingDescription: |
+    Activate what you are currently pointing at
+
+Recenter_SettingName: "Recenter"
+Recenter_SettingDescription: |
+    Recenters your view on your character, and moves any open menus to you.
+
+MetaMenu_SettingName: "Menus"
+MetaMenu_SettingDescription: |
+    Opens the VR version of the in-game menu.
+
+MenuBack_SettingName: "Menu back"
+MenuBack_SettingDescription: |
+    Exits out of the current menu, as if pressing ESC on the keyboard. Can be bound to the same input as Menus
+
+ToggleSneak_SettingName: "Toggle Sneak"
+ToggleSneak_SettingDescription: |
+    Toggles sneak if toggle sneak is enabled
+
+ToggleWeapon_SettingName: "Toggle Weapon"
+ToggleWeapon_SettingDescription: |
+    Readies / unreadies equipped weapon
+
+ToggleSpell_SettingName: "Toggle Spell"
+ToggleSpell_SettingDescription: |
+    Readies / unreadies equipped spell
+    

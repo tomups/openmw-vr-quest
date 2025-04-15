@@ -44,8 +44,6 @@ namespace VR
     bool getVR();
     bool getKBMouseModeActive();
     bool getSteamVR();
-    bool getSeatedPlay();
-    bool getStandingPlay();
     bool getControllerActive(XrPath controllerPath);
     XrPath getControllerInteractionProfile(XrPath controllerPath);
     bool getLeftControllerActive();
@@ -59,7 +57,6 @@ namespace VR
     void setVR(bool VR);
     void setControllerActive(XrPath controllerPath, XrPath interactionProfilePath, bool active);
     void setSteamVR(bool steamVR);
-    void setSeatedPlay(bool seated);
     void setSneakOffsetEnabled(bool enabled);
     void setPredictedDisplayTime(DisplayTime time);
     void setPredictedDisplayPeriod(DisplayTime time);
@@ -69,7 +66,6 @@ namespace VR
     void recenter();
     bool getShouldRecenterLua();
     void setShouldRecenterLua(bool arg);
-    void resetEyeLevel();
 }
 
 #endif

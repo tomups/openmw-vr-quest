@@ -390,62 +390,15 @@ namespace MWGui
         if (VR::getVR())
         {
             getWidget(mVRMirrorTextureEye, "VRMirrorTextureEye");
-            getWidget(mVRHudPosition, "VRHudPosition");
-            getWidget(mVRTooltipPosition, "VRTooltipPosition");
-            getWidget(mVRSnapAngle, "VRSnapAngle");
-            getWidget(mVRThumbstickUp, "VRThumbstickUp");
-            getWidget(mVRThumbstickDown, "VRThumbstickDown");
-            getWidget(mVRHeightCalibButton, "VRHeighCalib");
 
             mVRMirrorTextureEye->eventComboChangePosition
                 += MyGUI::newDelegate(this, &SettingsWindow::onVRMirrorTextureEyeChanged);
-            mVRHudPosition->eventComboChangePosition
-                += MyGUI::newDelegate(this, &SettingsWindow::onVRHudPositionChanged);
-            mVRTooltipPosition->eventComboChangePosition
-                += MyGUI::newDelegate(this, &SettingsWindow::onVRTooltipPositionChanged);
-            mVRSnapAngle->eventComboChangePosition += MyGUI::newDelegate(this, &SettingsWindow::onVRSnapAngleChanged);
-            mVRThumbstickUp->eventComboChangePosition
-                += MyGUI::newDelegate(this, &SettingsWindow::onVRThumbstickUpChanged);
-            mVRThumbstickDown->eventComboChangePosition
-                += MyGUI::newDelegate(this, &SettingsWindow::onVRThumbstickDownChanged);
-            mVRHeightCalibButton->eventMouseButtonClick
-                += MyGUI::newDelegate(this, &SettingsWindow::onVRHeightCalibButtonClicked);
 
             std::string mirrorTextureEye = Settings::Manager::getString("mirror texture eye", "VR");
             for (unsigned i = 0; i < mVRMirrorTextureEye->getItemCount(); i++)
                 if (Misc::StringUtils::ciEqual(
                         mirrorTextureEye, mVRMirrorTextureEye->getItemNameAt(i).asUTF8()))
                     mVRMirrorTextureEye->setIndexSelected(i);
-
-            std::string hudPosition = Settings::Manager::getString("hud position", "VR");
-            for (unsigned i = 0; i < mVRHudPosition->getItemCount(); i++)
-                if (Misc::StringUtils::ciEqual(hudPosition, mVRHudPosition->getItemNameAt(i).asUTF8()))
-                    mVRHudPosition->setIndexSelected(i);
-
-            std::string tooltipPosition = Settings::Manager::getString("tooltip position", "VR");
-            for (unsigned i = 0; i < mVRTooltipPosition->getItemCount(); i++)
-                if (Misc::StringUtils::ciEqual(tooltipPosition, mVRTooltipPosition->getItemNameAt(i).asUTF8()))
-                    mVRTooltipPosition->setIndexSelected(i);
-
-            double snapAngle = Settings::Manager::getDouble("snap angle", "VR");
-            for (unsigned i = 0; i < mVRSnapAngle->getItemCount(); i++)
-            {
-                std::string item = mVRSnapAngle->getItemNameAt(i);
-                double itemSnapAngle = 0.;
-                std::istringstream(item) >> itemSnapAngle;
-                if (itemSnapAngle == snapAngle)
-                    mVRSnapAngle->setIndexSelected(i);
-            }
-
-            std::string axisUpPosition = Settings::Manager::getString("utility axis up action", "VR");
-            for (unsigned i = 0; i < mVRThumbstickUp->getItemCount(); i++)
-                if (Misc::StringUtils::ciEqual(axisUpPosition, mVRThumbstickUp->getItemNameAt(i).asUTF8()))
-                    mVRThumbstickUp->setIndexSelected(i);
-
-            std::string axisDownPosition = Settings::Manager::getString("utility axis down action", "VR");
-            for (unsigned i = 0; i < mVRThumbstickDown->getItemCount(); i++)
-                if (Misc::StringUtils::ciEqual(axisDownPosition, mVRThumbstickDown->getItemNameAt(i).asUTF8()))
-                    mVRThumbstickDown->setIndexSelected(i);
         }
 
 //## VR_PATCH END
@@ -609,56 +562,6 @@ namespace MWGui
         settingString = Misc::StringUtils::lowerCase(settingString);
         Settings::Manager::setString("mirror texture eye", "VR", settingString);
         apply();
-    }
-
-    void SettingsWindow::onVRHudPositionChanged(MyGUI::ComboBox* _sender, size_t pos)
-    {
-        std::string settingString = _sender->getItemNameAt(pos);
-        settingString = Misc::StringUtils::lowerCase(settingString);
-        Settings::Manager::setString("hud position", "VR", settingString);
-        apply();
-    }
-
-    void SettingsWindow::onVRTooltipPositionChanged(MyGUI::ComboBox* _sender, size_t pos)
-    {
-        std::string settingString = _sender->getItemNameAt(pos);
-        settingString = Misc::StringUtils::lowerCase(settingString);
-        Settings::Manager::setString("tooltip position", "VR", settingString);
-        apply();
-    }
-
-    void SettingsWindow::onVRSnapAngleChanged(MyGUI::ComboBox* _sender, size_t pos)
-    {
-        std::string settingString = _sender->getItemNameAt(pos);
-        settingString = Misc::StringUtils::lowerCase(settingString);
-        Settings::Manager::setString("snap angle", "VR", settingString);
-        apply();
-    }
-
-    void SettingsWindow::onVRThumbstickUpChanged(MyGUI::ComboBox* _sender, size_t pos)
-    {
-        std::string settingString = _sender->getItemNameAt(pos);
-        settingString = Misc::StringUtils::lowerCase(settingString);
-        Settings::Manager::setString("utility axis up action", "VR", settingString);
-        apply();
-    }
-
-    void SettingsWindow::onVRThumbstickDownChanged(MyGUI::ComboBox* _sender, size_t pos)
-    {
-        std::string settingString = _sender->getItemNameAt(pos);
-        settingString = Misc::StringUtils::lowerCase(settingString);
-        Settings::Manager::setString("utility axis down action", "VR", settingString);
-        apply();
-    }
-
-    void SettingsWindow::onVRHeightCalibButtonClicked(MyGUI::Widget* _sender)
-    {
-        auto* im = dynamic_cast<MWVR::VRInputManager*>(MWBase::Environment::get().getInputManager().get());
-        if (im)
-        {
-            im->calibratePlayerHeight();
-            apply();
-        }
     }
 
 //## VR_PATCH END

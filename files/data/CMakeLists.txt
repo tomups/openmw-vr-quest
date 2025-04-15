@@ -48,7 +48,8 @@ set(BUILTIN_DATA_FILES
     l10n/OMWControls/fr.yaml
     l10n/OMWControls/ru.yaml
     l10n/OMWControls/sv.yaml
-    l10n/OMWVR/en.yaml
+    l10n/OMWVRInput/en.yaml
+    l10n/OMWVRUI/en.yaml
 
     # L10n for OpenMW menus and non-game-specific messages
     l10n/OMWEngine/de.yaml

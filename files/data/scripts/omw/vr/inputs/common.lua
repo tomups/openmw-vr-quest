@@ -104,7 +104,7 @@ local vrActions = {
 local inputActions = {
 }
 
-local function registerAction(path, type, func)
+local function registerInputAction(path, type, func)
     -- I wanted to use openmw.input's action system for this
     -- but it doesn't work during the main menu.
     
@@ -141,7 +141,7 @@ end
 -- Register an action for every input
 for path, type in pairs(supportedInteractionPaths.input) do
     if type == vr.INTERACTION_VALUE_TYPES.Boolean then
-        registerAction(
+        registerInputAction(
             path, 
             input.ACTION_TYPE.Boolean,
             function() 
@@ -149,7 +149,7 @@ for path, type in pairs(supportedInteractionPaths.input) do
             end
         )
     elseif type == vr.INTERACTION_VALUE_TYPES.Float then
-        registerAction(
+        registerInputAction(
             path, 
             input.ACTION_TYPE.Number,
             function() 
@@ -175,7 +175,7 @@ for path, type in pairs(supportedInteractionPaths.input) do
             neg = parent..'/down'
             pos = parent..'/up'
         end
-        registerAction(
+        registerInputAction(
             neg,
             input.ACTION_TYPE.Number,
             function() 
@@ -183,7 +183,7 @@ for path, type in pairs(supportedInteractionPaths.input) do
                 return (v < 0) and -v or 0
             end
         )
-        registerAction(
+        registerInputAction(
             pos,
             input.ACTION_TYPE.Number,
             function() 
@@ -440,23 +440,25 @@ bindingSection:subscribe(async:callback(function(_, id)
     return id
 end))
 
-local function boolSetting(key, default)
+local function boolSetting(key, default, argument)
     return {
         key = key,
         renderer = 'checkbox',
         name = key,
         description = key .. 'Description',
         default = default,
+        argument = argument,
     }
 end
 
-local function floatSetting(key, default)
+local function floatSetting(key, default, argument)
     return {
         key = key,
         renderer = 'number',
         name = key,
         description = key .. 'Description',
         default = default,
+        argument = argument,
     }
 end
 
@@ -511,8 +513,9 @@ local function registerTriggers()
     regExisting('ToggleWeapon')
     regExisting('ToggleSpell')
 end
+
 local function registerActions()
-    local reg = function(key, type, value, required, default)
+    local regAction = function(key, type, value)
         if not input.actions[key] then
             input.registerAction {
                 key = key,
@@ -523,6 +526,9 @@ local function registerActions()
                 defaultValue = value,
             }
         end
+    end
+    local reg = function(key, type, value, required, default)
+        regAction(key, type, value)
         bindSetting(key, 'action', default, required)
         -- Make sure our bindings are always fired first by setting up the binding right away
         setupValueBinding(key, required)
@@ -561,6 +567,16 @@ local function registerActions()
     regExistingRange('MoveForward')
     regExistingRange('MoveBackward')
     regExistingBool('Sneak')
+    
+    -- Reuse the LookLeft/LookRight actions for snap turning so we don't end up with two sets of bindings.
+    regAction('SnapTurnLeft', input.ACTION_TYPE.Boolean, false)
+    regAction('SnapTurnRight', input.ACTION_TYPE.Boolean, false)
+    input.bindAction('SnapTurnLeft', async:callback(function(dt, previous, lookLeft) 
+        return lookLeft > 0.6 or (previous and lookLeft > 0.4)
+    end), { 'LookLeft' })
+    input.bindAction('SnapTurnRight', async:callback(function(dt, previous, lookLeft) 
+        return lookLeft > 0.6 or (previous and lookLeft > 0.4)
+    end), { 'LookRight' })
 end
 
 -- The current .49 RC has a bug where actions defined during main menu won't transfer to in-game
@@ -574,8 +590,8 @@ local function registerSettingsPage()
     I.Settings.registerPage({
         key = settingsPageKey,
         l10n = l10nKey,
-        name = 'ControlsPage',
-        description = 'ControlsPageDescription',
+        name = 'InputPage',
+        description = 'InputPageDescription',
     })
 end
 
@@ -585,6 +601,7 @@ local function registerSettingsGroup()
         page = settingsPageKey,
         l10n = l10nKey,
         name = 'UserBindingsGroup',
+        description = 'UserBindingsGroupDescription',
         permanentStorage = true,
         settings = bindingsSettings,
     })
@@ -595,6 +612,8 @@ local function registerSettingsGroup()
         name = 'ControlsGroup',
         permanentStorage = true,
         settings = {
+            boolSetting('SmoothTurn', false),
+            floatSetting('SnapTurnRate', 30),
             floatSetting('SmoothTurnSensitivity', 2.0),
         },
     })

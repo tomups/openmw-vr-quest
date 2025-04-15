@@ -61,9 +61,9 @@ return {
         setNotificationConfig = function(config) vr._setLayerConfig('Notification', config) end,
         setNotificationPose = function(pose) vr._setLayerPose('Notification', pose) end,
         setHUDConfig = function(config) vr._setLayerConfig('HUD', config) end,
-        setHUDConfig = function(pose) vr._setLayerPose('HUD', pose) end,
+        setHUDPose = function(pose) vr._setLayerPose('HUD', pose) end,
         setTooltipConfig = function(config) vr._setLayerConfig('Tooltip', config) end,
-        setTooltipConfig = function(pose) vr._setLayerPose('Tooltip', pose) end,
+        setTooltipPose = function(pose) vr._setLayerPose('Tooltip', pose) end,
         setVirtualKeyboardConfig = function(config) vr._setLayerConfig('VirtualKeyboard', config) end,
         setVirtualKeyboardPose = function(pose) vr._setLayerPose('VirtualKeyboard', pose) end,
     }

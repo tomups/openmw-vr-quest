@@ -89,6 +89,7 @@ namespace XR
         XrSessionState mState = XR_SESSION_STATE_UNKNOWN;
         Stereo::Pose mReferenceWorldPose = {};
         std::array<std::shared_ptr<ReferenceSpace>, 3> mReferenceSpaces;
+        mutable std::map<std::pair<XrSpace, XrSpace>, VR::TrackingPose> mPoseCache;
 
         std::mutex mMutex;
         uint32_t mAcquiredResources = 0;

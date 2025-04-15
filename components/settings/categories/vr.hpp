@@ -33,31 +33,9 @@ namespace Settings
             makeMaxStrictSanitizerFloat(0.1) };
         SettingValue<bool> mHapticsEnabled{ mIndex, "VR", "haptics enabled" };
         SettingValue<bool> mHandDirectedMovement{ mIndex, "VR", "hand directed movement" };
-        SettingValue<std::string> mHudPosition{ mIndex, "VR", "hud position",
-            makeEnumSanitizerString({ "left wrist inner", "right wrist inner", "left wrist top", "right wrist top",
-                "top left", "top right", "bottom left", "bottom right" }) };
-        SettingValue<std::string> mTooltipPosition{ mIndex, "VR", "tooltip position",
-            makeEnumSanitizerString({ "left wrist inner", "right wrist inner", "left wrist top", "right wrist top",
-                "top left", "top right", "bottom left", "bottom right" }) };
-        SettingValue<float> mHudOffsetX{ mIndex, "VR", "hud offset x" };
-        SettingValue<float> mHudOffsetY{ mIndex, "VR", "hud offset y" };
-        SettingValue<float> mHudoffsetZ{ mIndex, "VR", "hud offset z" };
-        SettingValue<float> mTooltipOffsetX{ mIndex, "VR", "tooltip offset x" };
-        SettingValue<float> mTooltipOffsetY{ mIndex, "VR", "tooltip offset y" };
-        SettingValue<float> mTooltipOffsetZ{ mIndex, "VR", "tooltip offset z" };
         SettingValue<float> mHandsOffsetX{ mIndex, "VR", "hands offset x" };
         SettingValue<float> mHandsOffsetY{ mIndex, "VR", "hands offset y" };
         SettingValue<float> mHandsOffsetZ{ mIndex, "VR", "hands offset z" };
-        SettingValue<bool> mSeatedPlay{ mIndex, "VR", "seated play" };
-        SettingValue<bool> mSmoothTurning{ mIndex, "VR", "smooth turning" };
-        SettingValue<float> mSnapAngle{ mIndex, "VR", "snap angle" };
-        SettingValue<float> mSmoothTurnRate{ mIndex, "VR", "smooth turn rate" };
-        SettingValue<bool> mLeftHandedMode{ mIndex, "VR", "left handed mode" };
-        SettingValue<bool> mIntroSequenceComplete{ mIndex, "VR", "intro sequence complete" };
-        SettingValue<std::string> mUtilityAxisUpAction{ mIndex, "VR", "utility axis up action" };
-        SettingValue<std::string> mUtilityAxisDownAction{ mIndex, "VR", "utility axis down action" };
-        SettingValue<bool> mPhysicalSneakEnabled{ mIndex, "VR", "physical sneak enabled" };
-        SettingValue<float> mPhysicalSneakHeightOffset{ mIndex, "VR", "physical sneak height offset" };
         SettingValue<bool> mShow3DCrosshairs{ mIndex, "VR", "show 3D crosshairs" };
         SettingValue<bool> mUseXrLayerForHuds{ mIndex, "VR", "use xr layer for huds" };
     };

@@ -117,6 +117,7 @@ namespace XR
         shouldRender = frameState.shouldRender;
         predictedDisplayTime = frameState.predictedDisplayTime;
         predictedDisplayPeriod = frameState.predictedDisplayPeriod;
+        mPoseCache.clear();
     }
 
     void Session::syncFrameRender(VR::Frame& frame)
@@ -401,7 +402,6 @@ namespace XR
                 mAppShouldReadInput = true;
                 mXrSessionShouldStop = false;
                 VR::recenter();
-                VR::resetEyeLevel();
                 break;
             }
             default:
@@ -672,6 +672,11 @@ namespace XR
 
     VR::TrackingPose Session::locateSpace(XrSpace space, XrSpace referenceSpace) const
     {
+        {
+            auto it = mPoseCache.find(std::make_pair(space, referenceSpace));
+            if (it != mPoseCache.end())
+                return it->second;
+        }
         if (!VR::getLocatingSpacesAllowed())
             throw std::logic_error("locateSpace() called outside of frame sync");
         VR::TrackingPose pose = {};
@@ -707,6 +712,7 @@ namespace XR
         }
 
         pose.pose = fromXR(location.pose);
+        mPoseCache[std::make_pair(space, referenceSpace)] = pose;
         return pose;
     }
 

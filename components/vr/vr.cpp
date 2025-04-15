@@ -18,7 +18,6 @@ namespace VR
         bool sRecenterLua = true;
         bool sVRMode = false;
         bool sSteamVR = false;
-        bool sSeatedPlay = false;
         bool sLocatingSpacesAllowed = false;
         DisplayTime sPredictedDisplayTime = 0;
         DisplayTime sPredictedDisplayPeriod = 0;
@@ -59,16 +58,6 @@ namespace VR
     bool getSteamVR()
     {
         return sSteamVR;
-    }
-
-    bool getSeatedPlay()
-    {
-        return sSeatedPlay;
-    }
-
-    bool getStandingPlay()
-    {
-        return !sSeatedPlay;
     }
 
     bool getControllerActive(XrPath path)
@@ -139,11 +128,6 @@ namespace VR
         sSteamVR = steamVR;
     }
 
-    void setSeatedPlay(bool seated)
-    {
-        sSeatedPlay = seated;
-    }
-
     void setSneakOffsetEnabled(bool enabled) 
     {
         if (sVRMode)
@@ -183,12 +167,6 @@ namespace VR
     void setShouldRecenterLua(bool arg) 
     {
         sRecenterLua = arg;
-    }
-
-    void resetEyeLevel()
-    {
-        if (sVRMode)
-            Session::instance().resetEyeLevel();
     }
 
     struct Interaction

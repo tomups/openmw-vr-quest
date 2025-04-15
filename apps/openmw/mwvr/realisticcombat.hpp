@@ -50,7 +50,7 @@ namespace MWVR
         class StateMachine
         {
         public:
-            StateMachine(MWWorld::Ptr ptr, std::string_view poseAction);
+            StateMachine(MWWorld::Ptr ptr, std::string_view space);
             void update(float dt, bool enabled);
             MWWorld::Ptr ptr() { return mPtr; }
 
@@ -104,7 +104,7 @@ namespace MWVR
             bool mEnabled = false;
 
             osg::Vec3 mPreviousPosition{ 0.f, 0.f, 0.f };
-            std::string mTrackingAction = 0;
+            std::string mSpace;
         };
 
     }
