@@ -58,7 +58,11 @@ Sneak_Alias_SettingDescription: |
 
 PointerActivate_SettingName: "3D Pointer Click"
 PointerActivate_SettingDescription: |
-    Activate what you are currently pointing at
+    Activate what you are currently pointing at. Note that this will pick/probe locks if you are currently holding a lockpick/probe.
+
+Use_Alias_SettingName: "Use"
+Use_Alias_SettingDescription: |
+    Use the item curently in your hand. Note: use 3D Pointer Click for lockpicks/probes
 
 Recenter_SettingName: "Recenter"
 Recenter_SettingDescription: |
@@ -72,15 +76,27 @@ MenuBack_SettingName: "Menu back"
 MenuBack_SettingDescription: |
     Exits out of the current menu, as if pressing ESC on the keyboard. Can be bound to the same input as Menus
 
-ToggleSneak_SettingName: "Toggle Sneak"
-ToggleSneak_SettingDescription: |
+ToggleSneak_Alias_SettingName: "Toggle Sneak"
+ToggleSneak_Alias_SettingDescription: |
     Toggles sneak if toggle sneak is enabled
 
-ToggleWeapon_SettingName: "Toggle Weapon"
-ToggleWeapon_SettingDescription: |
+ToggleWeapon_Alias_SettingName: "Toggle Weapon"
+ToggleWeapon_Alias_SettingDescription: |
     Readies / unreadies equipped weapon
 
-ToggleSpell_SettingName: "Toggle Spell"
-ToggleSpell_SettingDescription: |
+ToggleSpell_Alias_SettingName: "Toggle Spell"
+ToggleSpell_Alias_SettingDescription: |
     Readies / unreadies equipped spell
-    
+
+Inventory_Alias_SettingName: "Inventory"
+Inventory_Alias_SettingDescription: |
+    Opens the inventory screen
+
+AlwaysRun_Alias_SettingName: "Always Run"
+AlwaysRun_Alias_SettingDescription: |
+    Inverts run/walk behavior to be running by default. Note that this makes no difference when moving using thumbsticks.
+    But does matter when enabling auto move.
+
+AutoMove_Alias_SettingName: "Auto Move"
+AutoMove_Alias_SettingDescription: |
+    Causes the character to move directly forward without the need for movement inputs.

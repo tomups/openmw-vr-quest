@@ -57,19 +57,13 @@ namespace MWVR
                 MWBase::Environment::get().getWorld()->enableVRPointer(
                     mPointerLeft && VR::getLeftControllerActive(), mPointerRight && VR::getRightControllerActive());
 
-            bool leftHanded = Settings::Manager::getBool("left handed mode", "VR");
             std::string action = "";
-            if (guiMode)
-            {
-                if (leftHanded)
-                    action = VR::Paths::LEFT_HAND_AIM;
-                else
-                    action = VR::Paths::RIGHT_HAND_AIM;
-            }
-            else if (mPointerRight)
+            if (mPointerRight)
                 action = VR::Paths::RIGHT_HAND_AIM;
             else if (mPointerLeft)
                 action = VR::Paths::LEFT_HAND_AIM;
+            else if (guiMode)
+                action = VR::Paths::RIGHT_HAND_AIM;
             if (!action.empty())
                 source = mXRInput->getSpace(action);
         }
@@ -265,7 +259,8 @@ namespace MWVR
 
     void VRInputManager::onSpaceUpdate() 
     {
-        if (!VR::getKBMouseModeActive())
+        if (!VR::getKBMouseModeActive()
+            && MWBase::Environment::get().getStateManager()->getState() == MWBase::StateManager::State_Running)
             updateRealisticCombat(mDt);
     }
 

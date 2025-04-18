@@ -37,14 +37,20 @@ local function getActive(paths)
 end
 
 local function bindingLabel(isRecording, binding)
+    local res = nil
     if isRecording then
-        return interfaceL10n('N/A')
+        res = interfaceL10n('N/A')
     elseif binding and binding.paths then
         local activePath = getActive(binding.paths)
-        if activePath then return common.getInteractionName(activePath) end
+        if activePath then 
+            res = common.getInteractionName(activePath) 
+        end
     end
     
-    return interfaceL10n('None')
+    if not res then 
+        res = interfaceL10n('None') 
+    end
+    return res
 end
 
 local bindingsVersion = 1
@@ -81,7 +87,7 @@ end
 
 local function setActivePath(paths, path)
     local controller = common.controllers.RIGHT_HAND
-    if string.find(paths, '/left/') then
+    if string.find(path, '/left/') then
         controller = common.controllers.LEFT_HAND
     end
     local profile = vr.getInteractionProfileOfController(controller)

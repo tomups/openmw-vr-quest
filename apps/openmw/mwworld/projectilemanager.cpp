@@ -61,6 +61,7 @@
 //## VR_PATCH BEGIN
 #include <components/vr/vr.hpp>
 #include "../mwvr/vrutil.hpp"
+#include "../mwvr/openxrinput.hpp"
 
 //## VR_PATCH END
 namespace
@@ -288,7 +289,7 @@ namespace MWWorld
         if (VR::getVR() && !VR::getKBMouseModeActive()
             && caster == MWBase::Environment::get().getWorld()->getPlayerPtr())
         {
-            auto tp = MWVR::Util::getXrPose(VR::Paths::RIGHT_HAND_AIM);
+            auto tp = MWVR::OpenXRInput::instance().getSpace(VR::Paths::RIGHT_HAND_AIM)->locateInWorld();
             if (!!tp.status)
             {
                 pos = tp.pose.position.asMWUnits();

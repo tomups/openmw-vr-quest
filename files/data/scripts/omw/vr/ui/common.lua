@@ -44,7 +44,7 @@ local function createDerivedSpaces()
 
     I.vrspaces.createDerivedSpace(
         'RightWristInner', 
-        I.vrspaces.actionSpaces.LeftHandAim,
+        I.vrspaces.actionSpaces.RightHandAim,
         {
             position = util.vector3(-0.09, -0.200, -0.033) * I.vrspaces.UnitsPerMeter,
             orientation = util.transform.rotate(-math.pi/2, util.vector3(0, 0, 1))
@@ -53,7 +53,7 @@ local function createDerivedSpaces()
 
     I.vrspaces.createDerivedSpace(
         'RightWristTop', 
-        I.vrspaces.actionSpaces.LeftHandAim,
+        I.vrspaces.actionSpaces.RightHandAim,
         {
             position = util.vector3(0.0, -0.200, 0.066) * I.vrspaces.UnitsPerMeter
         }

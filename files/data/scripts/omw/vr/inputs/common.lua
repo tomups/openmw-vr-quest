@@ -488,7 +488,7 @@ end
 
 
 local function registerTriggers()
-    local reg = function(key, required, long)
+    local regTrigger = function(key)
         if not input.triggers[key] then
             input.registerTrigger {
                 key = key,
@@ -496,8 +496,11 @@ local function registerTriggers()
                 name = key .. '_name',
                 description = key .. '_description',
             }
-            bindSetting(key, 'trigger', getDefaultBindings(key..'_VR'), required, long)
         end
+    end
+    local reg = function(key, required, long)
+        regTrigger(key)
+        bindSetting(key, 'trigger', getDefaultBindings(key..'_VR'), required, long)
     end
 
     reg('PointerActivate', true)
@@ -506,12 +509,22 @@ local function registerTriggers()
     --reg('MenuSelect')
     reg('MenuBack')
     
-    local regExisting = function(key, required)
-        bindSetting(key, 'trigger', getDefaultBindings(key..'_VR'), required)
+    
+    -- Existing triggers.
+    -- The intent was to only add the bindings for these existing triggers.
+    -- But upstream isn't registering them until loading a game...
+    local regExisting = function(key, required, long)
+        local key2 = key..'_Alias'
+        alias[key2] = key
+        regTrigger(key2)
+        bindSetting(key2, 'trigger', getDefaultBindings(key..'_VR'), required, long)
     end
     regExisting('ToggleSneak')
     regExisting('ToggleWeapon')
     regExisting('ToggleSpell')
+    regExisting('Inventory')
+    regExisting('AlwaysRun')
+    regExisting('AutoMove')
 end
 
 local function registerActions()
@@ -545,8 +558,8 @@ local function registerActions()
     regRange('LookRight')
     
     -- Existing actions.
-    -- The intent is to only add bindings for these,
-    -- but the upstream scripts don't define them until a game is loaded, which doesn't work for me.
+    -- The intent was to only add the bindings for these existing actions.
+    -- But upstream isn't registering them until loading a game...
     local regExistingBool = function(key, required)
         local key2 = key..'_Alias'
         alias[key2..'_VR'] = key..'_VR'
@@ -567,6 +580,7 @@ local function registerActions()
     regExistingRange('MoveForward')
     regExistingRange('MoveBackward')
     regExistingBool('Sneak')
+    regExistingBool('Use')
     
     -- Reuse the LookLeft/LookRight actions for snap turning so we don't end up with two sets of bindings.
     regAction('SnapTurnLeft', input.ACTION_TYPE.Boolean, false)
@@ -641,7 +655,11 @@ local longPressTime = 2.0 / 3.0
 local function tryTriggers(path, long)
     for id, key in pairs (activeTriggerBindings[path] or {}) do
         if (isLong[id] and long) or (not isLong[id] and not long) then
-            input.activateTrigger(key)
+            if alias[key] then 
+                input.activateTrigger(alias[key])
+            else
+                input.activateTrigger(key)
+            end
         end
     end
     tryManualTriggers(path)

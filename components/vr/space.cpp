@@ -66,6 +66,11 @@ namespace VR
 
     Space::Space() {}
 
+    VR::TrackingPose Space::locate(ReferenceSpace reference) const
+    {
+        return locate(*Session::instance().getReferenceSpace(reference));
+    }
+
     DerivedSpace::DerivedSpace(std::shared_ptr<Space> reference, Stereo::Pose pose)
         : mReference(reference)
         , mPose(pose)

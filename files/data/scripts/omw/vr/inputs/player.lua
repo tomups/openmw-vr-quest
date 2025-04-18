@@ -13,6 +13,7 @@ local core = require('openmw.core')
 local async = require('openmw.async')
 local types = require('openmw.types')
 local Player = types.Player
+local Actor = types.Actor
 local self = require('openmw.self')
 local common = require('scripts.omw.vr.inputs.common')
 
@@ -97,10 +98,15 @@ end
 updateControlsSettings()
 common.controlsSection:subscribe(async:callback(updateControlsSettings))
 
+local startUse = false
+local function pointerMode()
+    return pointerLeft or pointerRight or not controlsAllowed()
+end
 
-
-input.registerTriggerHandler('PointerActivate', async:callback(function() 
-    vr._pointerActivate() 
+input.registerTriggerHandler('PointerActivate', async:callback(function()
+    if pointerMode() then
+        vr._pointerActivate() 
+    end
 end))
 
 input.registerTriggerHandler('Activate', async:callback(function() 
@@ -125,8 +131,8 @@ end))
 
 input.registerActionHandler('Use', async:callback(function(v)
     -- Use should double as menu interactions when in GUI mode or the pointer is active.
-    if v and (core.isWorldPaused() or pointerLeft or pointerRight) then 
-        vr._pointerActivate() 
+    if v and not pointerMode() then 
+        startUse = true
     end
 end))
 
@@ -144,6 +150,53 @@ input.registerActionHandler('LookRight', async:callback(function(v)
     yawChanged = true
 end))
 
+
+-- A few functions duplicated from playercontrols.lua
+-- We are overriding combat controls and have to change these funtions
+-- to respect pointer mode
+local function checkNotWerewolf()
+    if Player.isWerewolf(self) then
+        ui.showMessage(core.getGMST('sWerewolfRefusal'))
+        return false
+    else
+        return true
+    end
+end
+
+input.registerTriggerHandler('ToggleSpell', async:callback(function()
+    if pointerMode() then return end
+    if Actor.getStance(self) == Actor.STANCE.Spell then
+        Actor.setStance(self, Actor.STANCE.Nothing)
+    elseif Player.getControlSwitch(self, Player.CONTROL_SWITCH.Magic) then
+        if checkNotWerewolf() then
+            Actor.setStance(self, Actor.STANCE.Spell)
+        end
+    end
+end))
+
+input.registerTriggerHandler('ToggleWeapon', async:callback(function()
+    if pointerMode() then return end
+    if Actor.getStance(self) == Actor.STANCE.Weapon then
+        Actor.setStance(self, Actor.STANCE.Nothing)
+    elseif Player.getControlSwitch(self, Player.CONTROL_SWITCH.Fighting) then
+        Actor.setStance(self, Actor.STANCE.Weapon)
+    end
+end))
+
+local function processAttacking()
+    if pointerMode() then return end
+    -- for spell-casting, set controls.use to true for exactly one frame
+    -- otherwise spell casting is attempted every frame while Use is true
+    if Actor.getStance(self) == Actor.STANCE.Spell then
+        self.controls.use = startUse and 1 or 0
+    elseif Actor.getStance(self) == Actor.STANCE.Weapon and input.getBooleanActionValue('Use') and not pointerMode() then
+        self.controls.use = 1
+    else
+        self.controls.use = 0
+    end
+    startUse = false
+end
+
 local function onFrame(dt)
     
     common.onFrame(dt)
@@ -157,7 +210,11 @@ local function onFrame(dt)
         local yawChange = (lookRight - lookLeft) * dt * smoothTurnSensitivity
         self.controls.yawChange = yawChange
     end
+    
+    processAttacking()
 end
+
+I.Controls.overrideCombatControls(true)
 
 return {
     engineHandlers = {

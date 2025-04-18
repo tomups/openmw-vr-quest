@@ -22,7 +22,6 @@ namespace MWVR
         std::pair<MWWorld::Ptr, float> getWeaponTarget();
         float getPoseTarget(MWRender::RayResult& result, const Stereo::Pose& pose, bool allowTelekinesis, bool ignore3DUI = true);
         Stereo::Pose getNodePose(const osg::Node* node);
-        VR::TrackingPose getXrPose(const std::string& path);
         VRAnimation* getPlayerAnimation();
     }
 

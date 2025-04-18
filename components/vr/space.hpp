@@ -15,6 +15,7 @@ namespace VR
         void operator=(const Space&) = delete;
 
         virtual TrackingPose locate(const Space& reference) const = 0;
+        TrackingPose locate(ReferenceSpace reference) const;
         virtual TrackingPose locateInWorld() const = 0;
     };
 

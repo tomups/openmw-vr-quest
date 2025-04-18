@@ -129,12 +129,13 @@ namespace MWVR
 
         void StateMachine::update(float dt, bool enabled)
         {
-            auto tp = MWVR::Util::getXrPose(mSpace);
-            auto& pose = tp.pose;
+            // Use the local reference space for swing state management to avoid the player character 
+            // moving around the stage interfering with the calculated swing speed.
+            auto tp = OpenXRInput::instance().getSpace(mSpace)->locate(VR::ReferenceSpace::Local);
             auto weaponType = MWBase::Environment::get().getWorld()->getActiveWeaponType();
 
             enabled = enabled && isMeleeWeapon(weaponType);
-            enabled = enabled && !!tp.status;
+            enabled = enabled && !!tp.status && !!tp.status;
 
             if (mEnabled != enabled)
             {
@@ -149,7 +150,7 @@ namespace MWVR
             // First determine direction of different swing types
 
             // Discover orientation of weapon
-            osg::Quat weaponDir = pose.orientation;
+            osg::Quat weaponDir = tp.pose.orientation;
 
             // Morrowind animations do not hold weapons at natural angles, so i rotate the hand forward
             // to get a more natural angle on the weapon to allow more comfortable combat.
@@ -173,11 +174,11 @@ namespace MWVR
             // Theoretically, the player's hand really could be at 0,0,0
             // but that's a super rare case so whatever.
             if (mPreviousPosition == osg::Vec3(0.f, 0.f, 0.f))
-                mPreviousPosition = pose.position.asMeters();
+                mPreviousPosition = tp.pose.position.asMeters();
 
-            osg::Vec3 movement = pose.position.asMeters() - mPreviousPosition;
+            osg::Vec3 movement = tp.pose.position.asMeters() - mPreviousPosition;
             mMovementSinceEnteredState += movement.length();
-            mPreviousPosition = pose.position.asMeters();
+            mPreviousPosition = tp.pose.position.asMeters();
             osg::Vec3 swingVector = movement / dt;
             osg::Vec3 swingDirection = swingVector;
             swingDirection.normalize();
@@ -345,7 +346,7 @@ namespace MWVR
 
             auto victim = MWBase::Environment::get().getWorld()->getVRMeleeHitContact(mPtr);
 
-            if (victim)
+            if (victim && victim->first.getClass().isActor())
             {
                 auto hit = mPtr.getClass().evaluateHit(mPtr, victim);
                 transition_swingingToImpact(hit.mVictim, hit.mHitPosition, hit.mSuccess);
