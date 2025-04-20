@@ -35,9 +35,7 @@ namespace MWVR
             osg::ref_ptr<osgViewer::ScreenCaptureHandler> screenCaptureHandler,
             const std::filesystem::path& userFile, bool userFileExists,
             const std::filesystem::path& userControllerBindingsFile,
-            const std::filesystem::path& controllerBindingsFile, bool grab,
-            const std::filesystem::path& xrControllerSuggestionsFile,
-            const std::filesystem::path& defaultXrControllerSuggestionsFile);
+            const std::filesystem::path& controllerBindingsFile, bool grab);
 
         virtual ~VRInputManager();
 

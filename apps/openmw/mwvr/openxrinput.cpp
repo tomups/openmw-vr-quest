@@ -10,8 +10,6 @@
 #include <components/xr/tracking.hpp>
 #include <components/xr/interactionprofiles.hpp>
 
-#include <iostream>
-#include <sstream>
 #include <set>
 
 #include <extern/oics/tinyxml.h>
@@ -55,10 +53,7 @@ namespace MWVR
         assert(sXrInput);
         return *sXrInput;
     }
-    OpenXRInput::OpenXRInput(const std::filesystem::path& xrControllerSuggestionsFile,
-        const std::filesystem::path& defaultXrControllerSuggestionsFile)
-        : mXrControllerSuggestionsFile(xrControllerSuggestionsFile)
-        , mDefaultXrControllerSuggestionsFile(defaultXrControllerSuggestionsFile)
+    OpenXRInput::OpenXRInput()
     {
         assert(!sXrInput);
         sXrInput = this;

@@ -199,13 +199,12 @@ namespace MWVR
         osg::ref_ptr<osgViewer::ScreenCaptureHandler> screenCaptureHandler,
         const std::filesystem::path& userFile, bool userFileExists,
         const std::filesystem::path& userControllerBindingsFile, const std::filesystem::path& controllerBindingsFile,
-        bool grab, const std::filesystem::path& xrControllerSuggestionsFile,
-        const std::filesystem::path& defaultXrControllerSuggestionsFile)
+        bool grab)
         : MWInput::InputManager(window, viewer, screenCaptureHandler, userFile, userFileExists,
             userControllerBindingsFile, controllerBindingsFile, grab)
         , mOSGViewer(viewer)
         , mVRPointer(nullptr)
-        , mXRInput(new OpenXRInput(xrControllerSuggestionsFile, defaultXrControllerSuggestionsFile))
+        , mXRInput(new OpenXRInput())
     {
 
         sInputManager = this;

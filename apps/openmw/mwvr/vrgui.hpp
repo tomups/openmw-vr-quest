@@ -3,11 +3,9 @@
 
 #include <MyGUI_Widget.h>
 #include <array>
-#include <chrono>
 #include <map>
 #include <set>
 #include <mutex>
-#include <variant>
 
 #include <osg/Camera>
 #include <osg/Geometry>
@@ -182,7 +180,7 @@ namespace MWVR
 
         static VRGUIManager& instance();
 
-        VRGUIManager(Resource::ResourceSystem* resourceSystem, osg::Group* rootNode);
+        VRGUIManager(osg::Group* rootNode);
 
         ~VRGUIManager(void);
 
@@ -245,7 +243,6 @@ namespace MWVR
         VRGUILayer& getLayer(const std::string& layer);
 
         osg::ref_ptr<osgViewer::Viewer> mOsgViewer;
-        Resource::ResourceSystem* mResourceSystem;
 
         osg::ref_ptr<osg::Group> mRootNode = nullptr;
         osg::ref_ptr<osg::Group> mGeometries = new osg::Group;

@@ -755,9 +755,8 @@ namespace MWVR
         VRGUIManager* mManager;
     };
 
-    VRGUIManager::VRGUIManager(Resource::ResourceSystem* resourceSystem, osg::Group* rootNode)
-        : mResourceSystem(resourceSystem)
-        , mRootNode(rootNode)
+    VRGUIManager::VRGUIManager(osg::Group* rootNode)
+        : mRootNode(rootNode)
     {
         if (!sManager)
             sManager = this;

@@ -66,8 +66,7 @@ namespace MWVR
         static OpenXRInput& instance();
 
         //! Default constructor, creates two ActionSets: Gameplay and GUI
-        OpenXRInput(const std::filesystem::path& xrControllerSuggestionsFile,
-            const std::filesystem::path& defaultXrControllerSuggestionsFile);
+        OpenXRInput();
         void createActionSets();
         void createLuaActions();
         void createPoseActions();
@@ -89,9 +88,6 @@ namespace MWVR
     protected:
         void onFrameUpdate(VR::Frame&) override;
 
-        std::filesystem::path mXrControllerSuggestionsFile;
-        std::filesystem::path mDefaultXrControllerSuggestionsFile;
-        //std::shared_ptr<XR::AxisDeadzone> mDeadzone{ std::make_shared<XR::AxisDeadzone>() };
         std::map<std::string, std::shared_ptr<VR::Space>> mSpaces{};
         std::map<std::string, std::string> mInteractionProfileLocalNames{};
         std::map<MWActionSet, XR::ActionSet> mActionSets{};

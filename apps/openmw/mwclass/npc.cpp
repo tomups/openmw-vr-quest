@@ -581,7 +581,11 @@ namespace MWClass
 
     MWWorld::MeleeHit Npc::evaluateHit(const MWWorld::Ptr& ptr, std::optional<std::pair<MWWorld::Ptr, osg::Vec3f>> victim) const
     {
-        MWWorld::MeleeHit result = { .mSuccess = true };
+        MWWorld::MeleeHit result = {
+            .mVictim = MWWorld::Ptr(),
+            .mHitPosition = osg::Vec3f(),
+            .mSuccess = true
+        };
         if (!victim)
             victim = findMeleeVictim(ptr);
         // Note that we return true in spite of an apparent failure to hit anything alive.

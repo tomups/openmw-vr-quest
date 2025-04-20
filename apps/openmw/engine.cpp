@@ -1289,36 +1289,9 @@ void OMW::Engine::configureVRPreScene(const std::filesystem::path& userFile, boo
     mViewer->getCamera()->setCullMaskLeft(cullMask);
     mViewer->getCamera()->setCullMaskRight(cullMask);
 
-    const std::string xrinputuserdefault = mCfgMgr.getUserConfigPath().string() + "/xrcontrollersuggestions.xml";
-    const std::string xrinputlocaldefault = mCfgMgr.getLocalPath().string() + "/xrcontrollersuggestions.xml";
-    const std::string xrinputglobaldefault = mCfgMgr.getGlobalPath().string() + "/xrcontrollersuggestions.xml";
-
-    std::string xrControllerSuggestions;
-    if (std::filesystem::exists(xrinputuserdefault))
-        xrControllerSuggestions = xrinputuserdefault;
-    else if (std::filesystem::exists(xrinputlocaldefault))
-        xrControllerSuggestions = xrinputlocaldefault;
-    else if (std::filesystem::exists(xrinputglobaldefault))
-        xrControllerSuggestions = xrinputglobaldefault;
-    else
-        xrControllerSuggestions = ""; // if it doesn't exist, pass in an empty string
-
-    std::string defaultXrControllerSuggestions;
-    if (std::filesystem::exists(xrinputlocaldefault))
-        defaultXrControllerSuggestions = xrinputlocaldefault;
-    else if (std::filesystem::exists(xrinputglobaldefault))
-        defaultXrControllerSuggestions = xrinputglobaldefault;
-    else
-        defaultXrControllerSuggestions = ""; // if it doesn't exist, pass in an empty string
-
-    Log(Debug::Verbose) << "xrinputuserdefault: " << xrinputuserdefault;
-    Log(Debug::Verbose) << "xrinputlocaldefault: " << xrinputlocaldefault;
-    Log(Debug::Verbose) << "xrinputglobaldefault: " << xrinputglobaldefault;
-
     mInputManager = std::make_unique<MWVR::VRInputManager>(mWindow, mViewer, mScreenCaptureHandler, userFile,
-        userFileExists, userControllerBindingsFile, controllerBindingsFile, mGrab, xrControllerSuggestions,
-        defaultXrControllerSuggestions);
-    mVrGUIManager = std::make_unique<MWVR::VRGUIManager>(mResourceSystem.get(), mViewer->getSceneData()->asGroup());
+        userFileExists, userControllerBindingsFile, controllerBindingsFile, mGrab);
+    mVrGUIManager = std::make_unique<MWVR::VRGUIManager>(mViewer->getSceneData()->asGroup());
 
     // Before the RenderingManager and associated infrastructure is created, we need to render directly into the stereo framebuffer
     mStereoManager->setShouldAttachMultiviewFramebufferToMainCamera(true);
