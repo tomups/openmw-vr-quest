@@ -961,7 +961,7 @@ elseif(NOT APPLE)
         INSTALL(FILES "${INSTALL_SOURCE}/defaults.bin" DESTINATION ".")
         INSTALL(FILES "${INSTALL_SOURCE}/overrides.bin" DESTINATION ".")
         INSTALL(FILES "${INSTALL_SOURCE}/gamecontrollerdb.txt" DESTINATION ".")
-        INSTALL(FILES "${INSTALL_SOURCE}/xrcontrollersuggestions.xml" DESTINATION ".")
+        INSTALL(FILES "${INSTALL_SOURCE}/openxrinteractionprofiles.xml" DESTINATION ".")
 
         INSTALL(DIRECTORY "${INSTALL_SOURCE}/resources" DESTINATION ".")
 

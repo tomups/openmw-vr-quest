@@ -168,28 +168,4 @@ namespace VR
     {
         sRecenterLua = arg;
     }
-
-    struct Interaction
-    {
-        enum ValueType
-        {
-            BOOLEAN,
-            FLOAT,
-            AXIS,
-            POSE
-        };
-
-        ValueType valueType;
-        std::string path;
-        std::optional<std::string> requiredExtension = std::nullopt;
-    };
-    using Interactions = std::vector<Interaction>;
-    using Controllers = std::map<std::string, Interactions>;
-    using InteractionProfiles = std::map<std::string, Controllers>;
-    constexpr const char* LEFT_HAND = "/user/hand/left";
-    constexpr const char* RIGHT_HAND = "/user/hand/right";
-
-    namespace
-    {
-    }
 }

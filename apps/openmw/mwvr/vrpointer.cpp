@@ -37,6 +37,7 @@
 #include "../mwworld/action.hpp"
 #include "../mwworld/class.hpp"
 #include "../mwworld/player.hpp"
+#include "../mwworld/inventorystore.hpp"
 
 namespace MWVR
 {

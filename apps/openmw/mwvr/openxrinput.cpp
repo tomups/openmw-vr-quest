@@ -41,45 +41,6 @@ namespace
     using Interactions = std::vector<Interaction>;
     using Controllers = std::map<std::string, Interactions>;
     using InteractionProfiles = std::vector<std::pair<std::vector<Controller>, Controllers>>;
-    constexpr const char* LEFT_HAND = "/user/hand/left";
-    constexpr const char* RIGHT_HAND = "/user/hand/right";
-    constexpr const char* BOTH_HANDS = "/user/hand/*";
-    constexpr const char* GAMEPAD = "/user/gamepad";
-
-    static Interaction::ValueType ParseValueType(const char* typeStr)
-    {
-        if (!typeStr)
-            return Interaction::BOOLEAN; // default/fallback
-
-        if (std::strcmp(typeStr, "BOOLEAN") == 0)
-            return Interaction::BOOLEAN;
-        if (std::strcmp(typeStr, "FLOAT") == 0)
-            return Interaction::FLOAT;
-        if (std::strcmp(typeStr, "AXIS") == 0)
-            return Interaction::AXIS;
-        if (std::strcmp(typeStr, "POSE") == 0)
-            return Interaction::POSE;
-
-        // Unknown or missing -> fallback
-        return Interaction::BOOLEAN;
-    }
-
-    static const char* ValueTypeToString(Interaction::ValueType valueType)
-    {
-        switch (valueType)
-        {
-            case Interaction::BOOLEAN:
-                return "BOOLEAN";
-            case Interaction::FLOAT:
-                return "FLOAT";
-            case Interaction::AXIS:
-                return "AXIS";
-            case Interaction::POSE:
-                return "POSE";
-            default:
-                return "UNKNOWN";
-        }
-    }
 
     InteractionProfiles interactionProfiles;
 

@@ -57,7 +57,7 @@ namespace VR
 
     private:
         std::shared_ptr<Space> mSpace;
-        mutable unsigned int mLastUpdate = -1;
+        //mutable unsigned int mLastUpdate = -1;
         mutable osg::Matrix mMatrix = osg::Matrix::identity();
     };
 }

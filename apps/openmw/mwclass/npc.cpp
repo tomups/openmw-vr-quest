@@ -572,8 +572,6 @@ namespace MWClass
         if (weaponslot != inv.end() && weaponslot->getType() == ESM::Weapon::sRecordId)
             weapon = *weaponslot;
 
-        MWBase::World* world = MWBase::Environment::get().getWorld();
-
         const float dist = MWMechanics::getMeleeWeaponReach(ptr, weapon);
         const std::pair<MWWorld::Ptr, osg::Vec3f> result = MWMechanics::getHitContact(ptr, dist);
         if (result.first.isEmpty()) // Didn't hit anything

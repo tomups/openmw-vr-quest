@@ -82,7 +82,7 @@ namespace MWVR
         std::unique_ptr<UserPointer> mVRPointer;
         std::unique_ptr<OpenXRInput> mXRInput;
         std::unique_ptr<RealisticCombat::StateMachine> mRealisticCombat;
-        bool mPointerActivation = false;
+        //bool mPointerActivation = false;
         bool mPointerLeft = true;
         bool mPointerRight = true;
         float mDt = 0.f;

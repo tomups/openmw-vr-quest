@@ -12,7 +12,7 @@ namespace
     constexpr const char* LEFT_HAND = "/user/hand/left";
     constexpr const char* RIGHT_HAND = "/user/hand/right";
     constexpr const char* BOTH_HANDS = "/user/hand/*";
-    constexpr const char* GAMEPAD = "/user/gamepad";
+    //constexpr const char* GAMEPAD = "/user/gamepad";
 
     // Note: LoadInteractionProfilesFromXML was mostly generated using ChatGPT
     //------------------------------------------------------------------------------

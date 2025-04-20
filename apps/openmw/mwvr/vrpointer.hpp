@@ -1,7 +1,6 @@
 #ifndef MWVR_POINTER_H
 #define MWVR_POINTER_H
 
-#include "../mwrender/npcanimation.hpp"
 #include "../mwrender/renderingmanager.hpp"
 
 #include <components/vr/space.hpp>
@@ -79,8 +78,8 @@ namespace MWVR
         osg::ref_ptr<osg::Node> mPointerTarget;
         float mDistanceToPointerTarget = -1.f;
         bool mCanPlaceObject = false;
-        bool mLeftHandEnabled = true;
-        bool mRightHandEnabled = true;
+        //bool mLeftHandEnabled = true;
+        //bool mRightHandEnabled = true;
         std::unique_ptr<Crosshair> mCrosshair;
     };
 }
