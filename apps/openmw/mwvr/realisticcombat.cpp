@@ -77,11 +77,12 @@ namespace MWVR
         }
 
         // Actions common to all transitions
-        void StateMachine::transition(SwingState newState)
+        void StateMachine::transition(SwingState newState, bool resetTime)
         {
             Log(Debug::Verbose) << "Transition:" << stateToString(mState) << "->" << stateToString(newState);
             mMaxSwingVelocity = 0.f;
-            mTimeSinceEnteredState = 0.f;
+            if (resetTime)
+                mTimeSinceEnteredState = 0.f;
             mMovementSinceEnteredState = 0.f;
             mState = newState;
         }
@@ -264,7 +265,7 @@ namespace MWVR
 
         void StateMachine::transition_cooldownToReady()
         {
-            transition(SwingState_Ready);
+            transition(SwingState_Ready, true);
         }
 
         void StateMachine::update_readyState()
@@ -275,7 +276,7 @@ namespace MWVR
 
         void StateMachine::transition_readyToLaunch()
         {
-            transition(SwingState_Launch);
+            transition(SwingState_Launch, false);
         }
 
         void StateMachine::playSwish()
@@ -322,13 +323,13 @@ namespace MWVR
 
         void StateMachine::transition_launchToReady()
         {
-            transition(SwingState_Ready);
+            transition(SwingState_Ready, false);
         }
 
         void StateMachine::transition_launchToSwing()
         {
             playSwish();
-            transition(SwingState_Swing);
+            transition(SwingState_Swing, true);
 
             // As a special case, update the new state immediately to allow
             // same-frame impacts.
@@ -356,7 +357,7 @@ namespace MWVR
         void StateMachine::transition_swingingToImpact(MWWorld::Ptr victim, osg::Vec3f hitPosition, bool success) 
         {
             mPtr.getClass().hit(mPtr, mStrength, mSwingType, victim, hitPosition, success);
-            transition(SwingState_Impact);
+            transition(SwingState_Impact, false);
         }
 
         void StateMachine::update_impactState()
@@ -367,7 +368,7 @@ namespace MWVR
 
         void StateMachine::transition_impactToCooldown()
         {
-            transition(SwingState_Cooldown);
+            transition(SwingState_Cooldown, false);
         }
 
     }

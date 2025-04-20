@@ -66,11 +66,15 @@ Use_Alias_SettingDescription: |
 
 Recenter_SettingName: "Recenter"
 Recenter_SettingDescription: |
-    Recenters your view on your character, and moves any open menus to you.
+    Recenters your view on your character, and moves any open menus to you.  Note, this is a long press action.
 
 MetaMenu_SettingName: "Menus"
 MetaMenu_SettingDescription: |
     Opens the VR version of the in-game menu.
+
+RadialMenu_SettingName: "RadialMenu"
+RadialMenu_SettingDescription: |
+    Opens the radial menu with access to the assigned quick key items. Note, this is a long press action.
 
 MenuBack_SettingName: "Menu back"
 MenuBack_SettingDescription: |

@@ -117,6 +117,12 @@ input.registerTriggerHandler('Recenter', async:callback(function()
     vr._recenter() 
 end))
 
+input.registerTriggerHandler('RadialMenu', async:callback(function() 
+    if not I.UI.getMode() then
+        I.UI.addMode('VrRadialMenu')
+    end
+end))
+
 input.registerActionHandler('SnapTurnLeft', async:callback(function(v) 
     if v and not smoothTurn then
         self.controls.yawChange = -snapTurnRate

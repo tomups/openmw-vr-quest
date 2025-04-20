@@ -360,40 +360,6 @@
 	</Entry>
 	<Entry>
 		<InteractionProfiles>
-			<InteractionProfile path="/interaction_profiles/yvr/touch_controller_yvr" requiredExtension="XR_YVR_controller_interaction" />
-		</InteractionProfiles>
-		<InteractionsMap>
-			<Controller path="/user/hand/*">
-				<Interaction type="POSE" path="/input/grip/pose" />
-				<Interaction type="POSE" path="/input/aim/pose" />
-				<Interaction type="BOOLEAN" path="/input/menu/click" />
-				<Interaction type="BOOLEAN" path="/input/trigger/click" />
-				<Interaction type="BOOLEAN" path="/input/trigger/touch" />
-				<Interaction type="FLOAT" path="/input/trigger/value" />
-				<Interaction type="BOOLEAN" path="/input/squeeze/click" />
-				<Interaction type="FLOAT" path="/input/squeeze/value" />
-				<Interaction type="AXIS" path="/input/thumbstick/x" />
-				<Interaction type="AXIS" path="/input/thumbstick/y" />
-				<Interaction type="BOOLEAN" path="/input/thumbstick/click" />
-				<Interaction type="BOOLEAN" path="/input/thumbstick/touch" />
-				<Interaction type="FLOAT" path="/output/haptic" />
-			</Controller>
-			<Controller path="/user/hand/left">
-				<Interaction type="BOOLEAN" path="/input/x/click" />
-				<Interaction type="BOOLEAN" path="/input/x/touch" />
-				<Interaction type="BOOLEAN" path="/input/y/click" />
-				<Interaction type="BOOLEAN" path="/input/y/touch" />
-			</Controller>
-			<Controller path="/user/hand/right">
-				<Interaction type="BOOLEAN" path="/input/a/click" />
-				<Interaction type="BOOLEAN" path="/input/a/touch" />
-				<Interaction type="BOOLEAN" path="/input/b/click" />
-				<Interaction type="BOOLEAN" path="/input/b/touch" />
-			</Controller>
-		</InteractionsMap>
-	</Entry>
-	<Entry>
-		<InteractionProfiles>
 			<InteractionProfile path="/interaction_profiles/google/daydream_controller" />
 		</InteractionProfiles>
 		<InteractionsMap>

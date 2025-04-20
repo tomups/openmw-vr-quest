@@ -508,6 +508,7 @@ local function registerTriggers()
     reg('MetaMenu', true)
     --reg('MenuSelect')
     reg('MenuBack')
+    reg('RadialMenu', false, true)
     
     
     -- Existing triggers.

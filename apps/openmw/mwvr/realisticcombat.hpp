@@ -60,7 +60,7 @@ namespace MWVR
             void playSwish();
             void reset();
 
-            void transition(SwingState newState);
+            void transition(SwingState newState, bool resetTime);
 
             void update_cooldownState();
             void transition_cooldownToReady();
