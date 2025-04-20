@@ -12,8 +12,9 @@ namespace VR
     {
     }
 
-    SpaceTransform::SpaceTransform(const SpaceTransform& transform, const osg::CopyOp&)
-        : mSpace(transform.mSpace)
+    SpaceTransform::SpaceTransform(const SpaceTransform& transform, const osg::CopyOp& copyop)
+        : osg::Transform(transform, copyop)
+        , mSpace(transform.mSpace)
     {
     }
 

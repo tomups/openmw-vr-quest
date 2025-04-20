@@ -71,7 +71,7 @@ namespace MWVR
         void updateCharHeight();
 
         void recenter();
-        void onRecenter() override { recenter(); };
+        void onRecenter() override { recenter(); }
         void onInteractionProfileActiveChanged(XrPath topLevelPath, bool isActive) override;
 
         void updateTrackingControllers();

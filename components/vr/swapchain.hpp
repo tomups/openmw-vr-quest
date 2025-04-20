@@ -3,6 +3,8 @@
 
 #include <cstdint>
 #include <string>
+#include <memory>
+#include <map>
 
 #include <osg/ref_ptr>
 

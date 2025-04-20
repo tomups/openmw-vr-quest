@@ -47,12 +47,12 @@ namespace VR
         SpaceTransform(std::shared_ptr<Space> space);
         SpaceTransform(const SpaceTransform& transform, const osg::CopyOp& op = osg::CopyOp::SHALLOW_COPY);
 
-        META_Node(VR, SpaceTransform);
+        META_Node(VR, SpaceTransform)
 
         void setSpace(std::shared_ptr<VR::Space> space);
 
-        bool computeLocalToWorldMatrix(osg::Matrix& matrix, osg::NodeVisitor*) const;
-        bool computeWorldToLocalMatrix(osg::Matrix& matrix, osg::NodeVisitor*) const;
+        bool computeLocalToWorldMatrix(osg::Matrix& matrix, osg::NodeVisitor*) const override;
+        bool computeWorldToLocalMatrix(osg::Matrix& matrix, osg::NodeVisitor*) const override;
         void onSpaceUpdate() override;
 
     private:

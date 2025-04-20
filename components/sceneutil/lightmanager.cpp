@@ -738,7 +738,6 @@ namespace SceneUtil
     void UBOManager::apply(osg::State& state) const
     {
         unsigned int frame = state.getFrameStamp()->getFrameNumber();
-        unsigned int index = frame % 2;
 
         if (!mInitLayout)
         {

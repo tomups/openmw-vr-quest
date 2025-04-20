@@ -3,6 +3,7 @@
 
 #include <osg/Math>
 #include <osg/Matrixf>
+#include <osg/Matrixd>
 #include <osg/Quat>
 #include <osg/Vec2f>
 #include <osg/Vec3f>

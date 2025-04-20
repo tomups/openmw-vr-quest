@@ -181,11 +181,11 @@ namespace MWVR
     }
 
     // When making a circle of a given radius of equally wide planes separated by a given angle, what is the width
-    static osg::Vec2 radiusAngleWidth(float radius, float angleRadian)
-    {
-        const float width = std::fabs(2.f * radius * tanf(angleRadian / 2.f));
-        return osg::Vec2(width, width);
-    }
+    // static osg::Vec2 radiusAngleWidth(float radius, float angleRadian)
+    // {
+    //     const float width = std::fabs(2.f * radius * tanf(angleRadian / 2.f));
+    //     return osg::Vec2(width, width);
+    // }
 
     class GUIRTT : public SceneUtil::RTTNode
     {

@@ -318,13 +318,8 @@ namespace Stereo
             mProjectionMatrix[1] = mView[1].perspectiveMatrix(mNear, mFar, false);
             if (SceneUtil::AutoDepth::isReversed())
             {
-                auto* ds = osg::DisplaySettings::instance().get();
-                const auto& projectionMatrix = mMainCamera->getProjectionMatrix();
-                auto s = ds->getEyeSeparation() * Constants::UnitsPerMeter;
                 mProjectionMatrixReverseZ[0] = mView[0].perspectiveMatrix(mNear, mFar, true);
                 mProjectionMatrixReverseZ[1] = mView[1].perspectiveMatrix(mNear, mFar, true);
-                auto refLeft = ds->computeLeftEyeProjectionImplementation(mMasterProjectionMatrix);
-                auto refRight = ds->computeRightEyeProjectionImplementation(mMasterProjectionMatrix);
             }
 
             View masterView;

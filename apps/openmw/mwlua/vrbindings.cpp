@@ -1,10 +1,7 @@
 #include "vrbindings.hpp"
-#include "../mwbase/environment.hpp"
 #include "../mwbase/world.hpp"
 #include "../mwvr/vrgui.hpp"
 #include "../mwvr/openxrinput.hpp"
-#include "../mwvr/vranimation.hpp"
-#include "../mwvr/vrutil.hpp"
 #include "../mwvr/vrinputmanager.hpp"
 #include <components/lua/utilpackage.hpp>
 #include <components/vr/vr.hpp>
@@ -98,15 +95,6 @@ namespace MWLua
                     pose.orientation = transform->mM.getRotate();
             }
             return pose;
-        }
-
-        MWVR::VRAnimation* getPlayerAnimation()
-        {
-            auto ptr = MWBase::Environment::get().getWorld()->getPlayerPtr();
-            auto* anim = MWBase::Environment::get().getWorld()->getAnimation(ptr);
-            if (!anim)
-                throw std::runtime_error("Player does not have an animation yet");
-            return static_cast<MWVR::VRAnimation*>(anim);
         }
 
         MWVR::LayerConfig layerConfigFromTable(const sol::table& options)

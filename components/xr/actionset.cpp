@@ -135,7 +135,7 @@ namespace XR
 
     void ActionSet::createPoseAction(const std::string& actionName, const std::string& localName, const std::string& id)
     {
-        auto res = mPoseActions.emplace(id, createXRAction(PoseAction::ActionType, actionName, localName));
+        mPoseActions.emplace(id, createXRAction(PoseAction::ActionType, actionName, localName));
         mAllInputActions.emplace(id, &mPoseActions.at(id));
     }
 

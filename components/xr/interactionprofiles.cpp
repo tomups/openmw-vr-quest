@@ -3,6 +3,8 @@
 #include <components/misc/strings/algorithm.hpp>
 #include <extern/oics/tinyxml.h>
 #include <set>
+#include <cstring>
+
 namespace
 {
     using InteractionProfilesXML = std::vector<std::pair<std::vector<XR::InteractionProfile>, XR::Controllers>>;

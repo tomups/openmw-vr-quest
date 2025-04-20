@@ -115,9 +115,9 @@ namespace XR
 
     //! Delay before a long-press action is activated (and regular press is discarded)
     //! TODO: Make this configurable?
-    static std::chrono::milliseconds gActionTime{ 666 };
+    //static std::chrono::milliseconds gActionTime{ 666 };
     //! Magnitude above which an axis action is considered active
-    static float gAxisEpsilon{ 0.01f };
+    //static float gAxisEpsilon{ 0.01f };
 
     HapticsAction::HapticsAction(std::unique_ptr<Action> action)
         : mAction{ std::move(action) }

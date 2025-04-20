@@ -276,7 +276,7 @@ namespace SceneUtil
 
         auto& getLightIndexMap(const osgUtil::CullVisitor* cv) { return getViewDependentData(cv).mLightIndexMap; }
 
-        auto& getUBOManager(const osgUtil::CullVisitor* cv) { return getViewDependentData(cv).mUBOManager; };
+        auto& getUBOManager(const osgUtil::CullVisitor* cv) { return getViewDependentData(cv).mUBOManager; }
 
         osg::Matrixf getSunlightBuffer(const osgUtil::CullVisitor* cv) const
         {

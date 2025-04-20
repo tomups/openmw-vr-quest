@@ -784,8 +784,6 @@ namespace MWVR
                 = osg::Quat(characterYawDiff, osg::Vec3d(0, 0, -1)) * mCharLocalSpacePose.orientation;
         }
         updateLocalSpaceWorldPose();
-        auto worldViewPose
-            = MWVR::OpenXRInput::instance().getSpace(MWVR::OpenXRInput::DefaultReferenceSpaceView)->locateInWorld();
         float worldYaw = 0.f;
         float worldYaw2 = 0.f;
         Stereo::getEulerAngles(pose.orientation, worldYaw, pitch, roll);

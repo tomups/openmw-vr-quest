@@ -4038,7 +4038,7 @@ namespace MWWorld
         auto* node = MWVR::VRInputManager::instance().vrAimNode();
         if (!node)
             return std::nullopt;
-            auto worldMatrix = osg::computeLocalToWorld(node->getParentalNodePaths()[0]);
+        auto worldMatrix = osg::computeLocalToWorld(node->getParentalNodePaths()[0]);
         auto result = mPhysics->getHitContact(ptr, worldMatrix.getTrans(), worldMatrix.getRotate(), distance);
         if (result.first.isEmpty())
             return std::nullopt;
