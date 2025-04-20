@@ -316,6 +316,8 @@ endif()
 if(BUILD_OPENMW_VR)
     ########### Import the OpenXR SDK
     # The openxr-sdk doesn't check the version of system jsoncpp so force it to build its bundled version to avoid errors.
+    # We have to set this policy otherwise cmake will ignore any options we try to set for the openxr build
+    cmake_policy(SET CMP0077 NEW)
     set(BUILD_WITH_SYSTEM_JSONCPP off) 
     set(DYNAMIC_LOADER off)
     include(FetchContent)
