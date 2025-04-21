@@ -68,11 +68,8 @@ if version < bindingsVersion then
 end
 
 -- Temp: Reset every time cause i keep breaking stuff
-bindingSection:reset()
 local userBindingsSection = common.userBindingsSection
-userBindingsSection:reset()
 local controlsSection = common.controlsSection
-controlsSection:reset()
 
 local recording = nil
 
