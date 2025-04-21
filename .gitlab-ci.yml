@@ -888,7 +888,7 @@ Windows_MSBuild_RelWithDebInfo:
     - .Windows_MSBuild_Base
   variables:
     multiview: "-M"
-    target: "openmw_vr openmw-launcher"
+    targets: "openmw_vr openmw-launcher"
     config: "RelWithDebInfo"
     # Gitlab can't successfully execute following binaries due to unknown reason
     # executables: "components-tests.exe,openmw-tests.exe,openmw-cs-tests.exe,openmw_detournavigator_navmeshtilescache_benchmark.exe"
