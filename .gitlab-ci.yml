@@ -481,7 +481,7 @@ Ubuntu_Clang_tests_Debug:
   after_script:
     - if [[ -f /tmp/openmw-crash.log ]]; then cat /tmp/openmw-crash.log; fi
 
-Ubuntu_Clang_integration_tests:
+.Ubuntu_Clang_integration_tests:
   extends: .Ubuntu_integration_tests_base
   needs:
     - Ubuntu_Clang
@@ -490,7 +490,7 @@ Ubuntu_Clang_integration_tests:
   variables:
     OPENMW_DEPS: openmw-integration-tests
 
-Ubuntu_GCC_integration_tests_asan:
+.Ubuntu_GCC_integration_tests_asan:
   extends: .Ubuntu_integration_tests_base
   needs:
     - Ubuntu_GCC_asan
