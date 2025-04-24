@@ -77,7 +77,8 @@ namespace MWInput
                 break;
             case A_Activate:
                 inputManager->resetIdleTime();
-                activate();
+                if (!VR::getVR())
+                    activate();
                 break;
             case A_MoveLeft:
             case A_MoveRight:

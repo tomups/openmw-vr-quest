@@ -20,6 +20,7 @@
 #include <components/vr/viewer.hpp>
 
 #include "../mwbase/environment.hpp"
+#include "../mwbase/luamanager.hpp"
 #include "../mwbase/soundmanager.hpp"
 #include "../mwbase/windowmanager.hpp"
 #include "../mwbase/world.hpp"
@@ -146,9 +147,10 @@ namespace MWVR
                     MWWorld::Player& player = MWBase::Environment::get().getWorld()->getPlayer();
                     if (!tryProbePick(target))
                     {
-                        auto action = target.getClass().activate(target, player.getPlayer());
-                        if(action)
-                            action->execute(player.getPlayer());
+                        MWBase::Environment::get().getLuaManager()->objectActivated(target, player.getPlayer());
+                        //auto action = target.getClass().activate(target, player.getPlayer());
+                        //if(action)
+                        //    action->execute(player.getPlayer());
                     }
                 }
             }
