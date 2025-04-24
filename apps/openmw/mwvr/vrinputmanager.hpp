@@ -63,7 +63,7 @@ namespace MWVR
         bool getPointerLeft() const;
         void setPointerRight(bool enabled);
         bool getPointerRight() const;
-        void pointerActivate();
+        void pointerActivate(bool injectMouseClickIfApplicable);
 
         MWWorld::Ptr getPointerTarget() const;
 

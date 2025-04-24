@@ -177,9 +177,9 @@ namespace MWVR
         return mPointerRight;
     }
 
-    void VRInputManager::pointerActivate() 
+    void VRInputManager::pointerActivate(bool injectMouseClickIfApplicable)
     {
-        if (MWVR::VRGUIManager::instance().hasFocus())
+        if (injectMouseClickIfApplicable && MWVR::VRGUIManager::instance().hasFocus())
         {
             if (MWVR::VRGUIManager::instance().injectMouseClick())
                 return;

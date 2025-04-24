@@ -104,13 +104,15 @@ local function pointerMode()
 end
 
 input.registerTriggerHandler('PointerActivate', async:callback(function()
+    print('pointeractivate')
     if pointerMode() then
-        vr._pointerActivate() 
+        vr._pointerActivate(true) 
     end
 end))
 
 input.registerTriggerHandler('Activate', async:callback(function() 
-    vr._pointerActivate() 
+    print('activate')
+    vr._pointerActivate(true) 
 end))
 
 input.registerTriggerHandler('Recenter', async:callback(function() 
@@ -137,8 +139,15 @@ end))
 
 input.registerActionHandler('Use', async:callback(function(v)
     -- Use should double as menu interactions when in GUI mode or the pointer is active.
-    if v and not pointerMode() then 
-        startUse = true
+    if v then
+        print('use')
+        if not pointerMode() then 
+            startUse = true
+        elseif I.vrinputs.isKBMouseMode() then
+            -- KB+Mouse Mode does not have the PointerActivate action
+            -- so we have to piggyback it on the default Use action
+            vr._pointerActivate(false)
+        end
     end
 end))
 
@@ -156,6 +165,9 @@ input.registerActionHandler('LookRight', async:callback(function(v)
     yawChanged = true
 end))
 
+local function isKBMouseMode()
+    return not (vr.isControllerActive(common.controllers.LEFT_HAND) or vr.isControllerActive(common.controllers.RIGHT_HAND))
+end
 
 -- A few functions duplicated from playercontrols.lua
 -- We are overriding combat controls and have to change these funtions
@@ -240,7 +252,7 @@ return {
         --- Interface version
         -- @field [parent=#VRUI] #number version
         version = 0,
-        
+        isKBMouseMode = isKBMouseMode,
         supportedInteractionPaths = supportedInteractionPaths,
         controllers = common.controllers,
     }

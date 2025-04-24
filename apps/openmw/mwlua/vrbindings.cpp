@@ -224,7 +224,8 @@ namespace MWLua
                                       bool enabled) { inputManager.setPointerRight(enabled); };
 
         api["_pointerActivate"]
-            = [&inputManager = MWVR::VRInputManager::instance()]() { inputManager.pointerActivate(); };
+            = [&inputManager = MWVR::VRInputManager::instance()](
+                  bool injectMouseClickIfApplicable) { inputManager.pointerActivate(injectMouseClickIfApplicable); };
 
         api["_recenter"] = []() { VR::recenter(); };
 

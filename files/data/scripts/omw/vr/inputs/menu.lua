@@ -207,7 +207,7 @@ end)
 -- Current .RC does not process actions during the main menu.
 -- So until a game has been loaded we have to manually deal with menu bindings.
 common.setManualTriggerCallback('PointerActivate', function()
-    vr._pointerActivate()
+    vr._pointerActivate(true)
 end)
 
 common.setManualTriggerCallback('MenuBack', async:callback(function()
