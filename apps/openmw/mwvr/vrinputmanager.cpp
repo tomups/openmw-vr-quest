@@ -187,6 +187,7 @@ namespace MWVR
             SDL_MouseButtonEvent arg;
             mMouseManager->mousePressed(arg, SDL_BUTTON_LEFT);
             mMouseManager->mouseReleased(arg, SDL_BUTTON_LEFT);
+            return;
         }
 
         if (mVRPointer)

@@ -526,6 +526,7 @@ local function registerTriggers()
     regExisting('Inventory')
     regExisting('AlwaysRun')
     regExisting('AutoMove')
+    regExisting('Jump')
 end
 
 local function registerActions()
