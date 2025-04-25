@@ -38,7 +38,7 @@ input.registerTriggerHandler('MetaMenu', async:callback(function()
 end))
 
 input.registerTriggerHandler('MenuBack', async:callback(function()
-    if I.UI.getMode() and core.isWorldPaused() then
+    if I.UI.getMode() or core.isWorldPaused() then
         -- There isn't a catch-all solution for closing the current menu item from lua.
         -- I.UI.removeMode can only remove modes, not dialogue boxes, the console, or the postprocessing hud.
         -- From VR I need a one click solution, so i am using this placeholder internal function.
