@@ -238,6 +238,15 @@ local function setupDefaults(modes)
     end
 
     -- Insert any per-mode configs here
+    if modeConfig.Book then
+        modeConfig.Book.backgroundOpacity = 0
+    end
+    if modeConfig.Journal then
+        modeConfig.Journal.backgroundOpacity = 0
+    end
+    if modeConfig.Scroll then
+        modeConfig.Scroll.backgroundOpacity = 0
+    end
 
     for mode, config in pairs(modeConfig) do
         I.vrui.setModeConfig(mode, config)
