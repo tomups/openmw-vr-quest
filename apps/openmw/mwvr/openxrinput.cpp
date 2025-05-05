@@ -193,6 +193,10 @@ namespace MWVR
             {
                 for (auto& interaction : ctrl.second)
                 {
+                    if (interaction.requiredExtension
+                        && !XR::Extensions::instance().extensionEnabled(interaction.requiredExtension.value()))
+                        continue;
+
                     XrPath interactionPath = XR_NULL_PATH;
                     CHECK_XRCMD(xrStringToPath(
                         XR::Instance::instance().xrInstance(), (ctrl.first + interaction.path).c_str(), &interactionPath));
