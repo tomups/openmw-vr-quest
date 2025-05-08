@@ -17,11 +17,11 @@ local function update()
 end
 
 local wasPaused = false
-local initialized = false
+local updateOnce = true
 local function onVRFrame()
-    if not initialized then 
+    if updateOnce then 
         update()
-        initialized = true
+        updateOnce = false
     end
     
     -- We only want to update the reference poses when the user enters GUI mode. Otherwise, the windows will be actively tracking
@@ -39,5 +39,11 @@ return {
     engineHandlers = {
         onVRFrame = onVRFrame,
         onVRRecenter = update,
+    },
+    
+    eventHandlers = {
+        UiModeChanged = function(data)
+            updateOnce = true
+        end,
     },
 }
