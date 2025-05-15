@@ -120,6 +120,10 @@ namespace SceneUtil
     // Recover the presumed texture type for the given texture unit
     // It may be set as a state attribute or it may come from the used texture's name
     const std::string& getTextureType(const osg::StateSet& stateset, const osg::Texture& texture, unsigned int texUnit);
+
+    // Fetches rotation from a matrix using a direction vector and matrix multiplication instead of directly
+    // reading rotation from the matrix. This is slightly slower but allows fetching rotation from a skewed matrix.
+    osg::Quat getRotationFromMatrix_SkewFriendly(const osg::Matrix& m);
 }
 
 #endif

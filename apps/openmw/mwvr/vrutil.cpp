@@ -37,8 +37,7 @@ namespace MWVR
 
         std::pair<MWWorld::Ptr, float> getTouchTarget()
         {
-            //std::string path = Settings::Manager::getBool("left handed mode", "VR") ? VR::Paths::LEFT_HAND_AIM : VR::Paths::RIGHT_HAND_AIM;
-            std::string path = VR::Paths::RIGHT_HAND_AIM;
+            std::string path = VR::getPreferredAimPath();
             auto space = OpenXRInput::instance().getSpace(path);
             MWRender::RayResult result;
 
@@ -93,7 +92,7 @@ namespace MWVR
             osg::Matrix worldMatrix = osg::computeLocalToWorld(node->getParentalNodePaths()[0]);
             Stereo::Pose pose;
             pose.position = Stereo::Position::fromMWUnits(worldMatrix.getTrans());
-            pose.orientation = worldMatrix.getRotate();
+            pose.orientation = SceneUtil::getRotationFromMatrix_SkewFriendly(worldMatrix);
             return pose;
         }
 

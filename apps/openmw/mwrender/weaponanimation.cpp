@@ -130,7 +130,7 @@ namespace MWRender
             if (node)
             {
                 auto worldMatrix = osg::computeLocalToWorld(node->getParentalNodePaths()[0]);
-                orient = worldMatrix.getRotate();
+                orient = SceneUtil::getRotationFromMatrix_SkewFriendly(worldMatrix);
             }
         }
 
@@ -178,7 +178,8 @@ namespace MWRender
             osg::NodePathList nodepaths = ammoNode->getParentalNodePaths();
             if (nodepaths.empty())
                 return;
-            osg::Vec3f launchPos = osg::computeLocalToWorld(nodepaths[0]).getTrans();
+            auto localToWorld = osg::computeLocalToWorld(nodepaths[0]);
+            osg::Vec3f launchPos = localToWorld.getTrans();
 
             float fProjectileMinSpeed = gmst.find("fProjectileMinSpeed")->mValue.getFloat();
             float fProjectileMaxSpeed = gmst.find("fProjectileMaxSpeed")->mValue.getFloat();
@@ -189,17 +190,16 @@ namespace MWRender
 //## VR_PATCH BEGIN
             if (VR::getVR() && VR::getRightControllerActive() && (actor == MWMechanics::getPlayer()))
             {
-                //if (Settings::Manager::getBool("skywind blaster workaround", "VR Debug"))
                 if (Settings::vrDebug().mSkywindBlasterWorkaround)
                 {
                     // Skywind has a blaster asset that doesn't properly orient projectiles before launching them
                     auto id = ammo->getCellRef().getRefId().getRefIdString();
                     if (id.find("sw_blastbolt") == std::string::npos)
-                        orient = osg::computeLocalToWorld(nodepaths[0]).getRotate();
+                        orient = SceneUtil::getRotationFromMatrix_SkewFriendly(localToWorld);
                 }
                 else
                 {
-                    orient = osg::computeLocalToWorld(nodepaths[0]).getRotate();
+                    orient = SceneUtil::getRotationFromMatrix_SkewFriendly(localToWorld);
                 }
             }
 //## VR_PATCH END

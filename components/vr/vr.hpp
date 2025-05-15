@@ -49,10 +49,12 @@ namespace VR
     bool getLeftControllerActive();
     bool getRightControllerActive();
     bool getLocatingSpacesAllowed();
+    bool getLeftHandedMode();
     Stereo::Unit getPlayerHeight();
     DisplayTime getPredictedDisplayTime();
     DisplayTime getPredictedDisplayPeriod();
     std::string getRuntimeName();
+    const char* getPreferredAimPath();
 
     void setVR(bool VR);
     void setControllerActive(XrPath controllerPath, XrPath interactionProfilePath, bool active);
@@ -62,6 +64,7 @@ namespace VR
     void setPredictedDisplayPeriod(DisplayTime time);
     void setLocatingSpacesAllowed(bool allowed);
     void setRuntimeName(std::string name);
+    void setLeftHandedMode(bool enable);
 
     void recenter();
     bool getShouldRecenterLua();

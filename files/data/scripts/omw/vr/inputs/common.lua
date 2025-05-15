@@ -194,9 +194,15 @@ for path, type in pairs(supportedInteractionPaths.input) do
     end
 end
 
+local handedness = 'RightHanded'
+if vr.isLeftHandedMode() then
+    print('Using left handed bindings')
+    handedness = 'LeftHanded'
+end
+
 -- Because controllers can look wildly different in terms of available interactions,
 -- we need per-profile default bindings.
-local defaultBindings = require('scripts.omw.vr.inputs.defaultBindings').defaultBindings
+local defaultBindings = require('scripts.omw.vr.inputs.defaultBindings'..handedness).defaultBindings
 
 local function getDefaultBindings(id)
     local defaults = {}
@@ -231,10 +237,10 @@ local controlsSection = storage.playerSection(controlsGroupKey)
 -- userBinding and binding are separate groups because bindingSection is the section
 -- used by the bindings renderer and doens't correspond to any entres in the settings page, 
 -- while userBindingsGroup is where we register the settings that appear on the page.
-local userBindingsGroupKey = settingsPageKey..'UserBindings'
+local userBindingsGroupKey = settingsPageKey..'UserBindings'..handedness
 local userBindingsSection = storage.playerSection(userBindingsGroupKey)
 
-local bindingSectionKey = settingsPageKey..'Bindings'
+local bindingSectionKey = settingsPageKey..'Bindings'..handedness
 local bindingSection = storage.playerSection(bindingSectionKey)
 
 local manualTriggerCallbacks = {}
@@ -658,8 +664,9 @@ local function tryTriggers(path, long)
     for id, key in pairs (activeTriggerBindings[path] or {}) do
         if (isLong[id] and long) or (not isLong[id] and not long) then
             if alias[key] then 
-                input.activateTrigger(alias[key])
-            else
+                key = alias[key]
+            end
+            if input.triggers[key] then
                 input.activateTrigger(key)
             end
         end

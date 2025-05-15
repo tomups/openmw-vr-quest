@@ -36,6 +36,7 @@ namespace Settings
         SettingValue<float> mHandsOffsetX{ mIndex, "VR", "hands offset x" };
         SettingValue<float> mHandsOffsetY{ mIndex, "VR", "hands offset y" };
         SettingValue<float> mHandsOffsetZ{ mIndex, "VR", "hands offset z" };
+        SettingValue<bool> mLeftHandedMode{ mIndex, "VR", "left handed mode" };
         SettingValue<bool> mShow3DCrosshairs{ mIndex, "VR", "show 3D crosshairs" };
         SettingValue<bool> mUseXrLayerForHuds{ mIndex, "VR", "use xr layer for huds" };
     };

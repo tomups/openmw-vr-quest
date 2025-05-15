@@ -346,6 +346,11 @@ bool Launcher::SettingsPage::loadSettings()
         startDefaultCharacterAtField->setText(mGameSettings.value("start").value);
         runScriptAfterStartupField->setText(mGameSettings.value("script-run").value);
     }
+
+    // VR
+    {
+        loadSettingBool(Settings::vr().mLeftHandedMode, *leftHandedModeCheckBox);
+    }
     return true;
 }
 
@@ -536,6 +541,11 @@ void Launcher::SettingsPage::saveSettings()
         QString scriptRun = runScriptAfterStartupField->text();
         if (scriptRun != mGameSettings.value("script-run").value)
             mGameSettings.setValue("script-run", { scriptRun });
+    }
+
+    // VR
+    {
+        saveSettingBool(*leftHandedModeCheckBox, Settings::vr().mLeftHandedMode);
     }
 }
 

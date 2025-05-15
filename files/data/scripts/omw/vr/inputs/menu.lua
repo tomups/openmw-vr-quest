@@ -56,9 +56,12 @@ end
 local bindingsVersion = 1
 local bindingsVersionMinSupported = 1
 local bindingSection = common.bindingSection
+local userBindingsSection = common.userBindingsSection
+local controlsSection = common.controlsSection
 local version = bindingSection:get('version') or 0
 if version < bindingsVersion then
     if version < bindingsVersionMinSupported then
+        userBindingsSection:reset()
         bindingSection:reset()
         ui.showMessage('Motion Controller bindings have been reset due to: version changed')
     else
@@ -66,10 +69,6 @@ if version < bindingsVersion then
     end
     bindingSection:set('version', bindingsVersion)
 end
-
--- Temp: Reset every time cause i keep breaking stuff
-local userBindingsSection = common.userBindingsSection
-local controlsSection = common.controlsSection
 
 local recording = nil
 

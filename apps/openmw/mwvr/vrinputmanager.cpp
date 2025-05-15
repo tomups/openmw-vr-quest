@@ -5,6 +5,7 @@
 #include "vranimation.hpp"
 #include "vrgui.hpp"
 #include "vrpointer.hpp"
+#include "vrutil.hpp"
 
 #include <components/debug/debuglog.hpp>
 #include <components/sceneutil/visitor.hpp>
@@ -57,15 +58,10 @@ namespace MWVR
                 MWBase::Environment::get().getWorld()->enableVRPointer(
                     mPointerLeft && VR::getLeftControllerActive(), mPointerRight && VR::getRightControllerActive());
 
-            std::string action = "";
-            if (mPointerRight)
-                action = VR::Paths::RIGHT_HAND_AIM;
-            else if (mPointerLeft)
-                action = VR::Paths::LEFT_HAND_AIM;
-            else if (guiMode)
-                action = VR::Paths::RIGHT_HAND_AIM;
-            if (!action.empty())
-                source = mXRInput->getSpace(action);
+            // If both hands are active, or we are in GUI mode, pick aim based on user's dominant hand.
+            if (auto space = Util::pickByHandedness(mPointerLeft || guiMode, mPointerRight || guiMode,
+                    VR::Paths::LEFT_HAND_AIM, VR::Paths::RIGHT_HAND_AIM))
+                source = mXRInput->getSpace(*space);
         }
         else
             source = mXRInput->getSpace(OpenXRInput::DefaultReferenceSpaceView);
@@ -99,8 +95,7 @@ namespace MWVR
             auto playerPtr = world->getPlayerPtr();
             if (!mRealisticCombat || mRealisticCombat->ptr() != playerPtr)
             {
-                // TODO: de-hardcode right-handedness for when ability to equip weapons with left hand is completed
-                mRealisticCombat.reset(new RealisticCombat::StateMachine(playerPtr, VR::Paths::RIGHT_HAND_AIM));
+                mRealisticCombat.reset(new RealisticCombat::StateMachine(playerPtr, VR::getPreferredAimPath()));
             }
             bool enabled = !guiMode && player.getDrawState() == MWMechanics::DrawState::Weapon && !player.isDisabled();
             mRealisticCombat->update(dt, enabled);

@@ -23,6 +23,30 @@ namespace MWVR
         float getPoseTarget(MWRender::RayResult& result, const Stereo::Pose& pose, bool allowTelekinesis, bool ignore3DUI = true);
         Stereo::Pose getNodePose(const osg::Node* node);
         VRAnimation* getPlayerAnimation();
+
+        template <typename T>
+        std::optional<T> pickByHandedness(bool leftAvailable, bool rightAvailable, const T& l, const T& r)
+        {
+            leftAvailable = leftAvailable && VR::getLeftControllerActive();
+            rightAvailable = rightAvailable && VR::getRightControllerActive();
+            if (VR::getLeftHandedMode() && leftAvailable)
+                return l;
+            if (rightAvailable)
+                return r;
+            if (leftAvailable)
+                return l;
+            return std::nullopt;
+        }
+
+        template <typename T>
+        const T& pickByHandedness(const T& l, const T& r)
+        {
+            if (VR::getLeftHandedMode() && VR::getLeftControllerActive())
+                return l;
+            if (VR::getRightControllerActive())
+                return r;
+            return l;
+        }
     }
 
 }

@@ -19,6 +19,7 @@ namespace VR
         bool sVRMode = false;
         bool sSteamVR = false;
         bool sLocatingSpacesAllowed = false;
+        bool sLeftHanded = false;
         DisplayTime sPredictedDisplayTime = 0;
         DisplayTime sPredictedDisplayPeriod = 0;
         std::map<XrPath, XrPath> sActiveControllers = {};
@@ -88,6 +89,11 @@ namespace VR
         return sLocatingSpacesAllowed;
     }
 
+    bool getLeftHandedMode()
+    {
+        return sLeftHanded;
+    }
+
     void setControllerActive(XrPath controllerPath, XrPath interactionProfilePath, bool active)
     {
         if (active)
@@ -116,6 +122,19 @@ namespace VR
     std::string getRuntimeName()
     {
         return sRuntimeName;
+    }
+
+    const char* getPreferredAimPath()
+    {
+        if (sLeftHanded)
+        {
+            if (getLeftControllerActive())
+                return Paths::LEFT_HAND_AIM;
+            return Paths::RIGHT_HAND_AIM;
+        }
+        if (getRightControllerActive())
+            return Paths::RIGHT_HAND_AIM;
+        return Paths::LEFT_HAND_AIM;
     }
 
     void setVR(bool VR)
@@ -150,6 +169,11 @@ namespace VR
     void setRuntimeName(std::string name)
     {
         sRuntimeName = name;
+    }
+
+    void setLeftHandedMode(bool enable) 
+    {
+        sLeftHanded = enable;
     }
 
     void recenter() 

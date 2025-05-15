@@ -1279,6 +1279,8 @@ void OMW::Engine::configureVRInputProfiles()
 void OMW::Engine::configureVRPreScene(const std::filesystem::path& userFile, bool userFileExists,
     const std::filesystem::path& userControllerBindingsFile, const std::filesystem::path& controllerBindingsFile)
 {
+    VR::setLeftHandedMode(Settings::vr().mLeftHandedMode);
+
     // Set up enough of VR to view the intro cinematic/loading screen
     mVrViewer = std::make_unique<VR::Viewer>(mXrSession, mViewer);
     mVrViewer->configureCallbacks();

@@ -144,7 +144,7 @@ namespace MWLua
         MWVR::OpenXRInput& xrinput = MWVR::OpenXRInput::instance();
         api["availableInteractions"] = getAvailableInteractions(context);
         api["availableReferenceSpaces"] = getAvailableReferenceSpaces(context);
-
+        api["isLeftHandedMode"] = []() { return VR::getLeftHandedMode(); };
         api["isControllerActive"]
             = [](const std::string& path) -> bool { return VR::getControllerActive(VR::stringToXrPath(path)); };
         api["getInteractionProfileOfController"] = [](const std::string& path) -> sol::optional<std::string> {

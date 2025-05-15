@@ -418,4 +418,15 @@ namespace SceneUtil
 
         return texture.getName();
     }
+    osg::Quat getRotationFromMatrix_SkewFriendly(const osg::Matrix& m)
+    {
+        // multiply with .w=0 to ignore translate
+        osg::Vec4 dir4 = osg::Vec4(0, 1, 0, 0) * m;
+        osg::Vec3 dir3 = osg::Vec3(dir4.x(), dir4.y(), dir4.z());
+        dir3.normalize();
+
+        osg::Quat res;
+        res.makeRotate(osg::Vec3(0, 1, 0), dir3);
+        return res;
+    }
 }

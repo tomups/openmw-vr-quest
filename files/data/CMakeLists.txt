@@ -130,7 +130,8 @@ set(BUILTIN_DATA_FILES
     scripts/omw/vr/ui/interface.lua
     scripts/omw/vr/inputs/player.lua
     scripts/omw/vr/inputs/common.lua
-    scripts/omw/vr/inputs/defaultBindings.lua
+    scripts/omw/vr/inputs/defaultBindingsLeftHanded.lua
+    scripts/omw/vr/inputs/defaultBindingsRightHanded.lua
     scripts/omw/vr/inputs/menu.lua
     
     shaders/adjustments.omwfx

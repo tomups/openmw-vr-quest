@@ -289,7 +289,7 @@ namespace MWWorld
         if (VR::getVR() && !VR::getKBMouseModeActive()
             && caster == MWBase::Environment::get().getWorld()->getPlayerPtr())
         {
-            auto tp = MWVR::OpenXRInput::instance().getSpace(VR::Paths::RIGHT_HAND_AIM)->locateInWorld();
+            auto tp = MWVR::OpenXRInput::instance().getSpace(VR::getPreferredAimPath())->locateInWorld();
             if (!!tp.status)
             {
                 pos = tp.pose.position.asMWUnits();
