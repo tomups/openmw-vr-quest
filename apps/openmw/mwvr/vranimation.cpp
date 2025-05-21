@@ -674,12 +674,6 @@ namespace MWVR
                 = osg::Quat(characterYawDiff, osg::Vec3d(0, 0, -1)) * mCharLocalSpacePose.orientation;
         }
         updateLocalSpaceWorldPose();
-        float worldYaw = 0.f;
-        float worldYaw2 = 0.f;
-        Stereo::getEulerAngles(pose.orientation, worldYaw, pitch, roll);
-        auto origin = mObjectRoot->getParent(0);
-        auto worldMatrix = osg::computeLocalToWorld(origin->getParentalNodePaths()[0]);
-        Stereo::getEulerAngles(worldMatrix.getRotate(), worldYaw2, pitch, roll);
 
         for (auto& it : mVrControllers)
         {
@@ -696,32 +690,32 @@ namespace MWVR
             mSkeleton->markBoneMatriceDirty();
         }
 
-        //if (!mAmmunition)
-        //    return;
-        //auto ammoNode = mAmmunition->getNode();
-        //if (!ammoNode)
-        //    return;
-        //osg::NodePathList nodepaths = ammoNode->getParentalNodePaths();
-        //if (nodepaths.empty())
-        //    return;
-        //auto localToWorld = osg::computeLocalToWorld(nodepaths[0]);
-        //auto orient = localToWorld.getRotate();
-        //osg::Vec3 dir = orient * osg::Vec3(0, 1, 0);
-        //Log(Debug::Verbose) << "Dir quat: " << dir.x() << ", " << dir.y() << ", " << dir.z();
-        //osg::Vec4 dir2 = osg::Vec4(0, 1, 0, 0) * localToWorld;
-        //dir.x() = dir2.x();
-        //dir.y() = dir2.y();
-        //dir.z() = dir2.z();
-        //Log(Debug::Verbose) << "Dir ltw1: " << dir.x() << ", " << dir.y() << ", " << dir.z();
-        //dir.normalize();
-        //Log(Debug::Verbose) << "Dir ltw2: " << dir.x() << ", " << dir.y() << ", " << dir.z();
-        //osg::Quat q;
-        //q.makeRotate(osg::Vec3(0, 1, 0), dir);
-        //dir = q * osg::Vec3(0, 1, 0);
-        //Log(Debug::Verbose) << "Dir ltw3: " << dir.x() << ", " << dir.y() << ", " << dir.z();
-        //dir.normalize();
-        //Log(Debug::Verbose) << "Dir ltw4: " << dir.x() << ", " << dir.y() << ", " << dir.z();
+        osg::Vec2 offset = osg::Vec2(0, 0);
+        if (Settings::vr().mHandDirectedMovement && !VR::getKBMouseModeActive())
+        {
+            // The baseline behavior is view directed movement. To make hand directed movement, simply add
+            // the rotation from view to hand.
+            // I compute this by locating the hand relative to view and computing yaw/pitch of that, using a direction vector
+            // to ignore roll
+            auto hand = VR::getLeftHandedMode() ? MWVR::OpenXRInput::RightHandAim : MWVR::OpenXRInput::LeftHandAim;
+            if (auto space = MWVR::OpenXRInput::instance().getSpace(hand))
+            {
+                auto tp = space->locate(*VR::Session::instance().getReferenceSpace(VR::ReferenceSpace::View));
+                if (!!tp.status)
+                {
+                    // Compute the directional vector
+                    auto forward = osg::Vec3(0, 1, 0);
+                    auto dir = tp.pose.orientation * forward;
+                    // Simple trigonometry to compute yaw/pitch
+                    offset = osg::Vec2(std::asin(-dir.z()), std::atan2(dir.x(), dir.y()));
+                }
+            }
+        }
+        VR::Session::instance().setMovementAngleOffset(offset);
+    }
 
+    void VRAnimation::modifyMovement(osg::Vec3& movement) 
+    {
     }
 
     void VRAnimation::addControllers()

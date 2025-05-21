@@ -3,6 +3,7 @@
 #include <components/debug/debuglog.hpp>
 #include <components/misc/constants.hpp>
 #include <components/sdlutil/sdlgraphicswindow.hpp>
+#include <components/settings/values.hpp>
 #include <components/vr/trackingsource.hpp>
 #include <components/vr/vr.hpp>
 #include <components/vr/space.hpp>
@@ -111,11 +112,9 @@ namespace VR
 
     void Session::readSettings()
     {
-        mHandDirectedMovement = Settings::Manager::getBool("hand directed movement", "VR");
-
-        mHandsOffset.x() = (Settings::Manager::getFloat("hands offset x", "VR") - 0.5) * Constants::UnitsPerMeter;
-        mHandsOffset.y() = (Settings::Manager::getFloat("hands offset y", "VR") - 0.5) * Constants::UnitsPerMeter;
-        mHandsOffset.z() = (Settings::Manager::getFloat("hands offset z", "VR") - 0.5) * Constants::UnitsPerMeter;
+        mHandsOffset.x() = (Settings::vr().mHandsOffsetX - 0.5) * Constants::UnitsPerMeter;
+        mHandsOffset.y() = (Settings::vr().mHandsOffsetY - 0.5) * Constants::UnitsPerMeter;
+        mHandsOffset.z() = (Settings::vr().mHandsOffsetZ - 0.5) * Constants::UnitsPerMeter;
     }
 
     void Session::computePlayerScale()

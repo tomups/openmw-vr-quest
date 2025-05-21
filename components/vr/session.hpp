@@ -89,8 +89,6 @@ namespace VR
 
         void setAppShouldShareDepthBuffer(bool arg) { mAppShouldShareDepthBuffer = arg; }
 
-        bool handDirectedMovement() const { return mHandDirectedMovement; }
-
         void requestRecenter() { mRecenter = true; }
 
         void instantTransition();
@@ -105,9 +103,10 @@ namespace VR
         // MERGETODO: New system for enabling sneak eyelevel offset
         void setSneak(bool sneak);
 
-        void setMovementAngleOffset(osg::Vec3 offsets) { mMovementAnglesOffset = offsets; }
+        void setMovementAngleOffset(osg::Vec2 offsets) { mMovementAnglesOffset = offsets; }
 
-        const osg::Vec3& movementAngleOffset() const { return mMovementAnglesOffset; }
+        const osg::Vec2& movementAngleOffset() const { return mMovementAnglesOffset; }
+
 
         void addListener(Listener* listener);
         void removeListener(Listener* listener);
@@ -143,7 +142,6 @@ namespace VR
 
     protected:
         bool mAppShouldShareDepthBuffer = false;
-        bool mHandDirectedMovement = false;
         bool mRecenter = true;
 
         float mPlayerScale = 1.f;
@@ -154,7 +152,7 @@ namespace VR
         std::set<XrPath> mActiveInteractionProfiles;
 
         osg::Vec3 mHandsOffset;
-        osg::Vec3 mMovementAnglesOffset;
+        osg::Vec2 mMovementAnglesOffset;
 
         std::vector<Listener*> mListeners;
     };

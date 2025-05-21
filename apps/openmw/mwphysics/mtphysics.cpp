@@ -193,15 +193,11 @@ namespace
                 frameData.mOldHeight = frameData.mPosition.z();
                 const auto rotation = actor->getPtr().getRefData().getPosition().asRotationVec3();
                 frameData.mRotation = osg::Vec2f(rotation.x(), rotation.z());
-//## VR_PATCH BEGIN
                 if (VR::getVR() && actor->getPtr() == MWMechanics::getPlayer()
-                    && VR::Session::instance().handDirectedMovement())
+                    && Settings::vr().mHandDirectedMovement)
                 {
-                    const auto& offset = VR::Session::instance().movementAngleOffset();
-                    frameData.mRotation.x() += offset.x();
-                    frameData.mRotation.y() += offset.z();
+                    frameData.mRotation += VR::Session::instance().movementAngleOffset();
                 }
-//## VR_PATCH END
 
                 frameData.mInertia = actor->getInertialForce();
                 frameData.mStuckFrames = actor->getStuckFrames();

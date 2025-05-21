@@ -64,6 +64,8 @@ namespace MWVR
 
         void updateSpace();
 
+        void modifyMovement(osg::Vec3& movement);
+
     protected:
 
         void updateCrosshairs() override;

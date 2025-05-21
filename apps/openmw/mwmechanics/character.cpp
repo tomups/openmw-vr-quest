@@ -58,8 +58,11 @@
 
 //## VR_PATCH BEGIN
 #include <components/vr/vr.hpp>
+#include <components/vr/session.hpp>
 //#include "../mwvr/vrutil.hpp"
 #include "../mwrender/npcanimation.hpp"
+#include "../mwvr/openxrinput.hpp"
+#include "../mwvr/vranimation.hpp"
 //## VR_PATCH END
 
 namespace
@@ -2532,6 +2535,12 @@ namespace MWMechanics
 
             movement.x() *= scale;
             movement.y() *= scale;
+
+            if (VR::getVR() && isPlayer)
+            {
+                static_cast<MWVR::VRAnimation*>(mAnimation)->modifyMovement(movement);
+            }
+
             world->queueMovement(mPtr, movement);
         }
 
