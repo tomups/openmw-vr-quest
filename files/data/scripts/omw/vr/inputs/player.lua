@@ -26,7 +26,16 @@ end
 local rightHanded = true
 local pointerRight = false
 local pointerLeft = false
+local physicalSneak = false
+local physicalSneakMessage = true
+local physicalSneakOffset = 25 * I.vrspaces.UnitsPerMeter / 100
+local l10nContext = core.l10n(common.l10nKey)
 
+local referencePose = nil
+
+local function getView()
+    return vr.locateSpace(I.vrspaces.referenceSpaces.View, I.vrspaces.referenceSpaces.Local) or referencePose
+end
 
 -- Note: 'MetaMenu' and 'MenuBack' are by default bound to the same key.
 -- Similar to how ESC by default opens the game menu, OR closes the current menu.
@@ -94,6 +103,9 @@ local function updateControlsSettings()
     smoothTurn = common.controlsSection:get('SmoothTurn')
     smoothTurnSensitivity = common.controlsSection:get('SmoothTurnSensitivity')
     snapTurnRate = common.controlsSection:get('SnapTurnRate') * math.pi / 180
+    physicalSneak = common.controlsSection:get('PhysicalSneak')
+    physicalSneakMessage = common.controlsSection:get('PhysicalSneakMessage')
+    physicalSneakOffset = common.controlsSection:get('PhysicalSneakOffset') * I.vrspaces.UnitsPerMeter / 100
 end
 updateControlsSettings()
 common.controlsSection:subscribe(async:callback(updateControlsSettings))
@@ -104,14 +116,12 @@ local function pointerMode()
 end
 
 input.registerTriggerHandler('PointerActivate', async:callback(function()
-    print('pointeractivate')
     if pointerMode() then
         vr._pointerActivate(true) 
     end
 end))
 
 input.registerTriggerHandler('Activate', async:callback(function() 
-    print('activate')
     vr._pointerActivate(true) 
 end))
 
@@ -140,7 +150,6 @@ end))
 input.registerActionHandler('Use', async:callback(function(v)
     -- Use should double as menu interactions when in GUI mode or the pointer is active.
     if v then
-        print('use')
         if not pointerMode() then 
             startUse = true
         elseif I.vrinputs.isKBMouseMode() then
@@ -201,6 +210,9 @@ input.registerTriggerHandler('ToggleWeapon', async:callback(function()
     end
 end))
 
+local isPhysicalSneak = false
+
+
 local function processAttacking()
     if pointerMode() then return end
     -- for spell-casting, set controls.use to true for exactly one frame
@@ -214,6 +226,23 @@ local function processAttacking()
     end
     startUse = false
 end
+
+input.bindAction('Sneak', async:callback(function()
+	if physicalSneak and pose and referencePose then
+		local wasPhysicalSneak = isPhysicalSneak
+		local z = pose.position.z
+		isPhysicalSneak = z < (referencePose.position.z - physicalSneakOffset)
+		if isPhysicalSneak ~= wasPhysicalSneak and physicalSneakMessage then
+			if isPhysicalSneak then
+				ui.showMessage(l10nContext('entered_physical_sneak'))
+			else
+				ui.showMessage(l10nContext('left_physical_sneak'))
+			end
+		end
+		return isPhysicalSneak
+	end
+	return false
+end), {})
 
 local function onFrame(dt)
     
@@ -232,12 +261,35 @@ local function onFrame(dt)
     processAttacking()
 end
 
+local function resetPhysicalSneakReferencePose()
+    referencePose = getView()
+    if physicalSneak then
+        ui.showMessage(l10nContext('physical_sneak_reference_reset'))
+    end
+end
+
+local function onVRFrame()
+    if not referencePose then
+        resetPhysicalSneakReferencePose()
+    end
+    pose = getView()
+end
+
+local function onVRRecenter(resetZ)
+    if resetZ then
+        -- TODO: A distinction between resetZ and non-resetZ recenters has not been implemented.
+        -- For now this code will never be hit
+        resetPhysicalSneakReferencePose()
+    end
+end
+
 I.Controls.overrideCombatControls(true)
 
 return {
     engineHandlers = {
         onFrame = onFrame,
-
+        onVRFrame = onVRFrame,
+        onVRRecenter = onVRRecenter,
     },
     
     eventHandlers = {

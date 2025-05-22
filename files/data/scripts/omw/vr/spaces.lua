@@ -100,7 +100,6 @@ return {
         isActionSpace = isActionSpace,
         isReferenceSpace = isReferenceSpace,
         isSpaceActive = function(space) return vr.locateSpace(space) ~= nil end,
-        locateSpace = vr._locateSpace,
         recenter = vr._recenter,
     }
 }

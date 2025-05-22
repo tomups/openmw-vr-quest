@@ -637,6 +637,9 @@ local function registerSettingsGroup()
             boolSetting('SmoothTurn', false),
             floatSetting('SnapTurnRate', 30),
             floatSetting('SmoothTurnSensitivity', 2.0),
+            boolSetting('PhysicalSneak', false),
+            boolSetting('PhysicalSneakMessage', false),
+            floatSetting('PhysicalSneakOffset', 25),
         },
     })
 end
@@ -757,6 +760,7 @@ return {
     setManualTriggerCallback = setManualTriggerCallback,
     controllers = controllers,
     getActiveProfileAndControllerFromPath = getActiveProfileAndControllerFromPath,
+    l10nKey = l10nKey,
     settingsPageKey = settingsPageKey,
     bindingSectionKey = bindingSectionKey,
     bindingSection = bindingSection,

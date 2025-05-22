@@ -14,7 +14,23 @@ SmoothTurnSensitivityDescription: |
 SnapTurnRate: "Snap Turn Rate"
 SnapTurnRateDescription: |
     Number of degrees to turn per input.
+
+PhysicalSneak: "Physical Sneak"
+PhysicalSneakDescription: |
+    "Engage sneak by physically crouching/ducking"
+
+PhysicalSneakMessage: "Physical Sneak Message"
+PhysicalSneakMessageDescription: |
+    "Shows a text notification when entering and exiting physical sneak"
+
+PhysicalSneakOffset: "Physical Sneak Offset"
+PhysicalSneakOffsetDescription: |
+    "How far (in cm) you must crouch before physical sneak engages"
     
+physical_sneak_reference_reset: "Physical sneak reference height has been reset"
+entered_physical_sneak: "Entered physical sneak"
+left_physical_sneak: "Left physical sneak"
+
 UserBindingsGroup: "VR Input Bindings"
 UserBindingsGroupDescription: |
     Click the binding on the right hand side to rebind. Note these bindings apply to motion controllers and are only possible to rebind when at least one motion controller is active.
