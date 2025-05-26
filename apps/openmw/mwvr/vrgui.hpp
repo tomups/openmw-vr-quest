@@ -57,45 +57,6 @@ namespace MWVR
         bool intersectable;
     };
 
-    //struct ModeConfig
-    //{
-    //    LayerConfig layerConfig;
-    //    std::map<std::string, Stereo::Pose> layerPoses;
-    //    bool dirty = true;
-    //};
-
-    //class VRGUITracking
-    //{
-    //public:
-    //    VRGUITracking();
-    //    ~VRGUITracking();
-
-
-    //    void onRecenter();
-    //    void onEyeLevelReset();
-
-    //private:
-    //    VR::TrackingPose mStationaryPose = VR::TrackingPose();
-    //    VR::TrackingPose mHUDTopLeftPose = VR::TrackingPose();
-    //    VR::TrackingPose mHUDTopRightPose = VR::TrackingPose();
-    //    VR::TrackingPose mHUDBottomLeftPose = VR::TrackingPose();
-    //    VR::TrackingPose mHUDBottomRightPose = VR::TrackingPose();
-    //    VR::TrackingPose mHUDMessagePose = VR::TrackingPose();
-    //    VR::TrackingPose mHUDKeyboardPose = VR::TrackingPose();
-    //    VR::TrackingPose mWristInnerLeftPose = VR::TrackingPose();
-    //    VR::TrackingPose mWristInnerRightPose = VR::TrackingPose();
-    //    VR::TrackingPose mWristTopLeftPose = VR::TrackingPose();
-    //    VR::TrackingPose mWristTopRightPose = VR::TrackingPose();
-
-    //    bool mShouldUpdateStationaryPose = true;
-    //    bool mShouldUpdateStationaryPoseHeight = false;
-    //    bool mHasInitialPose = false;
-    //    bool mTimedPoseRefresh = false;
-    //    std::chrono::steady_clock::time_point mTimedPoseRefreshTime;
-
-    //    VR::DisplayTime mLastTime = 0;
-    //};
-
     /// \brief A single VR GUI Quad.
     ///
     /// In VR menus are shown as quads within the game world.

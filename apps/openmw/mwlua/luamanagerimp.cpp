@@ -422,14 +422,14 @@ namespace MWLua
             playerScripts->uiModeChanged(argId, false);
     }
 
-    void LuaManager::vrRecentered()
+    void LuaManager::vrRecentered(bool vertical, bool horizontal)
     {
-        mMenuScripts.onVRRecenter();
+        mMenuScripts.onVRRecenter(vertical, horizontal);
         if (mPlayer.isEmpty())
             return;
         PlayerScripts* playerScripts = dynamic_cast<PlayerScripts*>(mPlayer.getRefData().getLuaScripts());
         if (playerScripts)
-            playerScripts->onVRRecenter();
+            playerScripts->onVRRecenter(vertical, horizontal);
     }
 
     void LuaManager::actorDied(const MWWorld::Ptr& actor)

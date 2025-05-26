@@ -401,7 +401,8 @@ namespace XR
                 mAppShouldSyncFrameLoop = true;
                 mAppShouldReadInput = true;
                 mXrSessionShouldStop = false;
-                VR::recenter();
+                VR::recenterXY();
+                VR::recenterZ();
                 break;
             }
             default:

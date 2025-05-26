@@ -31,7 +31,7 @@ namespace MWLua
 
         void onFrame(float dt) { callEngineHandlers(mOnFrameHandlers, dt); }
         void onVRFrame() { callEngineHandlers(mOnVRFrameHandlers); }
-        void onVRRecenter() { callEngineHandlers(mOnVRRecenter); }
+        void onVRRecenter(bool vertical, bool horizontal) { callEngineHandlers(mOnVRRecenter, vertical, horizontal); }
         void onQuestUpdate(std::string_view questId, int stage) { callEngineHandlers(mQuestUpdate, questId, stage); }
 
         bool consoleCommand(

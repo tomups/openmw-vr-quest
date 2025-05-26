@@ -12,10 +12,15 @@
             <Property key="FontHeight" value="32"/>
         </Widget>
 
-        <Widget type="AutoSizedButton" skin="MW_Button" name="recenter" align="HCenter">
-            <Property key="Caption" value="Recenter"/>
-            <Property key="FontHeight" value="32"/>
-        </Widget>
+		<Widget type="AutoSizedButton" skin="MW_Button" name="recenterXYZ" align="HCenter">
+			<Property key="Caption" value="Recenter (Full)"/>
+			<Property key="FontHeight" value="32"/>
+		</Widget>
+
+		<Widget type="AutoSizedButton" skin="MW_Button" name="recenterXY" align="HCenter">
+			<Property key="Caption" value="Recenter (Horizontal)"/>
+			<Property key="FontHeight" value="32"/>
+		</Widget>
 
         <Widget type="Spacer"/>
         <Widget type="Widget" skin="IB_T" align="HCenter" position="0 0 125 4">

@@ -218,7 +218,7 @@ end))
 
 common.setManualTriggerCallback('Recenter', async:callback(function()
     print('Recenter')
-    vr._recenter()
+    vr.vrspaces.recenterXY()
 end))
 
 local gameLoaded = false

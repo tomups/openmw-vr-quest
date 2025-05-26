@@ -15,7 +15,8 @@ namespace VR
 {
     namespace
     {
-        bool sRecenterLua = true;
+        bool sRecenterZ = true;
+        bool sRecenterXY = true;
         bool sVRMode = false;
         bool sSteamVR = false;
         bool sLocatingSpacesAllowed = false;
@@ -176,20 +177,37 @@ namespace VR
         sLeftHanded = enable;
     }
 
-    void recenter() 
+    void recenterXY()
     {
-        sRecenterLua = true;
+        sRecenterXY = true;
         if (sVRMode)
             Session::instance().requestRecenter();
     }
 
-    bool getShouldRecenterLua()
+    bool getShouldRecenterXY()
     {
-        return sRecenterLua;
+        return sRecenterXY;
     }
 
-    void setShouldRecenterLua(bool arg) 
+    void setShouldRecenterXY(bool arg)
     {
-        sRecenterLua = arg;
+        sRecenterXY = arg;
+    }
+
+    void recenterZ()
+    {
+        sRecenterZ = true;
+        if (sVRMode)
+            Session::instance().requestRecenter();
+    }
+
+    bool getShouldRecenterZ()
+    {
+        return sRecenterZ;
+    }
+
+    void setShouldRecenterZ(bool arg)
+    {
+        sRecenterZ = arg;
     }
 }

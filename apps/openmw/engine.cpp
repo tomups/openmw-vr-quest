@@ -390,9 +390,6 @@ bool OMW::Engine::frame(unsigned frameNumber, float frametime)
             if (playerAnim)
                 static_cast<MWVR::VRAnimation*>(playerAnim)->updateSpace();
         }
-        if (VR::getShouldRecenterLua())
-            mLuaManager->vrRecentered();
-        VR::setShouldRecenterLua(false);
         mLuaManager->onVRFrame();
         VR::Session::instance().updateSpaces();
     }

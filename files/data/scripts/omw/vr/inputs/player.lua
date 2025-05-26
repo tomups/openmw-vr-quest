@@ -126,7 +126,7 @@ input.registerTriggerHandler('Activate', async:callback(function()
 end))
 
 input.registerTriggerHandler('Recenter', async:callback(function() 
-    vr._recenter() 
+    I.vrspaces.recenter() 
 end))
 
 input.registerTriggerHandler('RadialMenu', async:callback(function() 
@@ -275,8 +275,8 @@ local function onVRFrame()
     pose = getView()
 end
 
-local function onVRRecenter(resetZ)
-    if resetZ then
+local function onVRRecenter(vertical, horizontal)
+    if vertical then
         -- TODO: A distinction between resetZ and non-resetZ recenters has not been implemented.
         -- For now this code will never be hit
         resetPhysicalSneakReferencePose()

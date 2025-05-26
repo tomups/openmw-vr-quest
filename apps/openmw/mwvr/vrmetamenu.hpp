@@ -47,7 +47,8 @@ namespace MWVR
         void onQuickMenu();
         void onQuickLoad();
         void onQuickSave();
-        void onRecenter();
+        void onRecenterXY();
+        void onRecenterXYZ();
         void onPostprocessor();
         void close();
 

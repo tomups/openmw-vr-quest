@@ -93,9 +93,15 @@ namespace MWVR
             MWBase::Environment::get().getStateManager()->quickSave();
     }
 
-    void VrMetaMenu::onRecenter()
+    void VrMetaMenu::onRecenterXY()
     {
-        VR::recenter();
+        VR::recenterXY();
+    }
+
+    void VrMetaMenu::onRecenterXYZ()
+    {
+        VR::recenterXY();
+        VR::recenterZ();
     }
 
     void VrMetaMenu::onPostprocessor()
@@ -128,8 +134,10 @@ namespace MWVR
             onQuickLoad();
         else if (name == "quicksave")
             onQuickSave();
-        else if (name == "recenter")
-            onRecenter();
+        else if (name == "recenterXY")
+            onRecenterXY();
+        else if (name == "recenterXYZ")
+            onRecenterXYZ();
         else if (name == "postprocessor")
             onPostprocessor();
     }
@@ -141,10 +149,11 @@ namespace MWVR
 
     void VrMetaMenu::updateMenu()
     {
-        static std::vector<std::string> buttons{ "return", "recenter", "quicksave", "quickload", "console", "inventory",
-            "journal", "rest", "quickmenu", "gamemenu", "postprocessor" };
+        static std::vector<std::string> buttons{ "return", "recenterXY", "recenterXYZ", "quicksave", "quickload",
+            "console", "inventory", "journal", "rest", "quickmenu", "gamemenu", "postprocessor" };
 
         if (mButtons.empty())
+        {
             for (std::string& buttonId : buttons)
             {
                 MyGUI::Button* button = nullptr;
@@ -156,5 +165,6 @@ namespace MWVR
                 button->setVisible(true);
                 mButtons[buttonId] = button;
             }
+        }
     }
 }

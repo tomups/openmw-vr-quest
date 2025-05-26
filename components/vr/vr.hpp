@@ -66,9 +66,12 @@ namespace VR
     void setRuntimeName(std::string name);
     void setLeftHandedMode(bool enable);
 
-    void recenter();
-    bool getShouldRecenterLua();
-    void setShouldRecenterLua(bool arg);
+    void recenterXY();
+    void recenterZ();
+    bool getShouldRecenterXY();
+    bool getShouldRecenterZ();
+    void setShouldRecenterXY(bool arg);
+    void setShouldRecenterZ(bool arg);
 }
 
 #endif

@@ -44,6 +44,7 @@
 #include "../mwmechanics/weapontype.hpp"
 
 #include "../mwbase/environment.hpp"
+#include "../mwbase/luamanager.hpp"
 #include "../mwbase/windowmanager.hpp"
 #include "../mwbase/world.hpp"
 
@@ -640,7 +641,10 @@ namespace MWVR
     {
         auto localRef = OpenXRInput::instance().getSpace(OpenXRInput::DefaultReferenceSpaceLocal);
         auto viewRef = OpenXRInput::instance().getSpace(OpenXRInput::DefaultReferenceSpaceView);
-        auto pose = viewRef->locate(*localRef).pose;
+        auto viewPose = viewRef->locate(*localRef);
+        if (!viewPose.status)
+            return;
+        auto pose = viewPose.pose;
         float newYaw = 0.f;
         float oldYaw = 0.f;
         float pitch = 0.f;
@@ -661,10 +665,25 @@ namespace MWVR
 
         if (mRecenter)
         {
-            Log(Debug::Verbose) << "VRAnimation: Recenter()";
+            Log(Debug::Verbose) << "VRAnimation: Recenter( vertical=" << VR::getShouldRecenterZ() << ", horizontal=" << VR::getShouldRecenterXY() << ")";
             // Recompute mCharLocalSpacePose so that view->locateInWorld() = mObjectRoot's pose + mCharHeight
             // pose.orientation = osg::Quat(mCharacterYaw, osg::Vec3d(0, 0, -1));
-            mCharLocalSpacePose.position = pose.position;
+            if (VR::getShouldRecenterXY())
+            {
+                mCharLocalSpacePose.position.mX = pose.position.mX;
+                mCharLocalSpacePose.position.mY = pose.position.mY;
+            }
+            if (VR::getShouldRecenterZ())
+            {
+                mCharLocalSpacePose.position.mZ = pose.position.mZ;
+            }
+
+
+            MWBase::Environment::get().getLuaManager()->vrRecentered(
+                VR::getShouldRecenterZ(), VR::getShouldRecenterXY());
+            VR::setShouldRecenterXY(false);
+            VR::setShouldRecenterZ(false);
+
             mRecenter = false;
         }
         // else

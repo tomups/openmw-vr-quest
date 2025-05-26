@@ -984,11 +984,6 @@ namespace MWWorld
         removeContainerScripts(getPlayerPtr());
         mWorldScene->changeToInteriorCell(cellName, position, adjustPlayerPos, changeEvent);
         addContainerScripts(getPlayerPtr(), getPlayerPtr().getCell());
-//## VR_PATCH BEGIN
-// MERGETODO: Another call to recenter was outside of scope
-// Somewhere is code that should recenter but doesn't...
-        VR::recenter();
-//## VR_PATCH END
     }
 
     void World::changeToCell(

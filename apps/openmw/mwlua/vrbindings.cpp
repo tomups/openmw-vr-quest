@@ -227,7 +227,8 @@ namespace MWLua
             = [&inputManager = MWVR::VRInputManager::instance()](
                   bool injectMouseClickIfApplicable) { inputManager.pointerActivate(injectMouseClickIfApplicable); };
 
-        api["_recenter"] = []() { VR::recenter(); };
+        api["_recenterXY"] = []() { VR::recenterXY(); };
+        api["_recenterZ"] = []() { VR::recenterZ(); };
 
         //api[]
 
