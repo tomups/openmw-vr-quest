@@ -2,6 +2,7 @@ Modding
 #######
 This section will detail any differences in mods and modding between VR and pancake.
 Currently OpenMW-VR is not known to break any mods that work in an equivalent version of OpenMW.
+But certain types of mods may need adaptation from its author to work with motion controls.
 
 MyGUI resource files
 ********************

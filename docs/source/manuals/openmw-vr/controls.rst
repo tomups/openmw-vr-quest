@@ -3,6 +3,24 @@ Controls
 
 TODO: It would be useful to include a **brief** gameplay video demonstrating the VR interface here.
 
+    .. note:: Note all bindings from OpenMW are available to motion controllers. Those actions, such as rest, journal, quick save/load, console, and postprocessor hud, are available through the in-game menu instead.
+
+Bindings Menu
+*************
+
+A bindings menu now exists in-game. Open up the settings menu -> scripts -> OpenMW VR Input settings.
+Note that due to an upstream rendering bug (https://gitlab.com/OpenMW/openmw/-/issues/8451) this screen does not always render correctly.
+
+Bindings show up as two columns, a left column describing the action, and a right column describing the binding for the currently active motion controllers. 
+Click the right column using your "3D Pointer Click" binding to initiate rebinding.
+
+    .. note:: In kb+mouse mode, or if using an unknown/unsupported controller, all bindings will be "none" and no bindings will be possible to make.
+    
+    .. note:: Upon initiating re-binding the existing binding is cleared and that action becomes unbound. The exception is "activate" binding, which is considered critical and cannot be unbound.
+    
+    .. note:: The current version does NOT do any sanity checking, so it's possible to make conflicting bindings. If this happens and you become unable to navigate menus because of it, navigate to OpenMW VR Input settings menu in KB+Mouse mode and click reset next to "VR Input Bindings".
+
+
 Default Bindings
 ****************
 
@@ -15,94 +33,23 @@ Default bindings exist for the following controllers:
  - Huawei Controllers
  - Vive Cosmos Controllers
 
-Oculus Touch controllers default bindings:
-    .. image:: ../../../controller_graphics/Oculus_Touch.png
-       :width: 600
-Valve Index controllers default bindings:
-    .. image:: ../../../controller_graphics/Valve_Index.png
-       :width: 600
+Default bindings are written to be as similar as possible between devices
 
-Similar graphics for other controllers will be added if people with those bindings contribute any.
-Default controls for other controllers are written to be similar to the touch and index controls.
+Special VR Actions
+******************
 
-Rebinding
-*********
-Currently there is no user friendly rebinding system available.
-Some OpenXR runtimes may offer their own rebinding service similar to what SteamVR already offers for OpenVR applications.
+A few of the bindable actions are unique to VR with motion controllers.
 
-If you can't rely on that, you'll have to edit
-the bindings manually. To do so find the *xrcontrollersuggestions.xml* file in your openmw root folder **and copy it to
-documents/my games/openmw/** or your platform's equivalent, and edit the new copy.
-The file itself contains a brief explanation for how to edit the file.
-
-    .. note:: You are kindly requested not to edit the xrcontrollersuggestions.xml file that resides in the installation folder. If you do you will not receive any support until you restore the original by reinstalling.
-
-    .. note:: If your OpenXR runtime sports its own rebinding service, it's possible that changes to xrcontrollersuggestions.xml will have no effect and you'll be forced to use that service.
-
-Actions Sets
-************
-
-Actions are divided into two bindable sets: Gameplay, and GUI.
-
-The GUI action set is active whenever you are in a menu and gameplay is paused.
-The gameplay action set is active whenever not in a menu. Bindings may therefore overlap between the two.
-
-Gameplay:
- - reposition_menu (aka recenter)
- - meta_menu
- - sneak
- - always_run
- - jump
- - spell (aka ready_spell)
- - weapon (aka ready_weapon)
- - rest
- - inventory
- - activate
- - activate_touched
- - auto_move
- - use
- - move_left_right
- - move_forward_backward
- - look_left_right
-
-GUI:
- - menu_up_down
- - menu_left_right
- - menu_select
- - menu_back
- - use
- - game_menu
- - reposition_menu
-
-Most of these actions are self-explanatory with a few exceptions.
-
-:activate_touched:
+:pointer:
     Whenever this control is active, pointer mode is enabled and your finger will point at stuff. Realistic combat is
     disabled in this mode, so avoid bindings that are easy to activate unintentionally.
 
-:use:
-    The Use action in VR combines the Active and Use action of pancake OpenMW. When pointer mode is active, Use will
-    activate whatever you are pointing at. When pointer mode is not active, Use will use the readied tool/spell in the
-    direction you are orienting it.
+:Radial Menu:
+    Opens a window with all items bound in the regular quick items menu. Since VR has too few available bindings to make quick items available as hotkeys, this menu is the compromise.
 		
 :Recenter:
-    The special action Recenter is by default assigned the same button as "Meta Menu". To activate recentering, you must **press and hold** the assigned button.
-    The recenter action has differing behaviour depending on whether you are currently in a menu, seated play, or standing play.
+    Recenter is a long press action by default assigned the same button as "Menus". To activate recentering, you must **press and hold** the assigned button.
+    The recenter action will not only recenter your camera on your character, it will also move all menus to your current position/orientation. This is useful if a menu is hidden by geometry.
 
-        .. note:: In the xrcontrollersuggestions.xml file the recenter action is labeled "reposition_menu".
+        .. note:: The bindable recenter action does a horizontal recenter only. No vertical recenter.
 
-Recenter (Menus)
-****************
-
-If recentering while navigating some menu, all windows are moved to center on your current location/orientation.
-This is useful if a menu ended up inside of some geometry.
-
-Recenter (Standing play)
-************************
-
-If recentering while in standing play, your view is moved to the location of your character **horizontally**
-
-Recenter (Seated play)
-**********************
-
-If recentering while in seated play, your view is moved to the location of your character **horizontally and vertically**.

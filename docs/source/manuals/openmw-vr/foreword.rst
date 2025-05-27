@@ -14,7 +14,7 @@ The rest of this page will explain some terminology.
 Terminology
 ***********
 A brief explanation of terms and abbreviation
- - VR: Virtual Reality (duh)
+ - VR: Virtual Reality
  - VR Stage: Your physical play area
  - Mirror texture: The motion picture shown on your pancake monitor when you are playing in VR
  - OpenXR: An Open Source interface for accessing AR/VR devices.

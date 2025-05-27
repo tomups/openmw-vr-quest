@@ -23,7 +23,8 @@ Windows Binaries
 
 If you're not sure what any of the different methods mean, you should probably stick to this one.
 Simply download the latest build from the link above and extract the archive into a new/empty folder.
-If you have not run the OpenMW install wizard in the past, run the extracted openmw_wizard.exe. Now you can run the extracted openmw-vr.exe to launch the game.
+If you have not run the OpenMW install wizard in the past, install any copy of regular openmw and run openmw_wizard.exe from that install. 
+Now you can run the extracted openmw-vr.exe to launch the game.
 
 	.. note::
 		There is no need to uninstall previous builds, but extract each build into a **new or empty** folder and **do not** extract two builds to the same folder.
