@@ -1642,13 +1642,140 @@
        <item>
         <layout class="QGridLayout" name="gridLayout_2">
          <item row="0" column="0">
-          <widget class="QCheckBox" name="leftHandedModeCheckBox">
+          <widget class="QLabel" name="realisticCombatMinimumSwingSpeed">
+           <property name="toolTip">
+            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The velocity at which the minimum strength of attack is achieved when swinging your motion controllers. In meters/second. Swinging slower than this does not initiate an attack.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+           </property>
            <property name="text">
-            <string>Left Handed Mode</string>
+            <string>Realistic melee combat minimum swing speed</string>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="1">
+          <widget class="QDoubleSpinBox" name="realisticCombatMinimumSwingSpeedSpinBox">
+           <property name="enabled">
+            <bool>true</bool>
+           </property>
+           <property name="decimals">
+            <number>2</number>
+           </property>
+           <property name="minimum">
+            <double>0</double>
+           </property>
+           <property name="maximum">
+            <double>100</double>
+           </property>
+           <property name="value">
+            <double>0.00</double>
+           </property>
+           <property name="singleStep">
+            <double>0.100000000000000</double>
            </property>
           </widget>
          </item>
          <item row="1" column="0">
+          <widget class="QLabel" name="realisticCombatMaximumSwingSpeed">
+           <property name="toolTip">
+            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The velocity at which max strength of attack is achieved when swinging your motion controllers. In meters/second&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+           </property>
+           <property name="text">
+            <string>Realistic melee combat minimum swing speed</string>
+           </property>
+          </widget>
+         </item>
+         <item row="1" column="1">
+          <widget class="QDoubleSpinBox" name="realisticCombatMaximumSwingSpeedSpinBox">
+           <property name="enabled">
+            <bool>true</bool>
+           </property>
+           <property name="decimals">
+            <number>2</number>
+           </property>
+           <property name="minimum">
+            <double>0</double>
+           </property>
+           <property name="maximum">
+            <double>100</double>
+           </property>
+           <property name="value">
+            <double>0.00</double>
+           </property>
+           <property name="singleStep">
+            <double>0.100000000000000</double>
+           </property>
+          </widget>
+         </item>
+         <item row="2" column="0">
+          <widget class="QCheckBox" name="leftHandedModeCheckBox">
+           <property name="toolTip">
+            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Makes OpenMW VR use left handed modes where this has been implemented.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+           </property>
+           <property name="text">
+            <string>Left handed mode.</string>
+           </property>
+          </widget>
+         </item>
+         <item row="3" column="0">
+          <widget class="QCheckBox" name="useSharedShadowMapsCheckBox">
+           <property name="toolTip">
+            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Makes OpenMW VR map shadows for both eyes in one pass, instead of once per eye. This is a significant performance benefit, and should only be disabled for debugging or masochism purposes.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+           </property>
+           <property name="text">
+            <string>Use shared shadow maps</string>
+           </property>
+          </widget>
+         </item>
+         <item row="4" column="0">
+          <widget class="QCheckBox" name="useMultiviewCheckBox">
+           <property name="toolTip">
+            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Makes OpenMW VR render stereo using the OVR_MultiView2 extension to OpenGL instead of two render passes. You may need to disable this on older GPUs. &lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+           </property>
+           <property name="text">
+            <string>Use OVR_MultiView2.</string>
+           </property>
+          </widget>
+         </item>
+         <item row="4" column="1">
+           <widget class="QCheckBox" name="allowDisplayListsCheckBox">
+             <property name="toolTip">
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Lets OpenMW VR use display lists when multiview is enabled. This is default disabled as it breaks on some drivers/cards. If you don't know what this is, ignore it. &lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             </property>
+             <property name="text">
+               <string>Enable display lists.</string>
+             </property>
+           </widget>
+         </item>
+         <item row="5" column="0">
+          <widget class="QCheckBox" name="logAllXrCallsCheckBox">
+           <property name="toolTip">
+            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Makes OpenMW VR log every single OpenXR call. This degrades performance and creates a massive log. You probably want this disabled.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+           </property>
+           <property name="text">
+            <string>Debug: Log all OpenXR calls</string>
+           </property>
+          </widget>
+         </item>
+         <item row="6" column="0">
+          <widget class="QCheckBox" name="ignoreXrErrorsCheckBox">
+           <property name="toolTip">
+            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Makes OpenMW VR ignore unsuccessful calls to OpenXR. You probably want this enabled.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+           </property>
+           <property name="text">
+            <string>Debug: Continue on errors</string>
+           </property>
+          </widget>
+         </item>
+         <item row="7" column="0">
+          <widget class="QCheckBox" name="skywindBlasterBoltWorkaroundCheckBox">
+           <property name="toolTip">
+            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt; In VR, projectiles are launched based on the orientation of the ammo node itself. The skywind blaster bolts do not receive an orientation before being launched, causing them to always travel in a fixed direction in VR. This workaround fixes this issue if enabled by explicitly testing for the sw_blasterbolt identifier and using the weapon orientation instead.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+           </property>
+           <property name="text">
+            <string>Skywind: Blaster bolt workaround</string>
+           </property>
+          </widget>
+         </item>
+         <item row="8" column="0">
           <spacer name="verticalSpacerVR">
            <property name="orientation">
             <enum>Qt::Orientation::Vertical</enum>

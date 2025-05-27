@@ -349,7 +349,19 @@ bool Launcher::SettingsPage::loadSettings()
 
     // VR
     {
-        loadSettingBool(Settings::vr().mLeftHandedMode, *leftHandedModeCheckBox);
+        auto& vr = Settings::vr();
+        auto& vrd = Settings::vrDebug();
+        auto& stereo = Settings::stereo();
+        realisticCombatMinimumSwingSpeedSpinBox->setValue(vr.mRealisticCombatMinimumSwingVelocity);
+        realisticCombatMaximumSwingSpeedSpinBox->setValue(vr.mRealisticCombatMaximumSwingVelocity);
+
+        loadSettingBool(vr.mLeftHandedMode, *leftHandedModeCheckBox);
+        loadSettingBool(stereo.mMultiview, *useMultiviewCheckBox);
+        loadSettingBool(stereo.mAllowDisplayListsForMultiview, *allowDisplayListsCheckBox);
+        loadSettingBool(stereo.mSharedShadowMaps, *useSharedShadowMapsCheckBox);
+        loadSettingBool(vrd.mLogAllOpenxrCalls, *logAllXrCallsCheckBox);
+        loadSettingBool(vrd.mContinueOnErrors, *ignoreXrErrorsCheckBox);
+        loadSettingBool(vrd.mSkywindBlasterWorkaround, *skywindBlasterBoltWorkaroundCheckBox);
     }
     return true;
 }
@@ -545,7 +557,21 @@ void Launcher::SettingsPage::saveSettings()
 
     // VR
     {
-        saveSettingBool(*leftHandedModeCheckBox, Settings::vr().mLeftHandedMode);
+        auto& vr = Settings::vr();
+        auto& vrd = Settings::vrDebug();
+        auto& stereo = Settings::stereo();
+        double minimumSwingSpeed = realisticCombatMinimumSwingSpeedSpinBox->value();
+        double maximumSwingSpeed = realisticCombatMaximumSwingSpeedSpinBox->value();
+
+        vr.mRealisticCombatMinimumSwingVelocity.set(minimumSwingSpeed);
+        vr.mRealisticCombatMaximumSwingVelocity.set(maximumSwingSpeed);
+        saveSettingBool(*leftHandedModeCheckBox, vr.mLeftHandedMode);
+        saveSettingBool(*useMultiviewCheckBox, stereo.mMultiview);
+        saveSettingBool(*allowDisplayListsCheckBox, stereo.mAllowDisplayListsForMultiview);
+        saveSettingBool(*useSharedShadowMapsCheckBox, stereo.mSharedShadowMaps);
+        saveSettingBool(*logAllXrCallsCheckBox, vrd.mLogAllOpenxrCalls);
+        saveSettingBool(*ignoreXrErrorsCheckBox, vrd.mContinueOnErrors);
+        saveSettingBool(*skywindBlasterBoltWorkaroundCheckBox, vrd.mSkywindBlasterWorkaround);
     }
 }
 
