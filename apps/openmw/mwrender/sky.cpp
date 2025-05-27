@@ -386,6 +386,7 @@ namespace MWRender
             return;
 
         mRainNode = new osg::Group;
+        mRainNode->addCullCallback(new ParticleStereoStatesetUpdater);
 
         mRainParticleSystem = new NifOsg::ParticleSystem;
         osg::Vec3 rainRange = osg::Vec3(mRainDiameter, mRainDiameter, (mRainMinHeight + mRainMaxHeight) / 2.f);
@@ -704,6 +705,7 @@ namespace MWRender
                 {
                     mParticleNode = new osg::PositionAttitudeTransform;
                     mParticleNode->addCullCallback(mUnderwaterSwitch);
+                    mParticleNode->addCullCallback(new ParticleStereoStatesetUpdater());
                     mParticleNode->setNodeMask(Mask_WeatherParticles);
                     mSkyNode->addChild(mParticleNode);
                 }

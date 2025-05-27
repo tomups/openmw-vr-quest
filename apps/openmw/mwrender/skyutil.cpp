@@ -662,6 +662,47 @@ namespace MWRender
     private:
     };
 
+    void ParticleStereoStatesetUpdater::setDefaults(osg::StateSet* stateset)
+    {
+        if (!Stereo::getMultiview())
+            stateset->addUniform(
+                new osg::Uniform(osg::Uniform::FLOAT_MAT4, "projectionMatrix"), osg::StateAttribute::ON | osg::StateAttribute::PROTECTED);
+    }
+
+    void ParticleStereoStatesetUpdater::apply(osg::StateSet* stateset, osg::NodeVisitor* /*nv*/)
+    {
+        if (Stereo::getMultiview())
+        {
+            std::array<osg::Matrix, 2> projectionMatrices;
+            auto& sm = Stereo::Manager::instance();
+
+            for (int view : { 0, 1 })
+            {
+                auto projectionMatrix = sm.computeEyeProjection(view, SceneUtil::AutoDepth::isReversed());
+                auto viewOffsetMatrix = sm.computeEyeViewOffset(view);
+                projectionMatrices[view] = viewOffsetMatrix * projectionMatrix;
+            }
+
+            Stereo::setMultiviewMatrices(stateset, projectionMatrices);
+        }
+    }
+    void ParticleStereoStatesetUpdater::applyLeft(osg::StateSet* stateset, osgUtil::CullVisitor* /*cv*/)
+    {
+        auto& sm = Stereo::Manager::instance();
+        auto* projectionMatrixUniform = stateset->getUniform("projectionMatrix");
+        auto projectionMatrix = sm.computeEyeProjection(0, SceneUtil::AutoDepth::isReversed());
+        auto viewOffsetMatrix = sm.computeEyeViewOffset(0);
+        projectionMatrixUniform->set(viewOffsetMatrix * projectionMatrix);
+    }
+    void ParticleStereoStatesetUpdater::applyRight(osg::StateSet* stateset, osgUtil::CullVisitor* /*cv*/)
+    {
+        auto& sm = Stereo::Manager::instance();
+        auto* projectionMatrixUniform = stateset->getUniform("projectionMatrix");
+        auto projectionMatrix = sm.computeEyeProjection(1, SceneUtil::AutoDepth::isReversed());
+        auto viewOffsetMatrix = sm.computeEyeViewOffset(1);
+        projectionMatrixUniform->set(viewOffsetMatrix * projectionMatrix);
+    }
+
     CameraRelativeTransform::CameraRelativeTransform()
     {
         // Culling works in node-local space, not in camera space, so we can't cull this node correctly

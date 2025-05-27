@@ -344,6 +344,22 @@ namespace MWRender
     private:
         MeshType mType;
     };
+
+    
+
+    class ParticleStereoStatesetUpdater : public SceneUtil::StateSetUpdater
+    {
+    public:
+        ParticleStereoStatesetUpdater() {}
+
+    protected:
+        void setDefaults(osg::StateSet* stateset) override;
+        void apply(osg::StateSet* stateset, osg::NodeVisitor* /*nv*/) override;
+        void applyLeft(osg::StateSet* stateset, osgUtil::CullVisitor* /*cv*/) override;
+        void applyRight(osg::StateSet* stateset, osgUtil::CullVisitor* /*cv*/) override;
+
+    private:
+    };
 }
 
 #endif

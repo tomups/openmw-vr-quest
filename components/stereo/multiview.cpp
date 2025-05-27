@@ -355,10 +355,7 @@ namespace Stereo
         if (!projUniform)
         {
             projUniform = new osg::Uniform(osg::Uniform::FLOAT_MAT4, "projectionMatrixMultiView", 2);
-//## VR_PATCH BEGIN
-// VR-TODO: There's probably a good reason for this but what was it?
             stateset->addUniform(projUniform, osg::StateAttribute::ON | osg::StateAttribute::PROTECTED);
-//## VR_PATCH END
         }
 
         projUniform->setElement(0, projection[0]);
@@ -370,9 +367,7 @@ namespace Stereo
             if (!invUniform)
             {
                 invUniform = new osg::Uniform(osg::Uniform::FLOAT_MAT4, "invProjectionMatrixMultiView", 2);
-//## VR_PATCH BEGIN
                 stateset->addUniform(invUniform, osg::StateAttribute::ON | osg::StateAttribute::PROTECTED);
-//## VR_PATCH END
             }
 
             invUniform->setElement(0, osg::Matrix::inverse(projection[0]));
