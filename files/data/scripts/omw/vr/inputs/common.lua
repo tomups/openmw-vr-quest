@@ -75,6 +75,22 @@ local interactionNames = {
     ['/user/hand/right/input/trigger/value'] = 'Right Trigger Value',
 }
 
+local ActionSets = {
+    Gameplay = 'Gameplay',
+    Interaction = 'Interaction',
+    Menu = 'Menu',
+}
+
+local ActionSetTemplates = {
+    Always = {ActionSets.Gameplay, ActionSets.Interaction, ActionSets.Menu}, -- Always active
+    GameplayOnly = {ActionSets.Gameplay}, -- For gameplay actions that should become inactive when the pointer is active
+    NotMenu = {ActionSets.Gameplay, ActionSets.Interaction}, -- For gameplay actions that should stay active when the pointer is active
+    MenuOnly = {ActionSets.Menu}, -- Menu actions
+    Interaction = {ActionSets.Interaction, ActionSets.Menu}, -- For pointer interactions
+}
+
+local currentActionSet = ActionSets.Menu
+
 local supportedInteractionPaths = {
     input = {},
     output = {},
@@ -263,6 +279,9 @@ local function getOrInitBindingsForProfile(tab, profile)
         bindings = {}
         for name, controller in pairs(controllers) do
             bindings[controller] = {}
+            for k,v in pairs(ActionSets) do
+                bindings[controller][v] = {}
+            end
         end
         tab[profile] = bindings
     end
@@ -278,11 +297,11 @@ local function getBindingsForController(tab, controller)
 end
 
 local function getActionBindingsForController(controller)
-    return getBindingsForController(actionBindings, controller)
+    return getBindingsForController(actionBindings, controller)[currentActionSet]
 end
 
 local function getTriggerBindingsForController(controller)
-    return getBindingsForController(triggerBindings, controller)
+    return getBindingsForController(triggerBindings, controller)[currentActionSet]
 end
 
 local function setManualTriggerCallback(key, callback)
@@ -292,18 +311,7 @@ end
 local activeProfiles = {
 }
 
-local function updateActiveProfiles()
-
-    -- TODO: Make an engine handler for profile changes so i don't have to do this every frame
-    local changed = false
-    for name, controller in pairs(controllers) do
-        if activeProfiles[controller] ~= I.vrinputs.getInteractionProfileOfController then
-            changed = true
-        end
-    end
-    
-    if not changed then return end
-
+local function updateActiveBindings()
     activeActionBindings = {}
     activeTriggerBindings = {}
     for name, controller in pairs(controllers) do
@@ -317,6 +325,22 @@ local function updateActiveProfiles()
                 end
             end
         end
+    end
+end
+
+local function updateActiveProfiles()
+    -- TODO: Might be worthwhile to make an engine handler for profile changes so i don't have to do this every frame
+    local changed = false
+    for name, controller in pairs(controllers) do
+        local profile = I.vrinputs.getInteractionProfileOfController(controller)
+        if activeProfiles[controller] ~= profile then
+            changed = true
+            activeProfiles[controller] = profile
+        end
+    end
+    
+    if changed then
+        updateActiveBindings()
     end
 end
 
@@ -381,8 +405,10 @@ local function bindAction(binding, id)
     for profile, controllers in pairs(binding.paths or {}) do
         for controller, path in pairs(controllers or {}) do
             local tab = getOrInitBindingsForProfile(actionBindings, profile)[controller]
-            tab[action] = tab[action] or {}
-            tab[action][id] = path
+            for _, actionSet in pairs(binding.actionSets) do
+                tab[actionSet][action] = tab[actionSet][action] or {}
+                tab[actionSet][action][id] = path
+            end
         end
     end
     setupValueBinding(action)
@@ -393,8 +419,10 @@ local function bindTrigger(binding, id)
     for profile, controllers in pairs(binding.paths or {}) do
         for controller, path in pairs(controllers or {}) do
             local tab = getOrInitBindingsForProfile(triggerBindings, profile)[controller]
-            tab[trigger] = tab[trigger] or {}
-            tab[trigger][id] = path
+            for _, actionSet in pairs(binding.actionSets) do
+                tab[actionSet][trigger] = tab[actionSet][trigger] or {}
+                tab[actionSet][trigger][id] = path
+            end
         end
     end
     isLong[id] = binding.long
@@ -402,9 +430,11 @@ end
 
 local function clearBindingForTable(tab, id)
     for profile, controllers in pairs(tab) do
-        for controller, actionBindings in pairs(controllers) do
-            for _, bindings in pairs(actionBindings) do
-                bindings[id] = nil
+        for controller, actionSets in pairs(controllers) do
+            for _, actionSet in pairs(actionSets) do
+                for _, bindings in pairs(actionSet) do
+                    bindings[id] = nil
+                end
             end
         end
     end
@@ -420,6 +450,8 @@ end
 local function invalidBinding(binding)
     if not binding.key then
         return 'has no key'
+    elseif not binding.actionSets then
+        return 'binding has no actionSets'
     elseif binding.type ~= 'action' and binding.type ~= 'trigger' then
         return string.format('has invalid type', binding.type)
     elseif binding.type == 'action' and not input.actions[binding.key] then
@@ -480,7 +512,7 @@ local controlsSettings = {
 local bindingsSettings = {
     }
     
-local function bindSetting(key, type, default, required, long)
+local function bindSetting(key, actionSets, type, default, required, long)
     if not default then print('error default nil') end
     bindingsSettings[#bindingsSettings+1] = {
         key = key..'_SettingKey',
@@ -490,6 +522,7 @@ local function bindSetting(key, type, default, required, long)
         default = {
             id = key..'_VR',
             key = key,
+            actionSets = actionSets,
             paths = default,
             type = type,
             required = required,
@@ -510,35 +543,35 @@ local function registerTriggers()
             }
         end
     end
-    local reg = function(key, required, long)
+    local reg = function(key, actionSets, required, long)
         regTrigger(key)
-        bindSetting(key, 'trigger', getDefaultBindings(key..'_VR'), required, long)
+        bindSetting(key, actionSets, 'trigger', getDefaultBindings(key..'_VR'), required, long)
     end
 
-    reg('PointerActivate', true)
-    reg('Recenter', false, true)
-    reg('MetaMenu', true)
-    --reg('MenuSelect')
-    reg('MenuBack')
-    reg('RadialMenu', false, true)
+    reg('PointerActivate', ActionSetTemplates.Interaction, true)
+    reg('Recenter', ActionSetTemplates.Always, false, true)
+    reg('MetaMenu', ActionSetTemplates.NotMenu, true)
+    --reg('MenuSelect', ActionSetTemplates.Menu)
+    reg('MenuBack', ActionSetTemplates.MenuOnly)
+    reg('RadialMenu', ActionSetTemplates.NotMenu, false, true)
     
     
     -- Existing triggers.
     -- The intent was to only add the bindings for these existing triggers.
     -- But upstream isn't registering them until loading a game...
-    local regExisting = function(key, required, long)
+    local regExisting = function(key, actionSets, required, long)
         local key2 = key..'_Alias'
         alias[key2] = key
         regTrigger(key2)
-        bindSetting(key2, 'trigger', getDefaultBindings(key..'_VR'), required, long)
+        bindSetting(key2, actionSets, 'trigger', getDefaultBindings(key..'_VR'), required, long)
     end
-    regExisting('ToggleSneak')
-    regExisting('ToggleWeapon')
-    regExisting('ToggleSpell')
-    regExisting('Inventory')
-    regExisting('AlwaysRun')
-    regExisting('AutoMove')
-    regExisting('Jump')
+    regExisting('ToggleSneak', ActionSetTemplates.GameplayOnly)
+    regExisting('ToggleWeapon', ActionSetTemplates.GameplayOnly)
+    regExisting('ToggleSpell', ActionSetTemplates.GameplayOnly)
+    regExisting('Inventory', ActionSetTemplates.NotMenu)
+    regExisting('AlwaysRun', ActionSetTemplates.NotMenu)
+    regExisting('AutoMove', ActionSetTemplates.NotMenu)
+    regExisting('Jump', ActionSetTemplates.NotMenu)
 end
 
 local function registerActions()
@@ -554,47 +587,47 @@ local function registerActions()
             }
         end
     end
-    local reg = function(key, type, value, required, default)
+    local reg = function(key, actionSets, type, value, required, default)
         regAction(key, type, value)
-        bindSetting(key, 'action', default, required)
+        bindSetting(key, actionSets, 'action', default, required)
         -- Make sure our bindings are always fired first by setting up the binding right away
         setupValueBinding(key, required)
     end
-    local regBool = function(key, required)
-        reg(key, input.ACTION_TYPE.Boolean, false, required, getDefaultBindings(key..'_VR'))
+    local regBool = function(key, actionSets, required)
+        reg(key, actionSets, input.ACTION_TYPE.Boolean, false, required, getDefaultBindings(key..'_VR'))
     end
-    local regRange = function(key, required)
-        reg(key, input.ACTION_TYPE.Range, 0, required, getDefaultBindings(key..'_VR'))
+    local regRange = function(key, actionSets, required)
+        reg(key, actionSets, input.ACTION_TYPE.Range, 0, required, getDefaultBindings(key..'_VR'))
     end
-    regBool('PointerLeft')
-    regBool('PointerRight')
-    regRange('LookLeft')
-    regRange('LookRight')
+    regBool('PointerLeft', ActionSetTemplates.Always)
+    regBool('PointerRight', ActionSetTemplates.Always)
+    regRange('LookLeft', ActionSetTemplates.Always)
+    regRange('LookRight', ActionSetTemplates.Always)
     
     -- Existing actions.
     -- The intent was to only add the bindings for these existing actions.
     -- But upstream isn't registering them until loading a game...
-    local regExistingBool = function(key, required)
+    local regExistingBool = function(key, actionSets, required)
         local key2 = key..'_Alias'
         alias[key2..'_VR'] = key..'_VR'
         --bindSetting(key, 'action', getDefaultBindings(key..'_VR'), required)
-        reg(key2, input.ACTION_TYPE.Boolean, false, required, getDefaultBindings(key..'_VR'))
-        setupValueBinding(key, required, key2)
+        reg(key2, actionSets, input.ACTION_TYPE.Boolean, false, required, getDefaultBindings(key..'_VR'))
+        setupValueBinding(key, actionSets, required, key2)
     end
-    local regExistingRange = function(key, required)
+    local regExistingRange = function(key, actionSets, required)
         local key2 = key..'_Alias'
         alias[key2..'_VR'] = key..'_VR'
         --bindSetting(key, 'action', getDefaultBindings(key..'_VR'), required)
-        reg(key2, input.ACTION_TYPE.Range, 0, required, getDefaultBindings(key..'_VR'))
+        reg(key2, actionSets, input.ACTION_TYPE.Range, 0, required, getDefaultBindings(key..'_VR'))
         setupValueBinding(key, required, key2)
     end
     -- For now, registering existing doesn't work
-    regExistingRange('MoveLeft')
-    regExistingRange('MoveRight')
-    regExistingRange('MoveForward')
-    regExistingRange('MoveBackward')
-    regExistingBool('Sneak')
-    regExistingBool('Use')
+    regExistingRange('MoveLeft', ActionSetTemplates.NotMenu)
+    regExistingRange('MoveRight', ActionSetTemplates.NotMenu)
+    regExistingRange('MoveForward', ActionSetTemplates.NotMenu)
+    regExistingRange('MoveBackward', ActionSetTemplates.NotMenu)
+    regExistingBool('Sneak', ActionSetTemplates.NotMenu)
+    regExistingBool('Use', ActionSetTemplates.GameplayOnly)
     
     -- Reuse the LookLeft/LookRight actions for snap turning so we don't end up with two sets of bindings.
     regAction('SnapTurnLeft', input.ACTION_TYPE.Boolean, false)
@@ -683,7 +716,7 @@ local function tryTriggers(path, long)
     tryManualTriggers(path)
 end
 
-local function inputChangedBoolean(path, action)
+local function inputChangedBoolean(path, action, value)
     -- In order to accomodate long presses, triggers react on release.
     if action.valueBoolean then
         inputHoldTime[path] = 0
@@ -695,7 +728,7 @@ local function inputChangedBoolean(path, action)
     end
     
     if onInputChangedBoolean then
-        onInputChangedBoolean(path, action)
+        onInputChangedBoolean(path, action, value)
     end
 end
 
@@ -715,7 +748,7 @@ local function updateInputs(dt)
             action.valueBoolean = value
         end
         if action.valueBoolean ~= prevBoolean then
-            inputChangedBoolean(path, action)
+            inputChangedBoolean(path, action, action.valueBoolean)
         end
     end
     for path, time in pairs(inputHoldTime) do
@@ -740,14 +773,39 @@ local function getInteractionName(interactionPath)
     return interactionPath
 end
 
+local function onActionSetChanged()
+    updateActiveBindings()
+end
+
+local function updateCurrentActionSet()
+    local previous = currentActionSet
+    -- This could be running in a menu script, so we have to check if I.UI exists
+    -- A clear-cut function to check for UI mode would be nice...
+    if core.isWorldPaused() or (I.UI and I.UI.getMode()) then
+        currentActionSet = ActionSets.Menu
+    elseif input.getBooleanActionValue('PointerLeft')
+            or input.getBooleanActionValue('PointerRight') then
+        currentActionSet = ActionSets.Interaction
+    else
+        currentActionSet = ActionSets.Gameplay
+    end
+    if currentActionSet ~= previous then
+        onActionSetChanged()
+    end
+end
+
 local lt = nil
 
 local function onFrame()
+    updateCurrentActionSet()
     updateActiveProfiles()
     if not initialized then 
         init() 
         initialized = true
     end
+
+    -- When managing input timings, we need to measure real time
+    -- and not simulation time
     local t = core.getRealTime()
     local dt = 0
     if lt then
@@ -763,6 +821,8 @@ return {
     onFrame = onFrame,
     onUpdate= onUpdate,
     settings = settings,
+    ActionSets = ActionSets,
+    ActionSetTemplates = ActionSetTemplates,
     registerSettingsGroup = registerSettingsGroup,
     registerSettingsPage = registerSettingsPage,
     setOnInputChangedBoolean = function(func) onInputChangedBoolean = func end,

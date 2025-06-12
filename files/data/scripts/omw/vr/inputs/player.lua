@@ -69,8 +69,8 @@ local pointerLeft = false
 local pointerRight = false
 
 local function updatePointer()
-    pointerLeft = input.getBooleanActionValue('PointerLeft') and vr.isControllerActive(common.controllers.LEFT_HAND)
-    pointerRight = input.getBooleanActionValue('PointerRight') and vr.isControllerActive(common.controllers.RIGHT_HAND)
+    pointerLeft = input.getBooleanActionValue('PointerLeft')
+    pointerRight = input.getBooleanActionValue('PointerRight')
     
     if pointerLeft and pointerRight then
         -- Both pointers are being activated at the same time, but i only 

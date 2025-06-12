@@ -1,7 +1,13 @@
 InputPage: "OpenMW VR Input settings"
 InputPageDescription: "Additional settings related to VR."
 
+"Unable to bind to {Input}, conflicts with existing {Binding}" : "Unable to bind to {Input}, conflicts with existing {Binding}"
+unable_to_bind_conflicts: "Unable to bind to input "
+
 ControlsGroup: "VR Input Settings"
+
+None: "None"
+Recording: "Recording..."
 
 SmoothTurn: "Smooth Turn"
 SmoothTurnDescription: |

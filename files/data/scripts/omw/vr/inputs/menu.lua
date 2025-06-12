@@ -13,12 +13,11 @@ local menu = require('openmw.menu')
 local core = require('openmw.core')
 local async = require('openmw.async')
 local common = require('scripts.omw.vr.inputs.common')
-
+local l10nContext = core.l10n(common.l10nKey)
 local inputTypes = {
     action = input.actions,
     trigger = input.triggers,
 }
-local interfaceL10n = core.l10n('interface')
 
 local activeProfiles = {}
 
@@ -32,10 +31,10 @@ local function getActive(paths)
     return nil
 end
 
-local function bindingLabel(isRecording, binding)
+local function bindingLabel(isRecording, binding, id)
     local res = nil
     if isRecording then
-        res = interfaceL10n('N/A')
+        res = l10nContext('Recording')
     elseif binding and binding.paths then
         local activePath = getActive(binding.paths)
         if activePath then 
@@ -44,13 +43,13 @@ local function bindingLabel(isRecording, binding)
     end
     
     if not res then 
-        res = interfaceL10n('None') 
+        res = l10nContext('None')
     end
     return res
 end
 
-local bindingsVersion = 1
-local bindingsVersionMinSupported = 1
+local bindingsVersion = 4
+local bindingsVersionMinSupported = 4
 local bindingSection = common.bindingSection
 local userBindingsSection = common.userBindingsSection
 local controlsSection = common.controlsSection
@@ -59,14 +58,16 @@ if version < bindingsVersion then
     if version < bindingsVersionMinSupported then
         userBindingsSection:reset()
         bindingSection:reset()
+        print('Motion Controller bindings have been reset due to: version changed')
         ui.showMessage('Motion Controller bindings have been reset due to: version changed')
     else
     -- Do any conversion here
     end
-    bindingSection:set('version', bindingsVersion)
+    --bindingSection:set('version', bindingsVersion)
 end
 
 local recording = nil
+local justRecorded = false
 
 local function clearActive(paths)
     for _, controller in pairs (common.controllers) do
@@ -78,17 +79,21 @@ local function clearActive(paths)
 end
 
 local function setActivePath(paths, path)
-    local controller = common.controllers.RIGHT_HAND
+    local targetController = common.controllers.RIGHT_HAND
+    local otherController = common.controllers.LEFT_HAND
     if string.find(path, '/left/') then
-        controller = common.controllers.LEFT_HAND
+        local targetController = common.controllers.LEFT_HAND
+        local otherController = common.controllers.RIGHT_HAND
     end
-    local profile = I.vrinputs.getInteractionProfileOfController(controller)
+    local profile = I.vrinputs.getInteractionProfileOfController(targetController)
     if not profile then
         print('Warning: Tried to bind to a non-existent controller')
         return
     end
     paths[profile] = paths[profile] or {}
-    paths[profile][controller] = path
+    paths[profile][targetController] = path
+    -- Only allow one binding on each profile
+    paths[profile][otherController] = nil
 end
 
 I.Settings.registerRenderer('inputBindingVR', function(value, set, arg)
@@ -102,6 +107,8 @@ I.Settings.registerRenderer('inputBindingVR', function(value, set, arg)
    
     local l10n = core.l10n(info.l10n)
 
+    -- TODO: It would be nice to include actionSet/longPress information
+    -- directly in the menu so users don't have to guess what conflicts and what doesn't.
     --local name = {
     --    template = I.MWUI.templates.textNormal,
     --    props = {
@@ -121,12 +128,19 @@ I.Settings.registerRenderer('inputBindingVR', function(value, set, arg)
         binding = {}
         binding.key = value.key
         binding.type = value.type
+        binding.actionSets = value.actionSets
+        if not binding.actionSets or #binding.actionSets == 0 then
+            binding.actionSets = common.ActionSetTemplates.Always
+        end
         binding.paths = value.paths
         binding.long = value.long
+        if binding.long == nil then
+            binding.long = false
+        end
         bindingSection:set(value.id, binding)
         print(tostring(value.id)..': set to defaults')
     end
-    local label = bindingLabel(recording and recording.id == value.id, binding)
+    local label = bindingLabel(recording and recording.value.id == value.id, binding, value.id)
 
     local recorder = {
         template = I.MWUI.templates.textNormal,
@@ -174,6 +188,53 @@ I.Settings.registerRenderer('inputBindingVR', function(value, set, arg)
     return column
 end)
 
+local function tableHasValueInCommon(t1, t2)
+    for _, v1 in pairs(t1) do
+        for _, v2 in pairs(t2) do
+            if v1 == v2 then
+                return true
+            end
+        end
+    end
+    return false
+end
+
+local function checkForConflict(binding1, binding2)
+    --An actionSet with no action sets in common is never
+    --a conflict
+    if not tableHasValueInCommon(binding1.actionSets, binding2.actionSets) then
+        return false
+    end
+
+    --Bindings with action sets in common can still be salvaged if they are both triggers
+    --and one is a long press while the other is a short press.
+    if binding1.type == 'trigger' and binding2.type == 'trigger'
+            and binding1.long ~= binding2.long then
+        return false
+    end
+
+    return true
+end
+
+local function findConflicts(path, rebindingId, rebinding)
+    local actionSets = rebinding.actionSets
+    local long = rebinding.long
+    local conflicts = {}
+    for id, binding in pairs(bindingSection:asTable()) do
+        if id ~= 'version' and id ~= rebindingId then
+            if getActive(binding.paths) == path then
+                if checkForConflict(rebinding, binding) then
+                    conflicts[#conflicts+1] = id
+                end
+            end
+        end
+    end
+    if #conflicts > 0 then
+        return conflicts
+    end
+    return nil
+end
+
 local function bindInteraction(path)
     if recording == nil then return end
     
@@ -182,14 +243,28 @@ local function bindInteraction(path)
         -- it's impossible to bind click without binding touch.
         return
     end
-    
+
     local binding = bindingSection:getCopy(recording.value.id)
-    binding.paths = binding.paths or {}
-    setActivePath(binding.paths, path)
-    bindingSection:set(recording.value.id, binding)
+    local conflicts = findConflicts(path, recording.value.id, binding)
+    if conflicts then
+        local label = common.getInteractionName(path)
+        for _, conflict in pairs(conflicts) do
+            -- TODO: Dig up the proper name of the binding and use its l10n context
+            print(l10nContext("Unable to bind to {Input}, conflicts with existing {Binding}", {Input = label, Binding = conflict}))
+            ui.showMessage(l10nContext("Unable to bind to {Input}, conflicts with existing {Binding}", {Input = label, Binding = conflict}))
+        end
+    else
+        print('No conflicts')
+        binding.paths = binding.paths or {}
+        setActivePath(binding.paths, path)
+        bindingSection:set(recording.value.id, binding)
+    end
+
     local refresh = recording.refresh
     recording = nil
     refresh()
+    -- Notify input handler that we just finished recording an input.
+    justRecorded = true
 end
 
 local initialized = false
@@ -197,14 +272,20 @@ local function init()
     common.registerSettingsGroup()
     common.registerSettingsPage()
 
-    common.setOnInputChangedBoolean(function(path, action)
+    common.setOnInputChangedBoolean(function(path, action, value)
+    if value then
         bindInteraction(path)
+    else
+        justRecorded = false
+    end
     end)
 
     -- Current .RC does not process actions during the main menu.
     -- So until a game has been loaded we have to manually deal with menu bindings.
     common.setManualTriggerCallback('PointerActivate', function()
-        vr._pointerActivate(true)
+        if not justRecorded then
+            vr._pointerActivate(true)
+        end
     end)
 
     common.setManualTriggerCallback('MenuBack', async:callback(function()
@@ -216,7 +297,7 @@ local function init()
 
     common.setManualTriggerCallback('Recenter', async:callback(function()
         print('Recenter')
-        vr.vrspaces.recenterXY()
+        I.vrspaces.recenterXY()
     end))
 end
 

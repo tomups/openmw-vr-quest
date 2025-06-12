@@ -4,8 +4,8 @@ local I = require('openmw.interfaces')
 local storage = require('openmw.storage')
 local util = require('openmw.util')
 local vr = require('openmw.vr')
-local function createDerivedSpaces()
 
+local function createDerivedSpaces()
     I.vrspaces.createDerivedSpace(
         'DefaultWindow', 
         I.vrspaces.referenceSpaces.View, 
