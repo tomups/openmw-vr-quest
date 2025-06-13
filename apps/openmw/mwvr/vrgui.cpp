@@ -570,8 +570,8 @@ namespace MWVR
                 mTransform->setScale(osg::Vec3(extent_units.x(), 1.f, extent_units.y()));
                 mTransform->setCullCallback(new CullVRGUILayerCallback(this));
                 mTransform->setCullingActive(false);
-                if (!config->intersectable)
-                    mTransform->setNodeMask(MWRender::Mask_Effect);
+                //if (!config->intersectable)
+                //    mTransform->setNodeMask(MWRender::Mask_Effect);
                 // configureGeometry();
             }
             mDirty = false;

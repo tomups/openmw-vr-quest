@@ -16,6 +16,15 @@ local function createDerivedSpaces()
     )
 
     I.vrspaces.createDerivedSpace(
+        'DefaultNotification',
+        I.vrspaces.referenceSpaces.View,
+        {
+            position = util.vector3(0, 0.8, -0.25) * I.vrspaces.UnitsPerMeter,
+            orientation = util.transform.identity,
+        }
+    )
+
+    I.vrspaces.createDerivedSpace(
         'DefaultVirtualKeyboard', 
         I.vrspaces.referenceSpaces.View, 
         {
@@ -258,7 +267,7 @@ local function setupDefaults(modes)
     I.vrui.setVirtualKeyboardConfig(configVirtualKeyboard)
 
     local configNotification = createDefaultConfig(false, 0, false)
-    configNotification.space = 'DefaultWindow'
+    configNotification.space = 'DefaultNotification'
     I.vrui.setNotificationConfig(configNotification)
 
     local configDefault = createDefaultConfig(true, 0.7, true)
