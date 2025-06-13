@@ -147,12 +147,6 @@ namespace MWLua
         api["isLeftHandedMode"] = []() { return VR::getLeftHandedMode(); };
         api["isControllerActive"]
             = [](const std::string& path) -> bool { return VR::getControllerActive(VR::stringToXrPath(path)); };
-        api["getInteractionProfileOfController"] = [](const std::string& path) -> sol::optional<std::string> {
-            auto p = VR::getControllerInteractionProfile(VR::stringToXrPath(path));
-            if (!p)
-                return sol::nullopt;
-            return std::string(VR::xrPathToString(p));
-        };
 
         api["createDerivedSpace"] = sol::overload(
             [&xrinput](const std::string& spaceId, VR::ReferenceSpace referenceSpaceType, const sol::table& pose) {
@@ -192,6 +186,13 @@ namespace MWLua
                 return sol::nil;
 
             return tableFromPose(space->locateInWorld(), lua);
+        };
+
+        api["_getInteractionProfileOfController"] = [](const std::string& path) -> sol::optional<std::string> {
+            auto p = VR::getControllerInteractionProfile(VR::stringToXrPath(path));
+            if (!p)
+                return sol::nullopt;
+            return std::string(VR::xrPathToString(p));
         };
 
         api["_setGuiPose"] = [&guiManager = MWVR::VRGUIManager::instance()](const std::string& id,

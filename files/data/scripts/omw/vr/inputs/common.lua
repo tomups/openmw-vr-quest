@@ -221,14 +221,6 @@ local function getDefaultBindings(id)
     return defaults
 end
 
-local function getActiveProfileAndControllerFromPath(path)
-    local controller = controllers.RIGHT_HAND
-    if string.find(path, '/left') then
-        controller = controllers.LEFT_HAND
-    end
-    return vr.getInteractionProfileOfController(controller), controller
-end
-
 local settingsPageKey = 'OMWVRInput'
 local l10nKey = settingsPageKey
 local controlsGroupKey = settingsPageKey..'Controls'
@@ -251,6 +243,20 @@ local activeActionBindings = {}
 local activeTriggerBindings = {}
 local isLong = {}
 
+-- To avoid needing to write redundant controller bindings, we alias some controllers
+local interactionProfileAliases = {
+    ['/interaction_profiles/meta/touch_controller_plus'] = '/interaction_profiles/oculus/touch_controller',
+    ['/interaction_profiles/facebook/touch_controller_pro'] = '/interaction_profiles/oculus/touch_controller',
+}
+
+local function getInteractionProfileOfController(controller)
+    local profile = vr._getInteractionProfileOfController(controller)
+    if not profile then
+        return nil
+    end
+    return interactionProfileAliases[profile] or profile
+end
+
 local function getOrInitBindingsForProfile(tab, profile)
     local bindings = tab[profile]
     if not bindings then
@@ -264,7 +270,7 @@ local function getOrInitBindingsForProfile(tab, profile)
 end
 
 local function getBindingsForController(tab, controller)
-    local profile = vr.getInteractionProfileOfController(controller)
+    local profile = I.vrinputs.getInteractionProfileOfController(controller)
     if not profile then 
         return {} 
     end
@@ -291,7 +297,7 @@ local function updateActiveProfiles()
     -- TODO: Make an engine handler for profile changes so i don't have to do this every frame
     local changed = false
     for name, controller in pairs(controllers) do
-        if activeProfiles[controller] ~= vr.getInteractionProfileOfController then
+        if activeProfiles[controller] ~= I.vrinputs.getInteractionProfileOfController then
             changed = true
         end
     end
@@ -301,7 +307,7 @@ local function updateActiveProfiles()
     activeActionBindings = {}
     activeTriggerBindings = {}
     for name, controller in pairs(controllers) do
-        local profile = vr.getInteractionProfileOfController(controller) 
+        local profile = I.vrinputs.getInteractionProfileOfController(controller)
         if profile then
             activeActionBindings[controller] = getActionBindingsForController(controller)
             for key, bindings in pairs(getTriggerBindingsForController(controller)) do
@@ -723,6 +729,10 @@ local function updateInputs(dt)
     end
 end
 
+local function isKBMouseMode()
+    return not (vr.isControllerActive(common.controllers.LEFT_HAND) or vr.isControllerActive(common.controllers.RIGHT_HAND))
+end
+
 local function getInteractionName(interactionPath)
     if interactionNames[interactionPath] then
         return interactionNames[interactionPath]
@@ -748,6 +758,7 @@ local function onFrame()
 end
 
 return {
+    isKBMouseMode = isKBMouseMode,
     updateInputs = updateInputs,
     onFrame = onFrame,
     onUpdate= onUpdate,
@@ -757,9 +768,9 @@ return {
     setOnInputChangedBoolean = function(func) onInputChangedBoolean = func end,
     interactionNames = interactionNames,
     getInteractionName = getInteractionName,
+    getInteractionProfileOfController = getInteractionProfileOfController,
     setManualTriggerCallback = setManualTriggerCallback,
     controllers = controllers,
-    getActiveProfileAndControllerFromPath = getActiveProfileAndControllerFromPath,
     l10nKey = l10nKey,
     settingsPageKey = settingsPageKey,
     bindingSectionKey = bindingSectionKey,

@@ -22,13 +22,9 @@ local interfaceL10n = core.l10n('interface')
 
 local activeProfiles = {}
 
-for _, controller in pairs (common.controllers) do
-    activeProfiles[controller] = vr.getInteractionProfileOfController(controller)
-end
-
 local function getActive(paths)
     for _, controller in pairs (common.controllers) do
-        local profile = vr.getInteractionProfileOfController(controller)
+        local profile = I.vrinputs.getInteractionProfileOfController(controller)
         if profile and paths[profile] and paths[profile][controller] then
             return paths[profile][controller]
         end
@@ -74,7 +70,7 @@ local recording = nil
 
 local function clearActive(paths)
     for _, controller in pairs (common.controllers) do
-        local profile = vr.getInteractionProfileOfController(controller)
+        local profile = I.vrinputs.getInteractionProfileOfController(controller)
         if profile and paths[profile] then
             paths[profile][controller] = nil
         end
@@ -86,7 +82,7 @@ local function setActivePath(paths, path)
     if string.find(path, '/left/') then
         controller = common.controllers.LEFT_HAND
     end
-    local profile = vr.getInteractionProfileOfController(controller)
+    local profile = I.vrinputs.getInteractionProfileOfController(controller)
     if not profile then
         print('Warning: Tried to bind to a non-existent controller')
         return
@@ -196,36 +192,43 @@ local function bindInteraction(path)
     refresh()
 end
 
-common.registerSettingsGroup()
-common.registerSettingsPage()
+local initialized = false
+local function init()
+    common.registerSettingsGroup()
+    common.registerSettingsPage()
 
-common.setOnInputChangedBoolean(function(path, action) 
-    bindInteraction(path) 
-end)
+    common.setOnInputChangedBoolean(function(path, action)
+        bindInteraction(path)
+    end)
 
--- Current .RC does not process actions during the main menu.
--- So until a game has been loaded we have to manually deal with menu bindings.
-common.setManualTriggerCallback('PointerActivate', function()
-    vr._pointerActivate(true)
-end)
+    -- Current .RC does not process actions during the main menu.
+    -- So until a game has been loaded we have to manually deal with menu bindings.
+    common.setManualTriggerCallback('PointerActivate', function()
+        vr._pointerActivate(true)
+    end)
 
-common.setManualTriggerCallback('MenuBack', async:callback(function()
-    -- There isn't a catch-all solution for closing the current menu item from lua.
-    -- I.UI.removeMode can only remove modes, not dialogue boxes, the console, or the postprocessing hud.
-    -- From VR I need a one click solution, so i am using this placeholder internal function.
-    ui._menuBack()
-end))
+    common.setManualTriggerCallback('MenuBack', async:callback(function()
+        -- There isn't a catch-all solution for closing the current menu item from lua.
+        -- I.UI.removeMode can only remove modes, not dialogue boxes, the console, or the postprocessing hud.
+        -- From VR I need a one click solution, so i am using this placeholder internal function.
+        ui._menuBack()
+    end))
 
-common.setManualTriggerCallback('Recenter', async:callback(function()
-    print('Recenter')
-    vr.vrspaces.recenterXY()
-end))
+    common.setManualTriggerCallback('Recenter', async:callback(function()
+        print('Recenter')
+        vr.vrspaces.recenterXY()
+    end))
+end
 
 local gameLoaded = false
 
 local function onFrame(dt)
+    if not initialized then
+        init()
+        initialized = true
+    end
     for _, controller in pairs (common.controllers) do
-        local profile = vr.getInteractionProfileOfController(controller)
+        local profile = I.vrinputs.getInteractionProfileOfController(controller)
         if profile ~= activeProfiles[controller] then
             I.Settings.updateRender(common.settingsPageKey)
         end
@@ -246,7 +249,6 @@ local function onFrame(dt)
         common.setManualTriggerCallback('Recenter', nil)
     end
 end
-
 return {
     engineHandlers = {
         onFrame = onFrame,
@@ -255,4 +257,18 @@ return {
     eventHandlers = {
         RecordVRBinding = function(data) bindInteraction(data.path) end,
     },
+
+    interfaceName = 'vrinputs',
+    ---
+    -- vr inputs
+    -- @module vrinputs
+
+    interface = {
+        --- Interface version
+        -- @field [parent=#vrinputs] #number version
+        version = 0,
+        getInteractionProfileOfController = common.getInteractionProfileOfController,
+        isKBMouseMode = common.isKBMouseMode,
+        controllers = common.controllers,
+    }
 }

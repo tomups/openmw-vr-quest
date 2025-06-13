@@ -174,10 +174,6 @@ input.registerActionHandler('LookRight', async:callback(function(v)
     yawChanged = true
 end))
 
-local function isKBMouseMode()
-    return not (vr.isControllerActive(common.controllers.LEFT_HAND) or vr.isControllerActive(common.controllers.RIGHT_HAND))
-end
-
 -- A few functions duplicated from playercontrols.lua
 -- We are overriding combat controls and have to change these funtions
 -- to respect pointer mode
@@ -297,15 +293,15 @@ return {
 
     interfaceName = 'vrinputs',
     ---
-    -- 3D menus
-    -- @module VRUI
+    -- vr inputs
+    -- @module vrinputs
 
     interface = {
         --- Interface version
-        -- @field [parent=#VRUI] #number version
+        -- @field [parent=#vrinputs] #number version
         version = 0,
-        isKBMouseMode = isKBMouseMode,
-        supportedInteractionPaths = supportedInteractionPaths,
+        getInteractionProfileOfController = common.getInteractionProfileOfController,
+        isKBMouseMode = common.isKBMouseMode,
         controllers = common.controllers,
     }
 }
