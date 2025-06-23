@@ -377,7 +377,7 @@ local function tryManualTriggers(path)
     end
 end
 
-local function setupValueBinding(action, required, alias)
+local function setupValueBinding(action, alias)
     if not boundActions[action] then
         boundActions[action] = true
         if not input.actions[action] then
@@ -591,7 +591,7 @@ local function registerActions()
         regAction(key, type, value)
         bindSetting(key, actionSets, 'action', default, required)
         -- Make sure our bindings are always fired first by setting up the binding right away
-        setupValueBinding(key, required)
+        setupValueBinding(key)
     end
     local regBool = function(key, actionSets, required)
         reg(key, actionSets, input.ACTION_TYPE.Boolean, false, required, getDefaultBindings(key..'_VR'))
@@ -612,14 +612,14 @@ local function registerActions()
         alias[key2..'_VR'] = key..'_VR'
         --bindSetting(key, 'action', getDefaultBindings(key..'_VR'), required)
         reg(key2, actionSets, input.ACTION_TYPE.Boolean, false, required, getDefaultBindings(key..'_VR'))
-        setupValueBinding(key, actionSets, required, key2)
+        setupValueBinding(key, key2)
     end
     local regExistingRange = function(key, actionSets, required)
         local key2 = key..'_Alias'
         alias[key2..'_VR'] = key..'_VR'
         --bindSetting(key, 'action', getDefaultBindings(key..'_VR'), required)
         reg(key2, actionSets, input.ACTION_TYPE.Range, 0, required, getDefaultBindings(key..'_VR'))
-        setupValueBinding(key, required, key2)
+        setupValueBinding(key, key2)
     end
     -- For now, registering existing doesn't work
     regExistingRange('MoveLeft', ActionSetTemplates.NotMenu)
