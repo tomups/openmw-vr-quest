@@ -331,7 +331,12 @@ namespace MWRender
 
         size_t frame = cv->getTraversalNumber();
 
-        mStateUpdater->setResolution(osg::Vec2f(cv->getViewport()->width(), cv->getViewport()->height()));
+// ## VR_PATCH BEGIN
+        if (VR::getVR())
+            mStateUpdater->setResolution(osg::Vec2f(renderWidth(), renderHeight()));
+        else
+// ## VR_PATCH END
+            mStateUpdater->setResolution(osg::Vec2f(cv->getViewport()->width(), cv->getViewport()->height()));
 
         // per-frame data
         if (frame != mLastFrameNumber)
