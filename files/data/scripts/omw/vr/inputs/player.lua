@@ -223,7 +223,7 @@ local function processAttacking()
     startUse = false
 end
 
-input.bindAction('Sneak', async:callback(function()
+input.bindAction('Sneak', async:callback(function(dt, v)
 	if physicalSneak and pose and referencePose then
 		local wasPhysicalSneak = isPhysicalSneak
 		local z = pose.position.z
@@ -235,9 +235,9 @@ input.bindAction('Sneak', async:callback(function()
 				ui.showMessage(l10nContext('left_physical_sneak'))
 			end
 		end
-		return isPhysicalSneak
+		return isPhysicalSneak or v
 	end
-	return false
+	return v
 end), {})
 
 local function onFrame(dt)
