@@ -63,7 +63,7 @@ if version < bindingsVersion then
     else
     -- Do any conversion here
     end
-    --bindingSection:set('version', bindingsVersion)
+    bindingSection:set('version', bindingsVersion)
 end
 
 local recording = nil
