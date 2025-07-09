@@ -203,7 +203,7 @@ return {
                 ['AutoMove_VR'] = '/user/hand/left/input/thumbstick/click',
                 ['RadialMenu_VR'] = '/user/hand/left/input/y/click',
                 ['ToggleWeapon_VR'] = '/user/hand/left/input/x/click',
-                ['ToggleSneak_VR'] = '/user/hand/left/input/thubmstick/down',
+                ['ToggleSneak_VR'] = '/user/hand/left/input/thumbstick/down',
             },
         },
         ['/interaction_profiles/valve/index_controller'] = {
@@ -235,7 +235,7 @@ return {
                 ['AutoMove_VR'] = '/user/hand/left/input/thumbstick/click',
                 ['RadialMenu_VR'] = '/user/hand/left/input/b/click',
                 ['ToggleWeapon_VR'] = '/user/hand/left/input/a/click',
-                ['ToggleSneak_VR'] = '/user/hand/left/input/thubmstick/down',
+                ['ToggleSneak_VR'] = '/user/hand/left/input/thumbstick/down',
             },
         },
     },

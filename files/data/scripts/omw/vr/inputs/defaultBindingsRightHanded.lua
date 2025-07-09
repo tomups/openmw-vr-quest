@@ -183,7 +183,7 @@ return {
                 ['AutoMove_VR'] = '/user/hand/right/input/thumbstick/click',
                 ['RadialMenu_VR'] = '/user/hand/right/input/b/click',
                 ['ToggleWeapon_VR'] = '/user/hand/right/input/a/click',
-                ['ToggleSneak_VR'] = '/user/hand/right/input/thubmstick/down',
+                ['ToggleSneak_VR'] = '/user/hand/right/input/thumbstick/down',
             },
             ['/user/hand/left'] = {
                 -- Oculus users frequently use steamvr which messes with the availability of the /menu binding
@@ -216,7 +216,7 @@ return {
                 ['AutoMove_VR'] = '/user/hand/right/input/thumbstick/click',
                 ['RadialMenu_VR'] = '/user/hand/right/input/b/click',
                 ['ToggleWeapon_VR'] = '/user/hand/right/input/a/click',
-                ['ToggleSneak_VR'] = '/user/hand/right/input/thubmstick/down',
+                ['ToggleSneak_VR'] = '/user/hand/right/input/thumbstick/down',
             },
             ['/user/hand/left'] = {
                 -- Since index always uses steamvr, it has no /menu binding.
