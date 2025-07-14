@@ -126,7 +126,7 @@ input.registerTriggerHandler('Activate', async:callback(function()
 end))
 
 input.registerTriggerHandler('Recenter', async:callback(function() 
-    I.vrspaces.recenter() 
+    I.vrspaces.recenterXY() 
 end))
 
 input.registerTriggerHandler('RadialMenu', async:callback(function() 
