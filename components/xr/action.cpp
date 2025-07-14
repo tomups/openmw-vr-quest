@@ -135,12 +135,13 @@ namespace XR
     {
     }
 
-    void PoseAction::update()
+    bool PoseAction::update()
     {
         if (mAction->getPoseIsActive(XR_NULL_PATH))
             mValue = true;
         else
             mValue = std::nullopt;
+        return false;
     }
 
     std::shared_ptr<Space> PoseAction::createActionSpace(Stereo::Pose pose) const
@@ -162,24 +163,34 @@ namespace XR
     {
     }
 
-    void BoolAction::update()
+    bool BoolAction::update()
     {
         bool value = false;
+        bool ret = false;
         bool active = mAction->getBool(XR_NULL_PATH, value);
         if (active)
+        {
+            ret = !std::get<bool>(mValue.value_or(false)) && value;
             mValue = value;
+        }
         else
             mValue = std::nullopt;
+        return ret;
     }
 
-    void FloatAction::update()
+    bool FloatAction::update()
     {
         float value = 0.f;
+        bool ret = false;
         bool active = mAction->getFloat(XR_NULL_PATH, value);
         if (active)
+        {
+            ret = (std::get<float>(mValue.value_or(0.f)) < 0.6f) && (value > 0.6f);
             mValue = value;
+        }
         else
             mValue = std::nullopt;
+        return ret;
     }
 
     //void AxisDeadzone::applyDeadzone(float& value)

@@ -233,10 +233,13 @@ namespace MWVR
             mMouseManager->setMousePosition(guiCursor.x(), guiCursor.y());
         }
 
+        auto wm = MWBase::Environment::get().getWindowManager();
+
         if (!VR::getKBMouseModeActive())
         {
             auto& actionSet = mXRInput->getActionSet(MWActionSet::Actions);
-            actionSet.update();
+            if (actionSet.update())
+                wm->skipVideo();
         }
 
         MWInput::InputManager::update(dt, disableControls, disableEvents);
@@ -245,7 +248,7 @@ namespace MWVR
         if (MWBase::Environment::get().getStateManager()->getState() == MWBase::StateManager::State_NoGame)
             return;
 
-        bool guiMode = MWBase::Environment::get().getWindowManager()->isGuiMode();
+        bool guiMode = wm->isGuiMode();
 
         // OpenMW assumes all input will come via SDL which i often violate.
         // This keeps player controls correctly enabled for my purposes.

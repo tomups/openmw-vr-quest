@@ -407,6 +407,8 @@ namespace MWGui
         std::vector<std::string_view> getAllowedWindowIds(GuiMode mode) const override;
         const std::map<MWGui::GuiMode, std::string_view>& guiModeToName() const override;
 
+        void skipVideo() override;
+
     private:
         unsigned int mOldUpdateMask;
         unsigned int mOldCullMask;

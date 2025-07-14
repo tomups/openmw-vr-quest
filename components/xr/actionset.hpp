@@ -36,7 +36,7 @@ namespace XR
         ~ActionSet();
 
         //! Update all actions
-        void update();
+        bool update();
 
         //! Apply haptics of the given intensity to the given limb
         void applyHaptics(const std::string& id, float intensity);

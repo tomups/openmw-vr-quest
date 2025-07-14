@@ -80,7 +80,7 @@ namespace XR
 
         std::optional<Value> value() const { return mValue; }
 
-        virtual void update() = 0;
+        virtual bool update() = 0;
 
     protected:
         std::unique_ptr<Action> mAction;
@@ -98,7 +98,7 @@ namespace XR
         //! Convenience
         XrAction xrAction() const { return mAction->xrAction(); }
 
-        void update() override;
+        bool update() override;
 
         std::shared_ptr<Space> createActionSpace(Stereo::Pose pose) const;
 
@@ -114,7 +114,7 @@ namespace XR
 
         static const XrActionType ActionType = XR_ACTION_TYPE_BOOLEAN_INPUT;
 
-        void update() override;
+        bool update() override;
 
     private:
         std::chrono::steady_clock::time_point mPressTime{};
@@ -179,30 +179,13 @@ namespace XR
 
         static const XrActionType ActionType = XR_ACTION_TYPE_FLOAT_INPUT;
 
-        void update() override;
+        bool update() override;
 
     private:
     };
 
     // Axis action is just a float action that goes from -1 to 1 instead of 0 to 1.
     using AxisAction = FloatAction;
-
-    //! Action for 2D axis actions, such as thumbsticks and trackpads.
-    //! Float axis are considered active whenever their magnitude is greater than gAxisEpsilon. This is useful
-    //! as a touch subtitute on levers without touch.
-    // class Axis2DAction : public InputAction
-    //{
-    // public:
-    //     Axis2DAction(int openMWAction, std::shared_ptr<Action> xrAction, std::shared_ptr<AxisDeadzone> deadzone);
-
-    //    static const XrActionType ActionType = XR_ACTION_TYPE_VECTOR2F_INPUT;
-
-    //    void update() override;
-
-    //    bool shouldQueue() const override { return true; }
-
-    //    std::shared_ptr<AxisDeadzone> mDeadzone;
-    //};
 }
 
 #endif

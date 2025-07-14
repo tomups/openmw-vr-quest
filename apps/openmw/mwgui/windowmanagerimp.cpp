@@ -2642,4 +2642,8 @@ namespace MWGui
     {
         return modeToName;
     }
+    void WindowManager::skipVideo() {
+        if (mVideoEnabled)
+            mVideoWidget->stop();
+    }
 }

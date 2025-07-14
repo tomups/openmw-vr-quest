@@ -260,29 +260,32 @@ namespace XR
         return std::make_unique<XR::Action>(xrAction, actionType, actionName, localName);
     }
 
-    void ActionSet::update()
+    bool ActionSet::update()
     {
         const XrActiveActionSet activeActionSet{ mActionSet, XR_NULL_PATH };
         XrActionsSyncInfo syncInfo{};
         syncInfo.type = XR_TYPE_ACTIONS_SYNC_INFO;
         syncInfo.countActiveActionSets = 1;
         syncInfo.activeActionSets = &activeActionSet;
+        bool inputChanged = false;
 
         auto res = xrSyncActions(XR::Session::instance().xrSession(), &syncInfo);
         if (XR_FAILED(res))
         {
             CHECK_XRRESULT(res, "xrSyncActions");
-            return;
+            return false;
         }
         else if (res == XR_SUCCESS)
         {
             for (auto& action : mAllInputActions)
-                action.second->update();
+                inputChanged = inputChanged || action.second->update();
         }
         else
         {
             // Do nothing if xrSyncActions returned XR_SESSION_NOT_FOCUSED or XR_SESSION_LOSS_PENDING
         }
+
+        return inputChanged;
     }
 
     XrPath ActionSet::getXrPath(const std::string& path) const
