@@ -69,12 +69,6 @@ namespace MWRender
         {
             int screenW = renderInfo.getCurrentCamera()->getViewport()->width();
             int screenH = renderInfo.getCurrentCamera()->getViewport()->height();
-            if (Stereo::getStereo())
-            {
-                auto eyeRes = Stereo::Manager::instance().eyeResolution();
-                screenW = eyeRes.x();
-                screenH = eyeRes.y();
-            }
             double imageaspect = (double)mWidth / (double)mHeight;
             int leftPadding = std::max(0, static_cast<int>(screenW - screenH * imageaspect) / 2);
             int topPadding = std::max(0, static_cast<int>(screenH - screenW / imageaspect) / 2);
