@@ -356,7 +356,7 @@ namespace MWVR
 
         void StateMachine::transition_swingingToImpact(MWWorld::Ptr victim, osg::Vec3f hitPosition, bool success) 
         {
-            mPtr.getClass().hit(mPtr, mStrength, mSwingType, victim, hitPosition, success);
+            mPtr.getClass().hit(mPtr, mStrength, mSwingType, victim, hitPosition, success, true);
             transition(SwingState_Impact, false);
         }
 

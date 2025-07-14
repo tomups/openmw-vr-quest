@@ -123,7 +123,7 @@ namespace MWWorld
     // ## VR_PATCH END
 
     void Class::hit(const Ptr& ptr, float attackStrength, int type, const Ptr& victim, const osg::Vec3f& hitPosition,
-        bool success) const
+        bool success, bool ignoreReach) const
     {
         throw std::runtime_error("class cannot hit");
     }

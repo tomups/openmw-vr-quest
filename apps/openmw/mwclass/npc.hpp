@@ -86,7 +86,7 @@ namespace MWClass
         // ## VR_PATCH END
 
         void hit(const MWWorld::Ptr& ptr, float attackStrength, int type, const MWWorld::Ptr& victim,
-            const osg::Vec3f& hitPosition, bool success) const override;
+            const osg::Vec3f& hitPosition, bool success, bool ignoreReach) const override;
 
         void onHit(const MWWorld::Ptr& ptr, float damage, bool ishealth, const MWWorld::Ptr& object,
             const MWWorld::Ptr& attacker, const osg::Vec3f& hitPosition, bool successful,
