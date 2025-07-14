@@ -14,6 +14,14 @@ local function createDerivedSpaces()
             orientation = util.transform.identity,
         }
     )
+    I.vrspaces.createDerivedSpace(
+        'DialogueWindow', 
+        I.vrspaces.referenceSpaces.View, 
+        {
+            position = util.vector3(0, 1, -0.45) * I.vrspaces.UnitsPerMeter,
+            orientation = util.transform.identity,
+        }
+    )
 
     I.vrspaces.createDerivedSpace(
         'DefaultNotification',
@@ -146,12 +154,19 @@ local windowsForArrangement = {
     'Dialogue',
 }
 
+local modeConfigOverridden = {}
+
 local modeWindowsForArrangement = {
     Interface = { "Stats", "Inventory", "Map", "Magic" },
     Container = { "Inventory", "Container" },
     Companion = { "Inventory", "Companion" },
     Barter = { "Inventory", "Trade" },
     Dialogue = { "Dialogue" },
+}
+
+local spaceForMode = {
+    Default = 'DefaultWindow',
+    Dialogue = 'DialogueWindow',
 }
 
 local modeConfig = {}
@@ -212,7 +227,7 @@ local function registerSettingsGroup()
         key = spacesGroupKey,
         page = settingsPageKey,
         l10n = l10nKey,
-        name = 'SpacesGroup',
+        name = spacesGroupKey,
         permanentStorage = true,
         settings = {
             selectSetting('HUDSpace', HUDpaces),
@@ -237,11 +252,11 @@ local function updateSpacesSettings()
     configTooltip.space = spacesSection:get('TooltipSpace')
     I.vrui.setTooltipConfig(configTooltip)
 end
-updateSpacesSettings()
 spacesSection:subscribe(async:callback(updateSpacesSettings))
 
 
 local function setupDefaults(modes)
+    updateSpacesSettings()
     for _, mode in pairs(modes or {}) do
         modeConfig[mode] = createDefaultConfig(true, 0.7, true)
     end
@@ -258,7 +273,9 @@ local function setupDefaults(modes)
     end
 
     for mode, config in pairs(modeConfig) do
-        I.vrui.setModeConfig(mode, config)
+        if not modeConfigOverridden[mode] then
+            I.vrui.setModeConfig(mode, config)
+        end
     end
 
     local configVirtualKeyboard = createDefaultConfig(true, 0.7, true)
@@ -283,10 +300,15 @@ local referenceWorldPose = {
     orientation = util.transform.identity,
 }
 
-local windowRelativePose = {
-    position = util.vector3(0, 1, -0.25) * I.vrspaces.UnitsPerMeter,
-    orientation = util.transform.identity,
-}
+local windowRelativePose = {}
+local function getWindowRelativePose(mode)
+    return windowRelativePose[mode] or windowRelativePose['Default']
+end
+local function updateWindowRelativePoses()
+    for mode, space in pairs(spaceForMode) do
+        windowRelativePose[mode] = vr.locateSpace(space, I.vrspaces.referenceSpaces.View) or windowRelativePose[mode]
+    end
+end
 
 local virtualKeyboardRelativePose = {
     position = util.vector3(0, 35, -40),
@@ -296,8 +318,9 @@ local virtualKeyboardRelativePose = {
 local visibleWindowsForArrangement = {}
 
 local function updateWindowArrangement(modes)
-    -- Updates all modes that need arrangement
-    if #visibleWindowsForArrangement == 0 then 
+    -- Updates all windows that need arrangement
+    local mode = I.UI.getMode()
+    if #visibleWindowsForArrangement == 0 or not mode then 
         return 
     end
     
@@ -305,14 +328,9 @@ local function updateWindowArrangement(modes)
     local step = (-math.pi / 4)
     local span = step * (#visibleWindowsForArrangement - 1)
     local angle = -span / 2 + referenceWorldPose.orientation:getYaw()
-    
     for _, window in ipairs(visibleWindowsForArrangement) do
-        -- Arrange window at this angle
-        
-        -- mRotation = osg::Quat{ angle, osg::Z_AXIS };
-        local transform = util.transform.rotateZ(angle) * util.transform.rotateZ(windowRelativePose.orientation:getYaw())
-        
-        local rotatedPosition = transform:apply(windowRelativePose.position)
+        local transform = util.transform.rotateZ(angle) * util.transform.rotateZ(getWindowRelativePose(mode).orientation:getYaw())
+        local rotatedPosition = transform:apply(getWindowRelativePose(mode).position)
         
         windowPoses[window] = {
             position = referenceWorldPose.position + rotatedPosition,
@@ -322,11 +340,9 @@ local function updateWindowArrangement(modes)
         angle = angle + step
     end
     
-    for mode, windows in pairs (modeWindowsForArrangement) do
-    end
     for _, mode in pairs(modes) do
         local windows = modeWindowsForArrangement[mode]
-        if windows then
+        if windows and not modeConfigOverridden[mode] then
             for _, window in pairs(windows) do
                 if windowPoses[window] then
                     I.vrui.setModePose(mode, windowPoses[window], window)
@@ -357,34 +373,95 @@ local function updateVisibleWindows()
     return false
 end
 
-local function updateModes(modes)
-    -- Updates all modes that do not need arrangement
-    local transform = util.transform.rotateZ(referenceWorldPose.orientation:getYaw() + windowRelativePose.orientation:getYaw())
-    local pose = {
-        position = referenceWorldPose.position + transform:apply(windowRelativePose.position),
+local function computeModePose(mode)
+    local transform = util.transform.rotateZ(referenceWorldPose.orientation:getYaw() + getWindowRelativePose(mode).orientation:getYaw())
+    return {
+        position = referenceWorldPose.position + transform:apply(getWindowRelativePose(mode).position),
         orientation = transform
     }
-    for _, mode in pairs(modes) do
-        if not modeWindowsForArrangement[mode] then
-            I.vrui.setModePose(mode, pose)
-        end
-    end
-    I.vrui.setDefaultWindowPose(pose)
-    
-    -- Handle virtual keyboard
-    orientation = util.transform.rotateX(math.pi/8)
-    transform = util.transform.rotateZ(referenceWorldPose.orientation:getYaw())
-    local pose = {
+end
+
+local function computeVirtualKeyboardPose()
+    local orientation = util.transform.rotateX(math.pi/8)
+    local transform = util.transform.rotateZ(referenceWorldPose.orientation:getYaw())
+    return {
         position = referenceWorldPose.position + transform:apply(virtualKeyboardRelativePose.position),
         orientation = transform * virtualKeyboardRelativePose.orientation
     }
-    I.vrui.setVirtualKeyboardPose(pose)
+end
+
+local function updateModes(modes)
+    -- Updates all modes that do not need arrangement
+    for _, mode in pairs(modes) do
+        if not modeConfigOverridden[mode] then
+            I.vrui.setModePose(mode, computeModePose(mode))
+        end
+    end
+    I.vrui.setDefaultWindowPose(computeModePose(nil))
+    I.vrui.setVirtualKeyboardPose(computeVirtualKeyboardPose())
 end
 
 local function updatePoses()
     referenceWorldPose = vr.locateSpaceInWorld(I.vrspaces.referenceSpaces.View) or referenceWorldPose
-    windowRelativePose = vr.locateSpace('DefaultWindow', I.vrspaces.referenceSpaces.View) or windowRelativePose
+    updateWindowRelativePoses()
 end
+
+local function overrideModeConfig(mode, v)
+    modeConfigOverridden[mode] = v
+end
+
+-- We need to manage some layers that haven't been exposed to Lua yet:
+-- These are MyGUI layers that i don't want to expose directly to Lua, but i still want them to be manageable from Lua.
+-- So i made .set*Config methods in I.vrui for these
+-- And one I.vrui.setDefaultWindowConfig which sets a default config for all remaining layers that haven't been exposed to Lua
+local secretItems = {
+    'Modal',
+    'RadialMenu',
+    'Windows',
+    'Video',
+    'InputBlocker',
+    'Settings',
+    'Console',
+    'ListBox',
+    'MainMenu',
+    'MainMenuBackground',
+    'LoadingScreen',
+    'LoadingScreenBackground',
+    'Debug',
+}
+
+local interface =
+{
+    --- Interface version
+    -- @field [parent=#vrui] #number version
+    version = 0,
+        
+    --- Set config for all hidden layers/windows that aren't exposed to lua yet
+    setDefaultWindowConfig = function(config)
+        for _, item in pairs(secretItems) do
+            vr._setLayerConfig(item, config)
+        end
+    end,
+    setDefaultWindowPose = function(pose)
+        for _, item in pairs(secretItems) do
+            vr._setLayerPose(item, pose)
+        end
+    end,
+        
+    setModeConfig = function(mode, options) 
+        vr._setModeConfig(mode, options) 
+    end,
+    setModePose = function(mode, pose, window) vr._setModePose(mode, pose, window) end,
+    setNotificationConfig = function(config) vr._setLayerConfig('Notification', config) end,
+    setNotificationPose = function(pose) vr._setLayerPose('Notification', pose) end,
+    setHUDConfig = function(config) vr._setLayerConfig('HUD', config) end,
+    setHUDPose = function(pose) vr._setLayerPose('HUD', pose) end,
+    setTooltipConfig = function(config) vr._setLayerConfig('Tooltip', config) end,
+    setTooltipPose = function(pose) vr._setLayerPose('Tooltip', pose) end,
+    setVirtualKeyboardConfig = function(config) vr._setLayerConfig('VirtualKeyboard', config) end,
+    setVirtualKeyboardPose = function(pose) vr._setLayerPose('VirtualKeyboard', pose) end,
+    overrideModeConfig = overrideModeConfig,
+}
 
 return {
     createDefaultConfig = createDefaultConfig,
@@ -397,4 +474,5 @@ return {
     updateWindowArrangement = updateWindowArrangement,
     registerSettingsPage = registerSettingsPage,
     registerSettingsGroup = registerSettingsGroup,
+    interface = interface,
 }

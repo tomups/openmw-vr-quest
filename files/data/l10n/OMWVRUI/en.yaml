@@ -2,11 +2,12 @@ UiPage: "OpenMW VR UI settings"
 UiPageDescription: "Settings related to UI in VR"
 
 SpacesGroup: "VR Spaces"
+OtherGroup: "Other Spaces"
 
 HUDSpace: "HUD Space"
 HUDSpaceDescription: |
     Where in space the hud should appear. Note that all Wrist options require motion controllers, and do not work in KB+Mouse or gamepad mode.
 
-HUDSpace: "HUD Space"
-HUDSpaceDescription: |
+TooltipSpace: "Tooltip Space"
+TooltipSpaceDescription: |
     Where in space tooltips should appear. Note that all Wrist options require motion controllers, and do not work in KB+Mouse or gamepad mode.

@@ -13,12 +13,12 @@ common.createDerivedSpaces()
 -- Instead i have to base myself on the knowledge that these and only these modes exist before loading a game.
 -- Anything not configured here is configured in the PLAYER script menus.lua
 local modes = {"Loading", "LoadingWallpaper", "MainMenu"}
-common.setupDefaults(modes)
 common.registerSettingsPage()
 common.registerSettingsGroup()
 
 local initialized = false
 local function init()
+    common.setupDefaults(modes)
     common.updatePoses()
     common.updateModes(modes)
     initialized = true
@@ -38,5 +38,7 @@ return {
                 init()
             end
         end
-    }
+    },
+    interfaceName = 'vrui',
+    interface = common.interface,
 }

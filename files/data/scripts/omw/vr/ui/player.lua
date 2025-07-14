@@ -8,9 +8,8 @@ local core = require('openmw.core')
 local I = require('openmw.interfaces')
 local common = require('scripts.omw.vr.ui.common')
 
-common.setupDefaults(I.UI.MODE)
-
 local function update()
+    common.setupDefaults(I.UI.MODE)
     common.updatePoses()
     common.updateModes(I.UI.modes)
     common.updateWindowArrangement(I.UI.modes)
@@ -35,6 +34,8 @@ local function onVRFrame()
 end
 
 return {
+    interfaceName = 'vrui',
+    interface = common.interface,
 
     engineHandlers = {
         onVRFrame = onVRFrame,
