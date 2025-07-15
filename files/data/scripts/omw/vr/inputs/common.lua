@@ -683,20 +683,6 @@ local function registerSettingsGroup()
     })
 end
 
-local initialized = false
-
-local function init()
-    -- Set up stored bindings from the bindingSection.
-    for id, binding in pairs(bindingSection:asTable()) do
-        if id ~= 'version' then
-            clearBinding(id)
-            if binding.paths then
-                registerBinding(binding, id)
-            end
-        end
-    end
-end
-
 local onInputChangedBoolean = nil
 
 local inputHoldTime = {}
@@ -763,7 +749,7 @@ local function updateInputs(dt)
 end
 
 local function isKBMouseMode()
-    return not (vr.isControllerActive(common.controllers.LEFT_HAND) or vr.isControllerActive(common.controllers.RIGHT_HAND))
+    return not (vr.isControllerActive(controllers.LEFT_HAND) or vr.isControllerActive(controllers.RIGHT_HAND))
 end
 
 local function getInteractionName(interactionPath)
@@ -792,6 +778,22 @@ local function updateCurrentActionSet()
     if currentActionSet ~= previous then
         onActionSetChanged()
     end
+end
+
+local initialized = false
+
+local function init()
+    -- Set up stored bindings from the bindingSection.
+    for id, binding in pairs(bindingSection:asTable()) do
+        if id ~= 'version' then
+            clearBinding(id)
+            if binding.paths then
+                registerBinding(binding, id)
+            end
+        end
+    end
+    
+    updateActiveBindings()
 end
 
 local lt = nil
