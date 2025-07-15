@@ -14,9 +14,9 @@ namespace VR
         Space(const Space&) = delete;
         void operator=(const Space&) = delete;
 
-        virtual TrackingPose locate(const Space& reference) const = 0;
-        TrackingPose locate(ReferenceSpace reference) const;
-        virtual TrackingPose locateInWorld() const = 0;
+        virtual TrackingPose locate(Space& reference) = 0;
+        TrackingPose locate(ReferenceSpace reference);
+        virtual TrackingPose locateInWorld() = 0;
     };
 
     class DerivedSpace : public Space
@@ -28,8 +28,8 @@ namespace VR
         DerivedSpace(const DerivedSpace&) = delete;
         void operator=(const DerivedSpace&) = delete;
 
-        TrackingPose locate(const Space& reference) const override;
-        TrackingPose locateInWorld() const override;
+        TrackingPose locate(Space& reference) override;
+        TrackingPose locateInWorld() override;
 
         void setPose(Stereo::Pose pose) { mPose = pose; }
         void setReference(std::shared_ptr<Space> reference) { mReference = reference; }

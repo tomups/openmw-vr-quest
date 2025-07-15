@@ -6,6 +6,19 @@
 
 namespace XR
 {
+    XrSpaceWrapper::~XrSpaceWrapper() 
+    {
+        if (mSpace != XR_NULL_HANDLE)
+            CHECK_XRCMD(xrDestroySpace(mSpace));
+    }
+
+    void XrSpaceWrapper::operator=(XrSpace space) 
+    {
+        if (mSpace != XR_NULL_HANDLE)
+            CHECK_XRCMD(xrDestroySpace(mSpace));
+        mSpace = space;
+    }
+
     Space::Space(XrSpace space)
         : mSpace(space)
     {
@@ -14,18 +27,16 @@ namespace XR
 
     Space::~Space()
     {
-        if (mSpace != XR_NULL_HANDLE)
-            CHECK_XRCMD(xrDestroySpace(mSpace));
     }
 
-    VR::TrackingPose Space::locate(const VR::Space& reference) const
+    VR::TrackingPose Space::locate(VR::Space& reference)
     {
-        return XR::Session::instance().locateSpace(mSpace, dynamic_cast<const XR::Space&>(reference).mSpace);
+        return XR::Session::instance().locateSpace(xrSpace(), dynamic_cast<XR::Space&>(reference).xrSpace());
     }
 
-    VR::TrackingPose Space::locateInWorld() const
+    VR::TrackingPose Space::locateInWorld()
     {
-        return XR::Session::instance().locateSpaceInWorld(mSpace);
+        return XR::Session::instance().locateSpaceInWorld(xrSpace());
     }
 
     ReferenceSpace::ReferenceSpace(VR::ReferenceSpace type, std::optional<VR::ReferenceSpace> recenterTo)
@@ -40,14 +51,19 @@ namespace XR
     {
     }
 
-    XrSpace ReferenceSpace::xrSpace() const
+    XrSpace ReferenceSpace::xrSpace()
     {
-        if (!mSpace)
+        if (!mSpace.mSpace)
             recreate();
-        return mSpace;
+        return mSpace.mSpace;
     }
 
-    void ReferenceSpace::recreate() const
+    void ReferenceSpace::recreate()
+    {
+        recenter(true, true, true);
+    }
+
+    void ReferenceSpace::recenter(bool recenterX, bool recenterY, bool recenterZ) 
     {
         auto& session = Session::instance();
         mSpace = session.createReferenceSpace(mType, {});
@@ -57,26 +73,16 @@ namespace XR
             auto tp = other->locate(*this);
             if (!!tp.status)
             {
-                //float yaw = 0;
-                //float pitch = 0;
-                //float roll = 0;
-                //Stereo::getEulerAngles(tp.pose.orientation, yaw, pitch, roll);
-                //tp.pose.orientation.makeRotate(yaw, osg::Vec3f(0, 0, -1));
-                tp.pose.orientation = osg::Quat();
-                mSpace = session.createReferenceSpace(mType, tp.pose);
+                if (recenterX)
+                    mCenter.position.mX = tp.pose.position.mX;
+                if (recenterY)
+                    mCenter.position.mY = tp.pose.position.mY;
+                if (recenterZ)
+                    mCenter.position.mZ = tp.pose.position.mZ;
+                mSpace = session.createReferenceSpace(mType, mCenter);
             }
         }
         mRecenter = false;
-    }
-
-    VR::TrackingPose ReferenceSpace::locate(const VR::Space& reference) const
-    {
-        return XR::Space::locate(reference);
-    }
-
-    VR::TrackingPose ReferenceSpace::locateInWorld() const
-    {
-        return XR::Space::locateInWorld();
     }
 
 }

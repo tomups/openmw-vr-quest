@@ -9,19 +9,36 @@
 
 namespace XR
 {
+    struct XrSpaceWrapper
+    {
+        XrSpaceWrapper(XrSpace space)
+            : mSpace(space)
+        {
+        }
+
+        ~XrSpaceWrapper();
+
+        void operator=(XrSpace space);
+
+        XrSpaceWrapper(const XrSpaceWrapper&) = delete;
+        void operator=(const XrSpaceWrapper&) = delete;
+
+        XrSpace mSpace = XR_NULL_HANDLE;
+    };
+
     class Space : public VR::Space
     {
     public:
         Space(XrSpace space);
         ~Space() override;
 
-        virtual XrSpace xrSpace() const { return mSpace; }
+        virtual XrSpace xrSpace() { return mSpace.mSpace; }
 
-        VR::TrackingPose locate(const VR::Space& reference) const override;
-        VR::TrackingPose locateInWorld() const override;
+        VR::TrackingPose locate(VR::Space& reference) override;
+        VR::TrackingPose locateInWorld() override;
     protected:
 
-        mutable XrSpace mSpace;
+        mutable XrSpaceWrapper mSpace;
     };
 
     class ReferenceSpace : public XR::Space
@@ -30,16 +47,14 @@ namespace XR
         ReferenceSpace(VR::ReferenceSpace type, std::optional<VR::ReferenceSpace> recenterTo);
         ~ReferenceSpace();
 
-        XrSpace xrSpace() const override;
+        XrSpace xrSpace() override;
 
-        void recreate() const;
-        void recenter();
-
-        VR::TrackingPose locate(const VR::Space& reference) const override;
-        VR::TrackingPose locateInWorld() const override;
+        void recreate();
+        void recenter(bool recenterX, bool recenterY, bool recenterZ);
 
     private:
         VR::ReferenceSpace mType;
+        Stereo::Pose mCenter;
         std::optional<VR::ReferenceSpace> mRecenterTo;
         mutable bool mRecenter;
     };

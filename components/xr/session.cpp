@@ -414,7 +414,14 @@ namespace XR
 
     void Session::recenter() 
     {
-        mReferenceSpaces[static_cast<int>(VR::ReferenceSpace::Local) - 1]->recreate();
+        bool recenterX = false;
+        bool recenterY = false;
+        bool recenterZ = false;
+        if (VR::getShouldRecenterXY())
+            recenterX = recenterY = true;
+        if (VR::getShouldRecenterZ())
+            recenterZ = true;
+        mReferenceSpaces[static_cast<int>(VR::ReferenceSpace::Local) - 1]->recenter(recenterX, recenterY, recenterZ);
         VR::Session::recenter();
     }
 

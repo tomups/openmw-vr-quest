@@ -1,6 +1,7 @@
 #include "space.hpp"
 #include <components/sceneutil/nodecallback.hpp>
 #include "space.hpp"
+#include "space.hpp"
 
 namespace VR
 {
@@ -67,7 +68,7 @@ namespace VR
 
     Space::Space() {}
 
-    VR::TrackingPose Space::locate(ReferenceSpace reference) const
+    VR::TrackingPose Space::locate(ReferenceSpace reference)
     {
         return locate(*Session::instance().getReferenceSpace(reference));
     }
@@ -78,14 +79,14 @@ namespace VR
     {
     }
 
-    TrackingPose VR::DerivedSpace::locate(const Space& reference) const
+    TrackingPose VR::DerivedSpace::locate(Space& reference)
     {
         auto tp = mReference->locate(reference);
         if (!!tp.status)
             tp.pose += mPose;
         return tp;
     }
-    TrackingPose DerivedSpace::locateInWorld() const
+    TrackingPose DerivedSpace::locateInWorld()
     {
         auto tp = mReference->locateInWorld();
         if (!!tp.status)
