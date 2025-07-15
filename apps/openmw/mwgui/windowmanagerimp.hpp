@@ -176,6 +176,7 @@ namespace MWGui
         bool isPostProcessorHudVisible() const override;
         bool isSettingsWindowVisible() const override;
         bool isInteractiveMessageBoxActive() const override;
+        void closeInteractiveMessageBoxWithDefaultButton() override;
 
         void toggleVisible(GuiWindow wnd) override;
 

@@ -104,6 +104,8 @@ namespace MWGui
 
         bool exit() override { return false; }
 
+        void closeDefault();
+
         bool mMarkedToDelete;
 
     private:

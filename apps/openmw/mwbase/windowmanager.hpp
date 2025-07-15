@@ -143,6 +143,7 @@ namespace MWBase
         virtual bool isPostProcessorHudVisible() const = 0;
         virtual bool isSettingsWindowVisible() const = 0;
         virtual bool isInteractiveMessageBoxActive() const = 0;
+        virtual void closeInteractiveMessageBoxWithDefaultButton() = 0;
 
         virtual void toggleVisible(MWGui::GuiWindow wnd) = 0;
 

@@ -1678,6 +1678,15 @@ namespace MWGui
         return mMessageBoxManager && mMessageBoxManager->isInteractiveMessageBox();
     }
 
+    void WindowManager::closeInteractiveMessageBoxWithDefaultButton() 
+    {
+        if (mMessageBoxManager && mMessageBoxManager->isInteractiveMessageBox()
+            && mCurrentModals.back() == mMessageBoxManager->getInteractiveMessageBox())
+        {
+            static_cast<MWGui::InteractiveMessageBox*>(mCurrentModals.back())->closeDefault();
+        }
+    }
+
     MWGui::GuiMode WindowManager::getMode() const
     {
         if (mGuiModes.empty())

@@ -272,7 +272,11 @@ namespace MWLua
             = [windowManager]() { 
                 if (MyGUI::InputManager::getInstance().isModalAny())
                 {
-                    windowManager->exitCurrentModal();
+                    if (windowManager->isInteractiveMessageBoxActive())
+                        // For some reason, exitCurrentModal() will not close a message box, even though those are modals.
+                        windowManager->closeInteractiveMessageBoxWithDefaultButton();
+                    else
+                        windowManager->exitCurrentModal();
                 }
                 else
                 {

@@ -414,6 +414,13 @@ namespace MWGui
         return nullptr;
     }
 
+    void InteractiveMessageBox::closeDefault() 
+    {
+        auto buttonIndex = std::max(0, std::min(mDefaultFocus, static_cast<int>(mButtons.size())));
+        auto button = mButtons[buttonIndex];
+        mousePressed(button);
+    }
+
     void InteractiveMessageBox::mousePressed(MyGUI::Widget* pressed)
     {
         buttonActivated(pressed);
