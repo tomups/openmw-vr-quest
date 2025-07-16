@@ -79,7 +79,6 @@ namespace MWVR
         // Actions common to all transitions
         void StateMachine::transition(SwingState newState, bool resetTime)
         {
-            Log(Debug::Verbose) << "Transition:" << stateToString(mState) << "->" << stateToString(newState);
             mMaxSwingVelocity = 0.f;
             if (resetTime)
                 mTimeSinceEnteredState = 0.f;
@@ -298,19 +297,6 @@ namespace MWVR
 
             if (!soundId->empty())
                 MWBase::Environment::get().getSoundManager()->playSound3D(mPtr, *soundId, volume, pitch);
-
-
-            //MWBase::SoundManager* sndMgr = MWBase::Environment::get().getSoundManager();
-
-            //std::string sound = "Weapon Swish";
-            //if (mStrength < 0.5f)
-            //    sndMgr->playSound3D(mPtr, sound, 1.0f, 0.8f); // Weak attack
-            //if (mStrength < 1.0f)
-            //    sndMgr->playSound3D(mPtr, sound, 1.0f, 1.0f); // Medium attack
-            //else
-            //    sndMgr->playSound3D(mPtr, sound, 1.0f, 1.2f); // Strong attack
-
-            Log(Debug::Verbose) << "Swing: " << swingTypeToString(mSwingType);
         }
 
         void StateMachine::update_launchState()
