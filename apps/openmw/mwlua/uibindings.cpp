@@ -268,12 +268,13 @@ namespace MWLua
               };
         api["_isWindowVisible"]
             = [windowManager](std::string_view window) { return windowManager->isWindowVisible(window); };
-        api["_menuBack"]
-            = [windowManager]() { 
+        api["_menuBack"] = [windowManager, luaManager = context.mLuaManager]() {
+            luaManager->addAction([windowManager]() {
                 if (MyGUI::InputManager::getInstance().isModalAny())
                 {
                     if (windowManager->isInteractiveMessageBoxActive())
-                        // For some reason, exitCurrentModal() will not close a message box, even though those are modals.
+                        // For some reason, exitCurrentModal() will not close a message box, even though those are
+                        // modals.
                         windowManager->closeInteractiveMessageBoxWithDefaultButton();
                     else
                         windowManager->exitCurrentModal();
@@ -289,7 +290,8 @@ namespace MWLua
                     else
                         windowManager->exitCurrentGuiMode();
                 }
-            };
+            });
+        };
 
         // TODO
         // api["_showMouseCursor"] = [](bool) {};

@@ -1,14 +1,15 @@
 #include "vrbindings.hpp"
 #include "../mwbase/world.hpp"
-#include "../mwvr/vrgui.hpp"
 #include "../mwvr/openxrinput.hpp"
+#include "../mwvr/vrgui.hpp"
 #include "../mwvr/vrinputmanager.hpp"
+#include "luamanagerimp.hpp"
 #include <components/lua/utilpackage.hpp>
-#include <components/vr/vr.hpp>
 #include <components/vr/trackingmanager.hpp>
+#include <components/vr/vr.hpp>
 #include <components/xr/extensions.hpp>
-#include <components/xr/session.hpp>
 #include <components/xr/interactionprofiles.hpp>
+#include <components/xr/session.hpp>
 
 #include <vector>
 
@@ -161,13 +162,14 @@ namespace MWLua
         // Cache the actionSet reference since it will never change and outlives lua.
         api["getActionValue"] = [&actionSet = MWVR::OpenXRInput::instance().getActionSet(MWVR::MWActionSet::Actions)](
                                     const std::string& path) { return actionSet.getValue(path); };
-        api["locateSpace"] = [&xrinput, lua](const std::string& spaceId, sol::optional<std::string> ref) -> sol::object {
+        api["locateSpace"]
+            = [&xrinput, lua](const std::string& spaceId, sol::optional<std::string> ref) -> sol::object {
             if (!VR::getLocatingSpacesAllowed())
                 throw std::logic_error("locateSpace() is only allowed during onVRFrame()");
             auto space = xrinput.getSpace(spaceId);
             if (!space)
                 return sol::nil;
-            
+
             std::shared_ptr<VR::Space> reference
                 = xrinput.getSpace(ref.value_or(MWVR::OpenXRInput::DefaultReferenceSpaceLocal));
 
@@ -198,13 +200,13 @@ namespace MWLua
         api["_setGuiPose"] = [&guiManager = MWVR::VRGUIManager::instance()](const std::string& id,
                                  const sol::table& pose) { guiManager.setLayerPose(id, poseFromTable(pose)); };
 
-        api["_setModeConfig"] = [&guiManager = MWVR::VRGUIManager::instance()](
-                                   const std::string& mode, const sol::table& options) {
-            guiManager.setModeConfig(mode, layerConfigFromTable(options));
-        };
+        api["_setModeConfig"]
+            = [&guiManager = MWVR::VRGUIManager::instance()](const std::string& mode, const sol::table& options) {
+                  guiManager.setModeConfig(mode, layerConfigFromTable(options));
+              };
 
         api["_setModePose"] = [&guiManager = MWVR::VRGUIManager::instance()](
-                                   const std::string& mode, const sol::table& pose, sol::optional<std::string> window) {
+                                  const std::string& mode, const sol::table& pose, sol::optional<std::string> window) {
             guiManager.setModePose(mode, poseFromTable(pose), window.value_or(""));
         };
 
@@ -213,10 +215,8 @@ namespace MWLua
                   guiManager.setLayerConfig(layer, layerConfigFromTable(options));
               };
 
-        api["_setLayerPose"]
-            = [&guiManager = MWVR::VRGUIManager::instance()](const std::string& layer, const sol::table& pose) {
-                  guiManager.setLayerPose(layer, poseFromTable(pose));
-              };
+        api["_setLayerPose"] = [&guiManager = MWVR::VRGUIManager::instance()](const std::string& layer,
+                                   const sol::table& pose) { guiManager.setLayerPose(layer, poseFromTable(pose)); };
 
         api["_setPointerLeft"] = [&inputManager = MWVR::VRInputManager::instance()](
                                      bool enabled) { inputManager.setPointerLeft(enabled); };
@@ -224,16 +224,17 @@ namespace MWLua
         api["_setPointerRight"] = [&inputManager = MWVR::VRInputManager::instance()](
                                       bool enabled) { inputManager.setPointerRight(enabled); };
 
-        api["_pointerActivate"]
-            = [&inputManager = MWVR::VRInputManager::instance()](
-                  bool injectMouseClickIfApplicable) { inputManager.pointerActivate(injectMouseClickIfApplicable); };
+        api["_pointerActivate"] = [&inputManager = MWVR::VRInputManager::instance(), luaManager = context.mLuaManager](
+                                      bool injectMouseClickIfApplicable) {
+            luaManager->addAction([&inputManager, injectMouseClickIfApplicable]() {
+                inputManager.pointerActivate(injectMouseClickIfApplicable);
+            });
+        };
 
         api["_recenterXY"] = []() { VR::recenterXY(); };
         api["_recenterZ"] = []() { VR::recenterZ(); };
 
-        //api[]
-
-
+        // api[]
 
         return LuaUtil::makeReadOnly(api);
     }
