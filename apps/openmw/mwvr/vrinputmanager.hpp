@@ -64,6 +64,7 @@ namespace MWVR
         void setPointerRight(bool enabled);
         bool getPointerRight() const;
         void pointerActivate(bool injectMouseClickIfApplicable);
+        void pointerActivateDelayed(bool injectMouseClickIfApplicable);
 
         MWWorld::Ptr getPointerTarget() const;
 
@@ -83,6 +84,8 @@ namespace MWVR
         //bool mPointerActivation = false;
         bool mPointerLeft = true;
         bool mPointerRight = true;
+        bool mDelayedPointerActivate = false;
+        bool mDelayedPointerActivateInjectMouseClickIfApplicable = false;
         float mDt = 0.f;
 
         osg::ref_ptr<osg::Node> mVRAimNode;

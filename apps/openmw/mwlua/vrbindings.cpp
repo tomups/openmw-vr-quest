@@ -224,11 +224,14 @@ namespace MWLua
         api["_setPointerRight"] = [&inputManager = MWVR::VRInputManager::instance()](
                                       bool enabled) { inputManager.setPointerRight(enabled); };
 
-        api["_pointerActivate"] = [&inputManager = MWVR::VRInputManager::instance(), luaManager = context.mLuaManager](
+        api["_pointerActivate"] = [&inputManager = MWVR::VRInputManager::instance()](
                                       bool injectMouseClickIfApplicable) {
-            luaManager->addAction([&inputManager, injectMouseClickIfApplicable]() {
+            // This action SHOULD be delayed, but this can result in a click on lua UI elements while applying delayed actions
+            // which in turn could try to queue a delayed action, which is illegal while applyin delayed actions. So i have to queue it differently,
+            // so it's not part of lua delayed actions.
+            //luaManager->addAction([&inputManager, injectMouseClickIfApplicable]() {
                 inputManager.pointerActivate(injectMouseClickIfApplicable);
-            });
+            //});
         };
 
         api["_recenterXY"] = []() { VR::recenterXY(); };

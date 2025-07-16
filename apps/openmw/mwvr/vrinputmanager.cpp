@@ -189,6 +189,11 @@ namespace MWVR
             mVRPointer->activate();
     }
 
+    void VRInputManager::pointerActivateDelayed(bool injectMouseClickIfApplicable) {
+        mDelayedPointerActivate = true;
+        mDelayedPointerActivateInjectMouseClickIfApplicable = injectMouseClickIfApplicable;
+    }
+
     static VRInputManager* sInputManager;
 
     VRInputManager::VRInputManager(SDL_Window* window, osg::ref_ptr<osgViewer::Viewer> viewer,
@@ -225,6 +230,12 @@ namespace MWVR
     void VRInputManager::update(float dt, bool disableControls, bool disableEvents)
     {
         mDt = dt;
+        if (mDelayedPointerActivate)
+        {
+            mDelayedPointerActivate = false;
+            pointerActivate(mDelayedPointerActivateInjectMouseClickIfApplicable);
+        }
+
         updateVRPointer(disableControls);
 
         if (MWVR::VRGUIManager::instance().hasFocus())
