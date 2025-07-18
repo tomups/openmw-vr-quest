@@ -10,6 +10,9 @@ paths=(
   scripts/omw/settings/player.lua
   scripts/omw/ui.lua
   scripts/omw/usehandlers.lua
+  scripts/omw/vr/inputs/player.lua
+  scripts/omw/vr/spaces.lua
+  scripts/omw/vr/ui/common.lua
   scripts/omw/skillhandlers.lua
   scripts/omw/crimes.lua
 )

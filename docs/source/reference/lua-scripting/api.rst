@@ -16,6 +16,9 @@ API Reference
     Engine Handlers <engine_handlers>
     events
     Iterables <iterables>
+    interface_vrinputs
+    interface_vrspaces
+    interface_vrui
 
 **API packages**
 

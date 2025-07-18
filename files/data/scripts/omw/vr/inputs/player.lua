@@ -28,7 +28,7 @@ local pointerRight = false
 local pointerLeft = false
 local physicalSneak = false
 local physicalSneakMessage = true
-local physicalSneakOffset = 25 * I.vrspaces.UnitsPerMeter / 100
+local physicalSneakOffset = 25 * I.vrspaces.unitsPerMeter / 100
 local l10nContext = core.l10n(common.l10nKey)
 
 local referencePose = nil
@@ -296,12 +296,30 @@ return {
     -- vr inputs
     -- @module vrinputs
 
+    --- Controller interaction paths
+    -- @type Controller
+    -- @field #string LEFT_HAND '/user/hand/left'
+    -- @field #string RIGHT_HAND '/user/hand/right'
+    --
+
     interface = {
         --- Interface version
         -- @field [parent=#vrinputs] #number version
         version = 0,
-        getInteractionProfileOfController = common.getInteractionProfileOfController,
-        isKBMouseMode = common.isKBMouseMode,
+
+        --- List of controllers and their corresponding interaction paths
+        -- @field [parent=#vrinputs] #table controllers
         controllers = common.controllers,
+
+        --- Get the name of the currently active profile for the given controller
+        -- @function [parent=#vrinputs] getInteractionProfileOfController
+        -- @param #ReferenceSpace name The interaction path of the controller (one of the top level input paths )
+        -- @return #Controller The interaction profile name (one of '/user/hand/left' or '/user/hand/right')
+        getInteractionProfileOfController = common.getInteractionProfileOfController,
+
+        --- Check if the game is currently in keyboard+mouse mode, or using motion controllers.
+        -- @function [parent=#vrinputs] isKBMouseMode
+        -- @return #boolean True if the game is currently in keyboard+mouse mode, false if the game is currently in motion controllers mode.
+        isKBMouseMode = common.isKBMouseMode,
     }
 }
