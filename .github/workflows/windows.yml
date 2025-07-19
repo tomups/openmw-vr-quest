@@ -68,7 +68,7 @@ jobs:
           echo "Failed hash"
           exit 1
         }
-        echo "archive=$FILE"
+        echo "archive=$FILE "
         echo "archive=$FILE" >> $env:GITHUB_ENV
 
     - name: Extract archived prebuilt vcpkg packages
