@@ -52,15 +52,23 @@ jobs:
         $MANIFEST = "vcpkg-x64-${{ inputs.msvc }}-${{ inputs.vcpkg-deps-tag }}.txt"
         curl --fail --retry 3 -L -o "$MANIFEST" "https://gitlab.com/madsbuvi/openmw-deps/-/raw/openmw-vr/windows/$MANIFEST"
         $lines = Get-Content "$MANIFEST"
+        echo $lines
         $URL = $lines[0]
+        echo $URL
         $split = -split $lines[1]
+        echo $split
         $HASH = $split[0]
+        echo $HASH
         $FILE = $split[1]
+        echo $FILE
         curl --fail --retry 3 -L -o "$FILE" "$URL"
         $filehash = Get-FileHash "$FILE" -Algorithm SHA512
+        echo $filehash
         if ( $filehash.hash -ne "$HASH" ) {
+          echo "Failed hash"
           exit 1
         }
+        echo "archive=$FILE"
         echo "archive=$FILE" >> $env:GITHUB_ENV
 
     - name: Extract archived prebuilt vcpkg packages
