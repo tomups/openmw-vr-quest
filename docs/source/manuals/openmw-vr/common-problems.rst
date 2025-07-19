@@ -2,6 +2,22 @@
 Common Problems
 ###############
 
+Menus keep getting stuck inside things
+######################################
+
+:Symptoms:
+	Opening a menu often leads to the menu being partially or fully hidden inside objects / NPCs.
+
+:Cause:
+	Menus are in 3D and appear at fixed offsets from the player, sometimes causing them to appear inside things. Unfortunately I have not implemented
+        any anti-collision systems for 3D menus.
+
+:Fix 1:
+	Look around for a clear spot and hold Y to recenter menus, this will move them to where you are looking.
+
+:Fix 2:
+	Press Y on your motion controller / hit ESC on your keyboard to close the menu.
+
 Game does not work in Virtual Desktop
 #####################################
 
@@ -79,18 +95,6 @@ My Controller doesn't work
 	Make sure your runtime is up to date. Try switching to your headset/controller's native runtimes, as opposed to a
         non-native runtime like SteamVR.
 
-The menu button and thumbsticks don't work.
-###########################################
-
-:Symptoms:
-	Motion controllers work but thumbsticks and the menu button do nothing.
-
-:Cause:
-	Known bug in SteamVR.
-
-:Fix:
-	Use your headset's native OpenXR runtimes instead of SteamVR.
-
 Audio does not go to my VR Headset
 ##################################
 
@@ -100,8 +104,14 @@ Audio does not go to my VR Headset
 :Cause:
 	OpenMW explicitly selects an audio device at startup and sticks with it. By default this is the default speaker.
 
-:Fix:
-	Either set your default audio to the VR headset, or configure openmw to use it. To do this, add the following lines
+:Fix 1:
+    Set your VR headset as system default speakers. Some headsets have an option to do this automatically.
+
+:Fix 2:
+    Enable mirroring desktop audio to your headset / vice versa.
+    
+:Fix 3:
+	Configure the openmw audio device. To do this, add the following lines
         to the end of settings.cfg.
 
         ::

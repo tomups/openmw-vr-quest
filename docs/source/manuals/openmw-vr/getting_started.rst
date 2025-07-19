@@ -57,7 +57,6 @@ the HUD/Tooltips to show up in this mode.
 
 Gameplay
 ********
-TODO: This part would probably be best demonstrated with a *brief* in-game video.
 The core of the gameplay is the same as regular OpenMW. The core difference is that instead of pointing and clicking with
 a mouse, you'll be pointing and clicking with motion controllers.
 

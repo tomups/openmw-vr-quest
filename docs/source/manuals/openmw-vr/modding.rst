@@ -4,6 +4,10 @@ This section will detail any differences in mods and modding between VR and panc
 Currently OpenMW-VR is not known to break any mods that work in an equivalent version of OpenMW.
 But certain types of mods may need adaptation from its author to work with motion controls.
 
+Lua
+***
+OpenMW-VR-49 adds some Lua interfaces. Refer to the Lua API reference.
+
 MyGUI resource files
 ********************
 The GUI of OpenMW is rendered using MyGUI resource files located in resources/mygui/. In OpenMW-VR Some of these

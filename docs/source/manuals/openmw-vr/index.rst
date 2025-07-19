@@ -8,7 +8,7 @@ introduction and a reference for the application. Even if you are familiar with
 few chapters to familiarise yourself with the VR interface.
 
 .. warning::
-    OpenMW VR is still software in development. The manual does not cover any of
+    OpenMW VR is still software in development. The manual may not cover all of
     its shortcomings, it is written as if everything was working as intended.
     Please report any software problems as bugs in the software, not errors in
     the manual.

@@ -1,8 +1,6 @@
 Controls
 ########
 
-TODO: It would be useful to include a **brief** gameplay video demonstrating the VR interface here.
-
     .. note:: Note all bindings from OpenMW are available to motion controllers. Those actions, such as rest, journal, quick save/load, console, and postprocessor hud, are available through the in-game menu instead.
 
 Bindings Menu
@@ -41,7 +39,7 @@ Special VR Actions
 A few of the bindable actions are unique to VR with motion controllers.
 
 :pointer:
-    Whenever this control is active, pointer mode is enabled and your finger will point at stuff. Realistic combat is
+    Default bound to the dominant hand's squeeze/grip button. Whenever this control is active, pointer mode is enabled and your finger will point at stuff. Realistic combat is
     disabled in this mode, so avoid bindings that are easy to activate unintentionally.
 
 :Radial Menu:
