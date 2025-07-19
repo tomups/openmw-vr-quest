@@ -161,7 +161,7 @@ for path, type in pairs(supportedInteractionPaths.input) do
             path, 
             input.ACTION_TYPE.Boolean,
             function() 
-                return vr.getActionValue(path) == true 
+                return I.vrinputs.getInputValue(path) == true 
             end
         )
     elseif type == vr.INTERACTION_VALUE_TYPES.Float then
@@ -169,7 +169,7 @@ for path, type in pairs(supportedInteractionPaths.input) do
             path, 
             input.ACTION_TYPE.Number,
             function() 
-                return deadzone(vr.getActionValue(path))
+                return deadzone(I.vrinputs.getInputValue(path))
             end
         )
     elseif type == vr.INTERACTION_VALUE_TYPES.Axis then
@@ -179,7 +179,7 @@ for path, type in pairs(supportedInteractionPaths.input) do
         --    path, 
         --    input.ACTION_TYPE.Number,
         --    function() 
-        --        return deadzone(vr.getActionValue(path))
+        --        return deadzone(I.vrinputs.getInputValue(path))
         --    end
         --)
         -- For Axis actions we want the option to assigning left/right/up/down as separate Number actions
@@ -195,7 +195,7 @@ for path, type in pairs(supportedInteractionPaths.input) do
             neg,
             input.ACTION_TYPE.Number,
             function() 
-                local v = deadzone(vr.getActionValue(path))
+                local v = deadzone(I.vrinputs.getInputValue(path))
                 return (v < 0) and -v or 0
             end
         )
@@ -203,7 +203,7 @@ for path, type in pairs(supportedInteractionPaths.input) do
             pos,
             input.ACTION_TYPE.Number,
             function() 
-                local v = deadzone(vr.getActionValue(path))
+                local v = deadzone(I.vrinputs.getInputValue(path))
                 return (v > 0) and v or 0
             end
         )

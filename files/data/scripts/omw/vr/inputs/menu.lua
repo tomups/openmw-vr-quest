@@ -348,8 +348,10 @@ return {
         --- Interface version
         -- @field [parent=#vrinputs] #number version
         version = 0,
-        getInteractionProfileOfController = common.getInteractionProfileOfController,
-        isKBMouseMode = common.isKBMouseMode,
         controllers = common.controllers,
+        getInteractionProfileOfController = common.getInteractionProfileOfController,
+        getInputValue = vr._getInputValue,
+        setOutputValue = vr._setOutputValue,
+        isKBMouseMode = common.isKBMouseMode,
     }
 }

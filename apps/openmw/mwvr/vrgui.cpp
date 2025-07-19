@@ -1082,7 +1082,7 @@ namespace MWVR
         auto* layer = widget->mMainWidget->getLayer();
         auto name = layer->getName();
 
-        Log(Debug::Verbose) << "SetVisible: " << name << ": " << visible;
+        Log(Debug::Debug) << "SetVisible: " << name << ": " << visible;
 
         if (layerBlacklist.find(name) != layerBlacklist.end())
         {

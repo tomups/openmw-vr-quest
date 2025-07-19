@@ -316,6 +316,20 @@ return {
         -- @param #ReferenceSpace name The interaction path of the controller (one of the top level input paths )
         -- @return #Controller The interaction profile name (one of '/user/hand/left' or '/user/hand/right')
         getInteractionProfileOfController = common.getInteractionProfileOfController,
+        
+        ---
+        -- Gets the current value of an interaction path
+        -- @function [parent=#vrinputs] getInputValue
+        -- @param #string path
+        -- @return #any Returns either a number or a boolean depending on the @{INTERACTION_VALUE_TYPE} corresponding to this action, if the action is active. If the action is inactive (i.e. if none of the active controller have this path), returns nil. If the provided path is not a valid or known interaction, throws an error.
+        getInputValue = vr._getInputValue,
+
+        ---
+        -- Sets the haptic value of an output for this frame
+        -- @function [parent=#vrinputs] setOutputValue
+        -- @param #string path
+        -- @param #number intensity Haptic intensity between 0 and 1
+        setOutputValue = vr._setOutputValue,
 
         --- Check if the game is currently in keyboard+mouse mode, or using motion controllers.
         -- @function [parent=#vrinputs] isKBMouseMode

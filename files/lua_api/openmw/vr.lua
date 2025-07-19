@@ -36,6 +36,7 @@
 -- I recommend printing out the table yourself to see what's in it to understand it better.
 -- @field [parent=#vr] #table availableInteractions
 -- @usage
+-- local I = require('openmw.interfaces')
 -- local vr = require('openmw.vr')
 -- local function printAvailableInteractions(controller)
 --     local profile = I.vrinputs.getInteractionProfileOfController(controller)
@@ -44,7 +45,7 @@
 --         return
 --     end
 --     print('Available interactions for '..controller..' controller of '..profile..': ')
---     for k,v in pairs(vr.availableInteractions[profile][controller] do
+--     for k,v in pairs(vr.availableInteractions[profile][controller]) do
 --         print(' - '..k..' [type:'..v..']')
 --     end
 -- end
@@ -65,18 +66,6 @@
 -- @function [parent=#vr] isControllerActive
 -- @param #CONTROLLER_PATH controller 
 -- @return #boolean
-
----
--- Gets the current value of an interaction path
--- @function [parent=#vr] getActionValue
--- @param #string path
--- @return #any Returns either a number or a boolean depending on the @{INTERACTION_VALUE_TYPE} corresponding to this action, if the action is active. If the action is inactive (i.e. if none of the active controller have this path), returns nil. If the provided path is not a valid or known interaction, throws an error.
-
----
--- Sets the haptic value of an output for this frame
--- @function [parent=#vr] setOutputValue
--- @param #string path
--- @param #number intensity Haptic intensity between 0 and 1
 
 
 

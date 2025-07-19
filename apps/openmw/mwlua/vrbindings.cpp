@@ -152,7 +152,7 @@ namespace MWLua
 
         api["_spaceExists"] = [&xrinput](const std::string& spaceId) -> bool { return !!xrinput.getSpace(spaceId); };
 
-        api["getActionValue"] = [&actionSet = MWVR::OpenXRInput::instance().getActionSet(MWVR::MWActionSet::Actions)](
+        api["_getInputValue"] = [&actionSet = MWVR::OpenXRInput::instance().getActionSet(MWVR::MWActionSet::Actions)](
                                     const std::string& path) { return actionSet.getValue(path); };
         api["_locateSpace"]
             = [&xrinput, lua](const std::string& spaceId, sol::optional<std::string> ref) -> sol::object {
@@ -169,7 +169,7 @@ namespace MWLua
         };
         // All known /output/ path values are of type FLOAT.
         // If there is ever a reason to support more, we can expand this with overloads (or use sol::object).
-        api["setOutputValue"] = [&actionSet = MWVR::OpenXRInput::instance().getActionSet(MWVR::MWActionSet::Haptics)](
+        api["_setOutputValue"] = [&actionSet = MWVR::OpenXRInput::instance().getActionSet(MWVR::MWActionSet::Haptics)](
                                     const std::string& path, float value) { actionSet.applyHaptics(path, value); };
 
         api["_locateSpaceInWorld"] = [&xrinput, lua](const std::string& spaceId) -> sol::object {
