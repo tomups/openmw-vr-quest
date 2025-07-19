@@ -386,7 +386,7 @@ local function getWindowRelativePose(mode)
 end
 local function updateWindowRelativePoses()
     for mode, space in pairs(spaceForMode) do
-        windowRelativePose[mode] = vr.locateSpace(space, I.vrspaces.referenceSpaces.View) or windowRelativePose[mode]
+        windowRelativePose[mode] = I.vrspaces.locateSpace(space, I.vrspaces.referenceSpaces.View) or windowRelativePose[mode]
     end
 end
 
@@ -481,7 +481,7 @@ local function updateModes(modes)
 end
 
 local function updatePoses()
-    referenceWorldPose = vr.locateSpaceInWorld(I.vrspaces.referenceSpaces.View) or referenceWorldPose
+    referenceWorldPose = I.vrspaces.locateSpaceInWorld(I.vrspaces.referenceSpaces.View) or referenceWorldPose
     updateWindowRelativePoses()
 end
 

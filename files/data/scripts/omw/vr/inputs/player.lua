@@ -34,7 +34,7 @@ local l10nContext = core.l10n(common.l10nKey)
 local referencePose = nil
 
 local function getView()
-    return vr.locateSpace(I.vrspaces.referenceSpaces.View, I.vrspaces.referenceSpaces.Local) or referencePose
+    return I.vrspaces.locateSpace(I.vrspaces.referenceSpaces.View, I.vrspaces.referenceSpaces.Local) or referencePose
 end
 
 -- Note: 'MetaMenu' and 'MenuBack' are by default bound to the same key.
@@ -105,7 +105,7 @@ local function updateControlsSettings()
     snapTurnRate = common.controlsSection:get('SnapTurnRate') * math.pi / 180
     physicalSneak = common.controlsSection:get('PhysicalSneak')
     physicalSneakMessage = common.controlsSection:get('PhysicalSneakMessage')
-    physicalSneakOffset = common.controlsSection:get('PhysicalSneakOffset') * I.vrspaces.UnitsPerMeter / 100
+    physicalSneakOffset = common.controlsSection:get('PhysicalSneakOffset') * I.vrspaces.unitsPerMeter / 100
 end
 updateControlsSettings()
 common.controlsSection:subscribe(async:callback(updateControlsSettings))

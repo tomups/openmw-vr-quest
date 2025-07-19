@@ -98,12 +98,16 @@ Engine handler is a function defined by a script, that can be called by the engi
 
 .. list-table::
   :widths: 20 80
-
+  
   * - onFrame(dt)
     - | Called every frame (even if the game is paused) right after
       | processing user input. Use it only for latency-critical stuff
       | and for UI that should work on pause.
       | `dt` is simulation time delta (0 when on pause).
+  * - onVRFrame()
+    - | Called every frame (even if the game is paused) right before rendering.
+      | Use it only for updates of VR spaces. This is the only time
+      | reading the location of a space is allowed.
   * - onKeyPress(key)
     - | `Key <openmw_input.html##(KeyboardEvent)>`_ is pressed.
       | Usage example:

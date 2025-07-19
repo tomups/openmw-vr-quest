@@ -59,6 +59,9 @@
    * - :doc:`vfs </reference/lua-scripting/openmw_vfs>`
      - |bdg-ctx-all|
      - Read-only access to data directories via VFS.
+   * - :doc:`vr </reference/lua-scripting/openmw_vr>`
+     - |bdg-ctx-player| |bdg-ctx-menu|
+     - VR related API
    * - :doc:`world </reference/lua-scripting/openmw_world>`
      - |bdg-ctx-global|
      - Read-write access to the game world.

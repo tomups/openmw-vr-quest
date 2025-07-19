@@ -1,5 +1,6 @@
 ---
--- VR spaces
+-- VR spaces. 
+-- See also documentation of the onVRFrame() engine handler.
 -- @module vrspaces
 
 local vr = require('openmw.vr')
@@ -15,7 +16,7 @@ end
 -- @field openmw.util#Vector3 position @{openmw.util#Vector3}
 -- @field openmw.util#Transform orientation @{openmw.util#Transform}
 
-local UnitsPerMeter = 69.99125109
+local unitsPerMeter = 69.99125109
 local customSpaces = {
 }
 
@@ -44,23 +45,15 @@ local actionSpaces = {
     RightHandPoke = "/user/hand/right/input/poke_ext/pose",
 }
 
---- Names of ReferenceSpace type spaces. These are HMD spaces that act as origins for other spaces.
--- @type ActionSpace
--- @field #string Local A vaguely defined, but relatively stable, origin. Usually the origin will be the location of the HMD upon launching the game, and may move suddenly if the HMD loses track of its origin.
+--- Names of reference type spaces. These are HMD spaces that act as origins for other spaces.
+-- @type ReferenceSpace
+-- @field #string Local Provides a gravity-locked origin around the initial position of the headest.
 -- @field #string View The origin is the HMD itself, and will be constantly moving with the player.
--- @field #string Stage A stable stage origin defined by the implementation. May not be available, so check its availability before use.
+-- @field #string Stage A gravity-locked, stable stage defined by the implementation. May not be available, so check its availability before use.
 local referenceSpaces = {
     Local = "/default/reference/local",
     View = "/default/reference/view",
     Stage = "/default/reference/stage",
-}
-
-
-
-local referenceSpaceToEnum = {
-    [referenceSpaces.Local] = vr.REFERENCE_SPACES.Local,
-    [referenceSpaces.View] = vr.REFERENCE_SPACES.View,
-    [referenceSpaces.Stage] = vr.REFERENCE_SPACES.Stage,
 }
 
 local supportedReferenceSpaces = {}
@@ -81,7 +74,12 @@ for profile, controllers in pairs(vr.availableInteractions) do
 end
 
 local function isReferenceSpace(space) 
-    return referenceSpaceToEnum[space] ~= nil 
+    for _, v in pairs(referenceSpaces) do
+        if v == space then
+            return true
+        end
+    end
+    return false
 end
 
 local function isActionSpace(space)
@@ -92,11 +90,7 @@ local function isActionSpace(space)
 end
 
 local function isReferenceSpaceSupported(space)
-    local refSpace = referenceSpaceToEnum[space]
-    if not refSpace then
-        error('Error: space '..tostring(space)..' is not a reference space', 2)
-    end
-    return supportedReferenceSpaces[refSpace]
+    return supportedReferenceSpaces[space]
 end
 
 local function isActionSpaceSupported(space)
@@ -104,7 +98,7 @@ local function isActionSpaceSupported(space)
 end
 
 local function createDerivedSpace(name, reference, pose)
-    vr.createDerivedSpace(name, reference, pose)
+    vr._createDerivedSpace(name, reference, pose)
     customSpaces[name] = name
 end
 
@@ -117,7 +111,7 @@ return {
         version = 0,
 
         --- Constant used to convert between MW units and meters
-        -- @field [parent=#vrspaces] #number UnitsPerMeter
+        -- @field [parent=#vrspaces] #number unitsPerMeter
         unitsPerMeter = unitsPerMeter,
 
         --- Table of existing custom spaces
@@ -164,6 +158,24 @@ return {
         -- @function [parent=#vrspaces] isSpaceActive
         -- @param #string name
         isSpaceActive = function(space) return vr.locateSpace(space) ~= nil end,
+
+        --- Check if the given string is the name of a space
+        -- @function [parent=#vrspaces] isSpace
+        -- @param #string name
+        isSpace = function(space) return vr._spaceExists(space) ~= nil end,
+
+        --- Locate a space in relative terms.
+        -- @function [parent=#vrspaces] locateSpace
+        -- @param #string name Name of the space to locate
+        -- @param #string reference (Optional) Name of the space to locate in reference to. Defaults to @{#ReferenceSpace.Local}
+        -- @return #Pose
+        locateSpace = function(space, ref) return vr._locateSpace(space, ref) end,
+
+        --- Locate a space in the game world.
+        -- @function [parent=#vrspaces] locateSpaceInWorld
+        -- @param #string name Name of the space to locate
+        -- @return #Pose
+        locateSpaceInWorld = function(space) return vr._locateSpaceInWorld(space) end,
 
         --- Request a horizontal recenter
         -- @function [parent=#vrspaces] recenterXY

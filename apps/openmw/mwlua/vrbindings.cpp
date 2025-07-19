@@ -68,9 +68,16 @@ namespace MWLua
             sol::state_view lua = context.sol();
             sol::table referenceTable(lua, sol::create);
             for (auto reference : VR::Session::instance().getSupportedReferenceSpaceTypes())
-                referenceTable[referenceTable.size() + 1] = reference;
+            {
+                if (reference == VR::ReferenceSpace::Local)
+                    referenceTable[referenceTable.size() + 1] = MWVR::OpenXRInput::DefaultReferenceSpaceLocal;
+                if (reference == VR::ReferenceSpace::View)
+                    referenceTable[referenceTable.size() + 1] = MWVR::OpenXRInput::DefaultReferenceSpaceView;
+                if (reference == VR::ReferenceSpace::Stage)
+                    referenceTable[referenceTable.size() + 1] = MWVR::OpenXRInput::DefaultReferenceSpaceStage;
+            }
 
-            return referenceTable;
+            return LuaUtil::makeReadOnly(referenceTable);
         }
 
         sol::table tableFromPose(const VR::TrackingPose& pose, sol::state_view lua)
@@ -122,22 +129,11 @@ namespace MWLua
         sol::table api(lua, sol::create);
         api["isVr"] = []() -> bool { return VR::getVR(); };
 
-        api["CONTROLLER_PATHS"] = LuaUtil::makeStrictReadOnly(LuaUtil::tableFromVector<std::string>(
+        api["controllerPaths"] = LuaUtil::makeStrictReadOnly(LuaUtil::tableFromVector<std::string>(
             lua, { "/user/hand/left", "/user/hand/right", "/user/gamepad", "/user/treadmill" }));
 
         api["INTERACTION_VALUE_TYPES"] = LuaUtil::makeStrictReadOnly(LuaUtil::tableFromPairs<std::string, std::string>(
             lua, { { "Boolean", "BOOLEAN" }, { "Float", "FLOAT" }, { "Axis", "AXIS" }, { "Pose", "POSE" } }));
-
-        api["EYES"] = LuaUtil::makeStrictReadOnly(
-            LuaUtil::tableFromPairs<std::string, int>(lua, { { "LEFT_EYE", 1 }, { "RIGHT_EYE", 2 } }));
-
-        api["REFERENCE_SPACES"]
-            = LuaUtil::makeStrictReadOnly(LuaUtil::tableFromPairs<std::string, VR::ReferenceSpace>(lua,
-                {
-                    { "View", VR::ReferenceSpace::View },
-                    { "Local", VR::ReferenceSpace::Local },
-                    { "Stage", VR::ReferenceSpace::Stage },
-                }));
 
         if (!VR::getVR())
             return LuaUtil::makeReadOnly(api);
@@ -149,20 +145,16 @@ namespace MWLua
         api["isControllerActive"]
             = [](const std::string& path) -> bool { return VR::getControllerActive(VR::stringToXrPath(path)); };
 
-        api["createDerivedSpace"] = sol::overload(
-            [&xrinput](const std::string& spaceId, VR::ReferenceSpace referenceSpaceType, const sol::table& pose) {
-                xrinput.createDerivedSpace(spaceId, referenceSpaceType, poseFromTable(pose));
-            },
-            [&xrinput](const std::string& spaceId, const std::string& actionName, const sol::table& pose) {
-                xrinput.createDerivedSpace(spaceId, actionName, poseFromTable(pose));
-            });
+        api["_createDerivedSpace"]
+            = [&xrinput](const std::string& spaceId, const std::string& referenceSpace, const sol::table& pose) {
+                  xrinput.createDerivedSpace(spaceId, referenceSpace, poseFromTable(pose));
+              };
 
-        api["spaceExists"] = [&xrinput](const std::string& spaceId) -> bool { return !!xrinput.getSpace(spaceId); };
+        api["_spaceExists"] = [&xrinput](const std::string& spaceId) -> bool { return !!xrinput.getSpace(spaceId); };
 
-        // Cache the actionSet reference since it will never change and outlives lua.
         api["getActionValue"] = [&actionSet = MWVR::OpenXRInput::instance().getActionSet(MWVR::MWActionSet::Actions)](
                                     const std::string& path) { return actionSet.getValue(path); };
-        api["locateSpace"]
+        api["_locateSpace"]
             = [&xrinput, lua](const std::string& spaceId, sol::optional<std::string> ref) -> sol::object {
             if (!VR::getLocatingSpacesAllowed())
                 throw std::logic_error("locateSpace() is only allowed during onVRFrame()");
@@ -180,7 +172,7 @@ namespace MWLua
         api["setOutputValue"] = [&actionSet = MWVR::OpenXRInput::instance().getActionSet(MWVR::MWActionSet::Haptics)](
                                     const std::string& path, float value) { actionSet.applyHaptics(path, value); };
 
-        api["locateSpaceInWorld"] = [&xrinput, lua](const std::string& spaceId) -> sol::object {
+        api["_locateSpaceInWorld"] = [&xrinput, lua](const std::string& spaceId) -> sol::object {
             if (!VR::getLocatingSpacesAllowed())
                 throw std::logic_error("locateSpace() is only allowed during onVRFrame()");
             auto space = xrinput.getSpace(spaceId);
