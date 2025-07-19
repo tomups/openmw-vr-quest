@@ -50,7 +50,7 @@ jobs:
       working-directory: ${{ github.workspace }}/deps
       run: |
         $MANIFEST = "vcpkg-x64-${{ inputs.msvc }}-${{ inputs.vcpkg-deps-tag }}.txt"
-        curl --fail --retry 3 -L -o "$MANIFEST" "https://gitlab.com/OpenMW/openmw-deps/-/raw/main/windows/$MANIFEST"
+        curl --fail --retry 3 -L -o "$MANIFEST" "https://gitlab.com/madsbuvi/openmw-deps/-/raw/openmw-vr/windows/$MANIFEST"
         $lines = Get-Content "$MANIFEST"
         $URL = $lines[0]
         $split = -split $lines[1]
@@ -108,6 +108,8 @@ jobs:
         -D BUILD_COMPONENTS_TESTS=${{ ! inputs.package }}
         -D BUILD_OPENMW_TESTS=${{ ! inputs.package }}
         -D BUILD_OPENCS_TESTS=${{ ! inputs.package }}
+        -D BUILD_OPENMW=OFF
+        -D BUILD_OPENMW_VR=ON
         -D OPENMW_USE_SYSTEM_SQLITE3=OFF
         -D OPENMW_USE_SYSTEM_YAML_CPP=OFF
         -D OPENMW_LTO_BUILD=ON
