@@ -66,26 +66,6 @@ jobs:
     #     path: ./build_artifact.7z
     #     name: build_artifact.7z
 
-  MacOS:
-    runs-on: macos-latest
-
-    steps:
-    - uses: actions/checkout@v4
-
-    - name: Install Building Dependencies
-      run: CI/before_install.macos.sh
-
-    - name: Prime ccache
-      uses: hendrikmuhs/ccache-action@v1
-      with:
-        key: ${{ matrix.os }}-${{ env.BUILD_TYPE }}
-        max-size: 1000M
-
-    - name: Configure
-      run: CI/before_script.macos.sh
-    - name: Build
-      run: CI/macos/build.sh
-
   Output-Envs:
     name: Read .env file and expose it as output
     runs-on: ubuntu-latest
