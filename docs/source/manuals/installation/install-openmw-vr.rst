@@ -7,7 +7,7 @@ OpenMW-VR is not yet a part of official OpenMW and must be installed separately.
 Windows Binaries
 ================
 
-`Releases <https://gitlab.com/madsbuvi/openmw/-/releases>`_
+`Releases <https://github.com/madsbuvi/openmw/releases>`_
 
 	.. note::
 		There is no need to uninstall previous builds, but extract each build into a **new or empty** folder and **do not** extract two builds to the same folder.
