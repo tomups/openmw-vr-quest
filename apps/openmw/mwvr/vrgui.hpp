@@ -18,6 +18,8 @@
 #include <components/vr/layer.hpp>
 #include <components/vr/vr.hpp>
 
+#include <components/lua_ui/element.hpp>
+
 namespace MyGUI
 {
     class Widget;
@@ -77,7 +79,7 @@ namespace MWVR
         void updateRect();
         void insertWidget(MWGui::Layout* widget);
         void removeWidget(MWGui::Layout* widget);
-        int widgetCount() { return mWidgets.size(); }
+        int widgetCount() { return mWidgets.size() + mLuaElements.size(); }
         //bool operator<(const VRGUILayer& rhs) const { return mConfig->priority < rhs.mConfig->priority; }
         void cull(osgUtil::CullVisitor* cv);
         void setVisible(bool visible);
@@ -99,6 +101,9 @@ namespace MWVR
         void setMode(const std::string& mode);
 
         void clear();
+
+        void addLuaElement(const LuaUi::Element* element);
+        void removeLuaElement(const LuaUi::Element* element);
 
     public:
         //Stereo::Pose mTrackingPose = Stereo::Pose();
@@ -124,9 +129,11 @@ namespace MWVR
         bool mVisible = false;
         bool mDirty = false;
         bool mSpaceIsLost = false;
+        bool mVisibleChanged = false;
         std::shared_ptr<VR::QuadLayer> mVrLayer;
         std::shared_ptr<VR::Space> mSpace;
         Stereo::Pose mPose;
+        std::vector<const LuaUi::Element*> mLuaElements;
     };
 
     /// \brief Manager of VRGUILayer objects.
@@ -192,6 +199,9 @@ namespace MWVR
         void setLayerPose(const std::string& layer, const Stereo::Pose& pose);
         void setModeConfig(const std::string& mode, const LayerConfig& config);
         void setModePose(const std::string& mode, const Stereo::Pose& pose, const std::string window = "");
+
+        void registerLuaElement(const LuaUi::Element* element);
+        void deregisterLuaElement(const LuaUi::Element* element);
 
     private:
         // Not used: void removeLayer(const std::string& name);

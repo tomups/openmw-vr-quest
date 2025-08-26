@@ -17,6 +17,7 @@
 
 #include "../mwbase/environment.hpp"
 #include "../mwbase/windowmanager.hpp"
+#include "../mwvr/vrgui.hpp"
 #include <MyGUI_InputManager.h>
 
 namespace MWLua
@@ -108,7 +109,12 @@ namespace MWLua
 
         api["create"] = [luaManager = context.mLuaManager, menu](const sol::table& layout) {
             auto element = LuaUi::Element::make(layout, menu);
-            luaManager->addAction([element] { wrapAction(element, [&] { element->create(); }); }, "Create UI");
+            luaManager->addAction(
+                [element] {
+                    wrapAction(element, [&] { element->create(); });
+                    MWVR::VRGUIManager::instance().registerLuaElement(element.get());
+                },
+                "Create UI");
             return element;
         };
 
@@ -117,7 +123,14 @@ namespace MWLua
                 if (e->mState == LuaUi::Element::Created)
                     e->mState = LuaUi::Element::Update;
             });
-            luaManager->addAction([menu]() { LuaUi::Element::forEach(menu, [](LuaUi::Element* e) { e->update(); }); },
+            luaManager->addAction(
+                [menu]() {
+                    LuaUi::Element::forEach(menu, [](LuaUi::Element* e) {
+                        MWVR::VRGUIManager::instance().deregisterLuaElement(e);
+                        e->update();
+                        MWVR::VRGUIManager::instance().registerLuaElement(e);
+                    });
+                },
                 "Update all menu UI elements");
         };
         api["_getMenuTransparency"] = []() -> float { return Settings::gui().mMenuTransparency; };
@@ -317,14 +330,24 @@ namespace MWLua
                 if (element->mState != LuaUi::Element::Created)
                     return;
                 element->mState = LuaUi::Element::Update;
-                luaManager->addAction([element] { wrapAction(element, [&] { element->update(); }); }, "Update UI");
+                luaManager->addAction(
+                    [element] {
+                        MWVR::VRGUIManager::instance().deregisterLuaElement(element.get());
+                        wrapAction(element, [&] { element->update(); });
+                        MWVR::VRGUIManager::instance().registerLuaElement(element.get());
+                    },
+                    "Update UI");
             };
             element["destroy"] = [luaManager = context.mLuaManager](const std::shared_ptr<LuaUi::Element>& element) {
                 if (element->mState == LuaUi::Element::Destroyed)
                     return;
                 element->mState = LuaUi::Element::Destroy;
                 luaManager->addAction(
-                    [element] { wrapAction(element, [&] { LuaUi::Element::erase(element.get()); }); }, "Destroy UI");
+                    [element] {
+                        MWVR::VRGUIManager::instance().deregisterLuaElement(element.get());
+                        wrapAction(element, [&] { LuaUi::Element::erase(element.get()); });
+                    },
+                    "Destroy UI");
             };
 
             auto uiLayer = context.sol().new_usertype<LuaUi::Layer>("UiLayer");

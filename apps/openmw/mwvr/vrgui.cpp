@@ -1,6 +1,7 @@
 #include "vrgui.hpp"
 
 #include <cmath>
+#include <algorithm>
 
 #include "openxrinput.hpp"
 #include "vrpointer.hpp"
@@ -340,6 +341,16 @@ namespace MWVR
         removeFromSceneGraph();
     }
 
+    void VRGUILayer::addLuaElement(const LuaUi::Element* element) 
+    {
+        mLuaElements.push_back(element);
+    }
+
+    void VRGUILayer::removeLuaElement(const LuaUi::Element* element) 
+    {
+        std::erase_if(mLuaElements, [element](const auto& lhs) { return lhs == element; });
+    }
+
     const LayerConfig* VRGUILayer::activeConfig()
     {
         auto it = mPerModeConfigs.find(mActiveMode);
@@ -458,6 +469,20 @@ namespace MWVR
         for (auto* widget : mWidgets)
         {
             auto rect = widget->mMainWidget->getAbsoluteRect();
+            mRect.left = std::min(rect.left, mRect.left);
+            mRect.top = std::min(rect.top, mRect.top);
+            mRect.right = std::max(rect.right, mRect.right);
+            mRect.bottom = std::max(rect.bottom, mRect.bottom);
+        }
+
+        for (const auto& element : mLuaElements)
+        {
+            if (!element->mRoot)
+                continue;
+            const auto* widget = element->mRoot->widget();
+            if (!widget)
+                continue;
+            auto rect = widget->getAbsoluteRect();
             mRect.left = std::min(rect.left, mRect.left);
             mRect.top = std::min(rect.top, mRect.top);
             mRect.right = std::max(rect.right, mRect.right);
@@ -694,7 +719,7 @@ namespace MWVR
         if (visible == mVisible)
             return;
         mVisible = visible;
-
+        mVisibleChanged = true;
         if (mVisible)
             addToSceneGraph();
         else
@@ -1346,6 +1371,35 @@ namespace MWVR
         }
         else
             getLayer(windowToLayers.at(window)).mPose = pose;
+    }
+
+    void VRGUIManager::registerLuaElement(const LuaUi::Element* element) 
+    {
+        const auto& layer = element->mLayer;
+        if (layer.empty())
+        {
+            // Don't know what to do with these
+            return;
+        }
+
+        auto& vrLayer = getLayer(layer);
+        vrLayer.addLuaElement(element);
+        vrLayer.setVisible(true);
+    }
+
+    void VRGUIManager::deregisterLuaElement(const LuaUi::Element* element) 
+    {
+        const auto& layer = element->mLayer;
+        if (layer.empty())
+        {
+            // Don't know what to do with these
+            return;
+        }
+
+        auto& vrLayer = getLayer(layer);
+        vrLayer.removeLuaElement(element);
+        if (vrLayer.widgetCount() == 0)
+            vrLayer.setVisible(false);
     }
 
     void VRGUIManager::computeGuiCursor(osg::Vec3 hitPoint)
