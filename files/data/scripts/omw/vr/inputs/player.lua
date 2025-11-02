@@ -241,6 +241,10 @@ input.bindAction('Sneak', async:callback(function(dt, v)
 end), {})
 
 local function onFrame(dt)
+    -- If a mod ever calls overrideCombatControls(false), it would break VR controls.
+    -- There's no API to detect this, so i call this every frame to make sure we stay
+    -- in control.
+    I.Controls.overrideCombatControls(true)
     
     common.onFrame(dt)
     updatePointer()
@@ -278,8 +282,6 @@ local function onVRRecenter(vertical, horizontal)
         resetPhysicalSneakReferencePose()
     end
 end
-
-I.Controls.overrideCombatControls(true)
 
 return {
     engineHandlers = {
