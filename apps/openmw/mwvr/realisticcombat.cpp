@@ -40,22 +40,22 @@ namespace MWVR
             }
             return "Error, invalid enum";
         }
-        static const char* swingTypeToString(int type)
-        {
-            switch (type)
-            {
-                case ESM::Weapon::AT_Chop:
-                    return "Chop";
-                case ESM::Weapon::AT_Slash:
-                    return "Slash";
-                case ESM::Weapon::AT_Thrust:
-                    return "Thrust";
-                case -1:
-                    return "Fail";
-                default:
-                    return "Invalid";
-            }
-        }
+        // static const char* swingTypeToString(int type)
+        // {
+        //     switch (type)
+        //     {
+        //         case ESM::Weapon::AT_Chop:
+        //             return "Chop";
+        //         case ESM::Weapon::AT_Slash:
+        //             return "Slash";
+        //         case ESM::Weapon::AT_Thrust:
+        //             return "Thrust";
+        //         case -1:
+        //             return "Fail";
+        //         default:
+        //             return "Invalid";
+        //     }
+        // }
 
         StateMachine::StateMachine(MWWorld::Ptr ptr, std::string_view space)
             : mPtr(ptr)
