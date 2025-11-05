@@ -97,10 +97,10 @@ namespace MWLua
             if (table)
             {
                 pose.position = Stereo::Position::fromMWUnits(get_or<osg::Vec3f>(*table, "position", osg::Vec3f()));
-                if (auto transform = table->get<sol::optional<LuaUtil::TransformQ>>("orientation"))
-                    pose.orientation = transform->mQ;
-                else if (auto transform = table->get<sol::optional<LuaUtil::TransformM>>("orientation"))
-                    pose.orientation = transform->mM.getRotate();
+                if (auto transformQuat = table->get<sol::optional<LuaUtil::TransformQ>>("orientation"))
+                    pose.orientation = transformQuat->mQ;
+                else if (auto transformMat = table->get<sol::optional<LuaUtil::TransformM>>("orientation"))
+                    pose.orientation = transformMat->mM.getRotate();
             }
             return pose;
         }

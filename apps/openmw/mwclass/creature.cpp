@@ -472,14 +472,14 @@ namespace MWClass
         }
 //## VR_PATCH BEGIN
         // TODO: Port to lua
-        if (successful)
-        {
-            if (attacker == MWMechanics::getPlayer() && hitStrength > 0.f)
-            {
-                float hapticIntensity = std::max(0.25f, std::min(1.f, hitStrength));
-                MWBase::Environment::get().getInputManager()->applyHapticsRightHand(hapticIntensity);
-            }
-        }
+        // if (successful)
+        // {
+        //     if (attacker == MWMechanics::getPlayer() && hitStrength > 0.f)
+        //     {
+        //         float hapticIntensity = std::max(0.25f, std::min(1.f, hitStrength));
+        //         MWBase::Environment::get().getInputManager()->applyHapticsRightHand(hapticIntensity);
+        //     }
+        // }
 //## VR_PATCH END
     }
 

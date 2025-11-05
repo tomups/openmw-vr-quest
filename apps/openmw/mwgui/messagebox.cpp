@@ -434,7 +434,7 @@ namespace MWGui
 
     void InteractiveMessageBox::closeDefault() 
     {
-        auto buttonIndex = std::max(0, std::min(mDefaultFocus, static_cast<int>(mButtons.size())));
+        auto buttonIndex = std::max(size_t(0), std::min(mDefaultFocus, mButtons.size()));
         auto button = mButtons[buttonIndex];
         mousePressed(button);
     }

@@ -168,7 +168,6 @@ namespace MWWorld
         virtual void onHit(const MWWorld::Ptr& ptr, const std::map<std::string, float>& damages, ESM::RefId object,
             const MWWorld::Ptr& attacker, bool successful, const MWMechanics::DamageSourceType sourceType) const;
         ///< Alerts \a ptr that it's being hit for \a damages by \a object (sword, arrow, etc). \a attacker specifies
-            float hitStrength, const MWMechanics::DamageSourceType sourceType) const;
         /// actor responsible for the attack. \a successful specifies if the hit is
         /// successful or not. \a sourceType classifies the damage source.
 

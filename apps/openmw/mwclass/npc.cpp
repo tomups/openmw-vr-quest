@@ -729,7 +729,7 @@ namespace MWClass
         bool wasDead = stats.isDead();
 //## VR_PATCH BEGIN
 // Set aside raw damage before adjustments, to use for haptics
-        float rawDamage = damage;
+        //float rawDamage = damage;
 //## VR_PATCH END
 
         bool setOnPcHitMe = true;
@@ -860,21 +860,21 @@ namespace MWClass
 //## VR_PATCH BEGIN
         // TODO: Port to lua
         // Apply haptics
-        if (successful)
-        {
-            auto inputManager = MWBase::Environment::get().getInputManager();
-            if (ptr == MWMechanics::getPlayer())
-            {
-                float maxHealth = getCreatureStats(ptr).getHealth().getModified();
-                float hapticIntensity = std::max(0.25f, std::min(1.f, rawDamage / (maxHealth / 4.f)));
-                inputManager->applyHapticsLeftHand(hapticIntensity);
-            }
-            else if (attacker == MWMechanics::getPlayer() && hitStrength > 0.f)
-            {
-                float hapticIntensity = std::max(0.25f, std::min(1.f, hitStrength));
-                inputManager->applyHapticsRightHand(hapticIntensity);
-            }
-        }
+        // if (successful)
+        // {
+        //     auto inputManager = MWBase::Environment::get().getInputManager();
+        //     if (ptr == MWMechanics::getPlayer())
+        //     {
+        //         float maxHealth = getCreatureStats(ptr).getHealth().getModified();
+        //         float hapticIntensity = std::max(0.25f, std::min(1.f, rawDamage / (maxHealth / 4.f)));
+        //         inputManager->applyHapticsLeftHand(hapticIntensity);
+        //     }
+        //     else if (attacker == MWMechanics::getPlayer() && hitStrength > 0.f)
+        //     {
+        //         float hapticIntensity = std::max(0.25f, std::min(1.f, hitStrength));
+        //         inputManager->applyHapticsRightHand(hapticIntensity);
+        //     }
+        // }
 //## VR_PATCH END
     }
 

@@ -302,9 +302,6 @@ namespace MWMechanics
 
             MWBase::Environment::get().getLuaManager()->onHit(attacker, victim, weapon, projectile, 0, attackStrength,
                 damage, true, hitPosition, true, MWMechanics::DamageSourceType::Ranged);
-// Vr uses attack strength to determine haptic feedback strength
-                victim, damage, true, projectile, attacker, hitPosition, true, attackStrength, MWMechanics::DamageSourceType::Ranged);
-//## VR_PATCH END
         }
     }
 

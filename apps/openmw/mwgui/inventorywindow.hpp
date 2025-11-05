@@ -140,13 +140,12 @@ namespace MWGui
         };
         ControllerAction mPendingControllerAction;
 
-        void onWindowResize(MyGUI::Window* _sender) override;
         void sellItem(MyGUI::Widget* sender, std::size_t count);
         void dragItem(MyGUI::Widget* sender, std::size_t count);
         void transferItem(MyGUI::Widget* sender, std::size_t count);
         void dropItem(MyGUI::Widget* sender, std::size_t count);
 
-        void onWindowResize(MyGUI::Window* sender);
+        void onWindowResize(MyGUI::Window* sender) override;
         void onFilterChanged(MyGUI::Widget* sender);
         void onNameFilterChanged(MyGUI::EditBox* sender);
         void onAvatarClicked(MyGUI::Widget* sender);

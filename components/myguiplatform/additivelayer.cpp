@@ -22,7 +22,7 @@ namespace MyGUIPlatform
     void AdditiveLayer::renderToTarget(MyGUI::IRenderTarget* target, bool update)
     {
 //## VR_PATCH BEGIN
-        StateInjectableRenderTarget* injectableTarget = static_cast<StateInjectableRenderTarget*>(_target);
+        StateInjectableRenderTarget* injectableTarget = static_cast<StateInjectableRenderTarget*>(target);
 
         injectableTarget->setInjectState(mStateSet.get());
 

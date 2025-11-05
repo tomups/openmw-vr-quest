@@ -73,12 +73,8 @@ namespace MWClass
         void hit(const MWWorld::Ptr& ptr, float attackStrength, int type, const MWWorld::Ptr& victim,
             const osg::Vec3f& hitPosition, bool success, bool ignoreReach) const override;
 
-        void onHit(const MWWorld::Ptr& ptr, const std::map<std::string, float>& damages, ESM::RefId object,
-            const MWWorld::Ptr& attacker, bool successful,
-//## VR_PATCH BEGIN
-// Add hitStrength to signature
-            float hitStrength, const MWMechanics::DamageSourceType sourceType) const override;
-//## VR_PATCH END
+        virtual void onHit(const MWWorld::Ptr& ptr, const std::map<std::string, float>& damages, ESM::RefId object,
+            const MWWorld::Ptr& attacker, bool successful, const MWMechanics::DamageSourceType sourceType) const override;
 
         std::unique_ptr<MWWorld::Action> activate(const MWWorld::Ptr& ptr, const MWWorld::Ptr& actor) const override;
         ///< Generate action for activation

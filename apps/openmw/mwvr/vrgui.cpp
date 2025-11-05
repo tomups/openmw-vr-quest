@@ -133,7 +133,7 @@ namespace MWVR
         {
             std::map<std::string, int> res;
             int priority = 0;
-            for (auto layer : layers)
+            for (auto& layer : layers)
                 res[layer] = priority++;
             return res;
         }
@@ -247,16 +247,16 @@ namespace MWVR
         osg::ref_ptr<osg::Geometry> geometry = new osg::Geometry();
 
         // Define the menu quad
-        osg::Vec3 top_left(left, 1, top);
-        osg::Vec3 bottom_left(left, 1, bottom);
-        osg::Vec3 bottom_right(right, 1, bottom);
-        osg::Vec3 top_right(right, 1, top);
+        osg::Vec3 topLeft(left, 1, top);
+        osg::Vec3 bottomLeft(left, 1, bottom);
+        osg::Vec3 bottomRight(right, 1, bottom);
+        osg::Vec3 topRight(right, 1, top);
 
         osg::ref_ptr<osg::Vec3Array> vertices{ new osg::Vec3Array(4) };
-        (*vertices)[0] = bottom_left;
-        (*vertices)[1] = top_left;
-        (*vertices)[2] = bottom_right;
-        (*vertices)[3] = top_right;
+        (*vertices)[0] = bottomLeft;
+        (*vertices)[1] = topLeft;
+        (*vertices)[2] = bottomRight;
+        (*vertices)[3] = topRight;
         geometry->setVertexArray(vertices);
 
         osg::ref_ptr<osg::Vec2Array> texCoords{ new osg::Vec2Array(4) };
@@ -539,8 +539,8 @@ namespace MWVR
             std::string filter = mLayerName;
             // Some layers have their own background layer
             filter = filter + ";" + mLayerName + "Background";
-            osgMyGUI::RenderManager& renderManager
-                = static_cast<osgMyGUI::RenderManager&>(MyGUI::RenderManager::getInstance());
+            MyGUIPlatform::RenderManager& renderManager
+                = static_cast<MyGUIPlatform::RenderManager&>(MyGUI::RenderManager::getInstance());
             mMyGUICamera = renderManager.createGUICamera(osg::Camera::NESTED_RENDER, filter);
 
             auto* rttNode = new GUIRTT(config->pixelResolution.x(), config->pixelResolution.y(),
@@ -1271,7 +1271,7 @@ namespace MWVR
         {
             // Make a back up list of visible widgets
             std::vector<MWGui::Layout*> widgets;
-            for (auto layer : mLayers)
+            for (auto& layer : mLayers)
             {
                 widgets.insert(widgets.end(), layer.second->mWidgets.begin(), layer.second->mWidgets.end());
                 layer.second->removeFromSceneGraph();
@@ -1324,7 +1324,7 @@ namespace MWVR
     {
         MyFactory<MyGUI::OverlappedLayer>::registerFactory();
         MyFactory<MyGUI::SharedLayer>::registerFactory();
-        MyFactory<osgMyGUI::AdditiveLayer>::registerFactory();
+        MyFactory<MyGUIPlatform::AdditiveLayer>::registerFactory();
     }
 
     void VRGUIManager::setPick(MWGui::Layout* widget, bool pick)

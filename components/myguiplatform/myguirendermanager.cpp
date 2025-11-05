@@ -83,7 +83,7 @@ namespace MyGUIPlatform
             {
             }
 
-            void setCamera(osgMyGUI::GUICamera* camera) { mCamera = camera; }
+            void setCamera(MyGUIPlatform::GUICamera* camera) { mCamera = camera; }
 
             void operator()(osg::Node*, osg::NodeVisitor*);
 
@@ -181,7 +181,7 @@ namespace MyGUIPlatform
 //## VR_PATCH BEGIN
 // In VR each filter/layer gets its own drawable and associated RTT camera
         Drawable(std::string filter = "", osg::StateSet* stateset = nullptr, MyGUIPlatform::RenderManager* parent = nullptr,
-            osgMyGUI::GUICamera* camera = nullptr)
+            MyGUIPlatform::GUICamera* camera = nullptr)
             : mParent(parent)
             , mStateSet(stateset)
             , mWriteTo(0)
