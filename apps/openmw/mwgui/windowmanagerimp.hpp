@@ -130,6 +130,9 @@ namespace MWGui
     class PostProcessorHud;
     class JailScreen;
     class KeyboardNavigation;
+    class ItemTransfer;
+    class ControllerButtonsOverlay;
+    class InventoryTabsOverlay;
 
     class WindowManager : public MWBase::WindowManager
     {
@@ -196,7 +199,9 @@ namespace MWGui
         MWGui::CountDialog* getCountDialog() override;
         MWGui::ConfirmationDialog* getConfirmationDialog() override;
         MWGui::TradeWindow* getTradeWindow() override;
+        MWGui::HUD* getHud() override;
         MWGui::PostProcessorHud* getPostProcessorHud() override;
+        std::vector<MWGui::WindowBase*> getGuiModeWindows(GuiMode mode) override;
 
         /// Make the player use an item, while updating GUI state accordingly
         void useItem(const MWWorld::Ptr& item, bool bypassBeastRestrictions = false) override;
@@ -296,7 +301,7 @@ namespace MWGui
          * @param id Identifier for the GMST setting, e.g. "aName"
          * @param default Default value if the GMST setting cannot be used.
          */
-        std::string_view getGameSettingString(std::string_view id, std::string_view default_) override;
+        std::string_view getGameSettingString(std::string_view id, std::string_view defaultValue) override;
 
         void processChangedSettings(const Settings::CategorySettingVector& changed) override;
 
@@ -400,6 +405,17 @@ namespace MWGui
 
         void asyncPrepareSaveMap() override;
 
+        WindowBase* getActiveControllerWindow() override;
+        int getControllerMenuHeight() override;
+        void cycleActiveControllerWindow(bool next) override;
+        void setActiveControllerWindow(GuiMode mode, int activeIndex) override;
+        bool getControllerTooltipVisible() const override { return mControllerTooltipVisible; }
+        void setControllerTooltipVisible(bool visible) override;
+        bool getControllerTooltipEnabled() const override { return mControllerTooltipEnabled; }
+        void setControllerTooltipEnabled(bool enabled) override;
+        void restoreControllerTooltips() override;
+        void updateControllerButtonsOverlay() override;
+
         // Used in Lua bindings
         const std::vector<GuiMode>& getGuiModeStack() const override { return mGuiModes; }
         void setDisabledByLua(std::string_view windowId, bool disabled) override;
@@ -418,7 +434,7 @@ namespace MWGui
         Resource::ResourceSystem* mResourceSystem;
         osg::ref_ptr<SceneUtil::WorkQueue> mWorkQueue;
 
-        std::unique_ptr<osgMyGUI::Platform> mGuiPlatform;
+        std::unique_ptr<MyGUIPlatform::Platform> mGuiPlatform;
         osgViewer::Viewer* mViewer;
 
         std::unique_ptr<Gui::FontLoader> mFontLoader;
@@ -428,7 +444,7 @@ namespace MWGui
 
         std::map<MyGUI::Window*, WindowSettingValues> mTrackedWindows;
         void trackWindow(Layout* layout, const WindowSettingValues& settings);
-        void onWindowChangeCoord(MyGUI::Window* _sender);
+        void onWindowChangeCoord(MyGUI::Window* sender);
 
         ESM::RefId mSelectedSpell;
         MWWorld::Ptr mSelectedEnchantItem;
@@ -449,6 +465,7 @@ namespace MWGui
         Console* mConsole;
         DialogueWindow* mDialogueWindow;
         std::unique_ptr<DragAndDrop> mDragAndDrop;
+        std::unique_ptr<ItemTransfer> mItemTransfer;
         InventoryWindow* mInventoryWindow;
         ScrollWindow* mScrollWindow;
         BookWindow* mBookWindow;
@@ -471,6 +488,8 @@ namespace MWGui
         PostProcessorHud* mPostProcessorHud;
         JailScreen* mJailScreen;
         ContainerWindow* mContainerWindow;
+        ControllerButtonsOverlay* mControllerButtonsOverlay;
+        InventoryTabsOverlay* mInventoryTabsOverlay;
 
         std::vector<std::unique_ptr<WindowBase>> mWindows;
 
@@ -510,6 +529,14 @@ namespace MWGui
         std::map<GuiMode, GuiModeState> mGuiModeStates;
         // The currently active stack of GUI modes (top mode is the one we are in).
         std::vector<GuiMode> mGuiModes;
+        // The active window for controller mode for each GUI mode.
+        std::map<GuiMode, int> mActiveControllerWindows;
+        // Current tooltip visibility state (can be disabled by mouse movement)
+        bool mControllerTooltipVisible = false;
+        // User preference for tooltips (persists across mouse/controller switches)
+        bool mControllerTooltipEnabled = false;
+
+        void reapplyActiveControllerWindow();
 
         std::unique_ptr<SDLUtil::SDLCursorManager> mCursorManager;
 
@@ -575,18 +602,18 @@ namespace MWGui
          * "FontColor_color_<FontColourName>" from openmw.cfg, in the format "#xxxxxx" where x are hexadecimal numbers.
          * Useful in an EditBox's caption to change the color of following text.
          */
-        void onRetrieveTag(const MyGUI::UString& _tag, MyGUI::UString& _result);
+        void onRetrieveTag(const MyGUI::UString& tag, MyGUI::UString& result);
 
         void onCursorChange(std::string_view name);
         void onKeyFocusChanged(MyGUI::Widget* widget);
 
         // Key pressed while playing a video
-        void onVideoKeyPressed(MyGUI::Widget* _sender, MyGUI::KeyCode _key, MyGUI::Char _char);
+        void onVideoKeyPressed(MyGUI::Widget* sender, MyGUI::KeyCode key, MyGUI::Char value);
 
         void sizeVideo(int screenWidth, int screenHeight);
 
-        void onClipboardChanged(std::string_view _type, std::string_view _data);
-        void onClipboardRequested(std::string_view _type, std::string& _data);
+        void onClipboardChanged(std::string_view type, std::string_view data);
+        void onClipboardRequested(std::string_view type, std::string& data);
 
         void createTextures();
         void createCursors();

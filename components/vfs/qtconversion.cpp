@@ -1,4 +1,3 @@
-
 #include "qtconversion.hpp"
 
 #include <components/misc/strings/conversion.hpp>

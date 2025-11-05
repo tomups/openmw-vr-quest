@@ -1,5 +1,6 @@
 #include "weather.hpp"
 
+#include <components/esm/stringrefid.hpp>
 #include <components/settings/values.hpp>
 
 #include <components/misc/rng.hpp>
@@ -141,9 +142,12 @@ namespace MWWorld
         return direction;
     }
 
-    Weather::Weather(const std::string& name, float stormWindSpeed, float rainSpeed, float dlFactor, float dlOffset,
-        const std::string& particleEffect)
-        : mCloudTexture(Fallback::Map::getString("Weather_" + name + "_Cloud_Texture"))
+    Weather::Weather(ESM::RefId id, int scriptId, const std::string& name, float stormWindSpeed, float rainSpeed,
+        float dlFactor, float dlOffset, const std::string& particleEffect)
+        : mId(id)
+        , mScriptId(scriptId)
+        , mName(name)
+        , mCloudTexture(Fallback::Map::getString("Weather_" + name + "_Cloud_Texture"))
         , mSkyColor(Fallback::Map::getColour("Weather_" + name + "_Sky_Sunrise_Color"),
               Fallback::Map::getColour("Weather_" + name + "_Sky_Day_Color"),
               Fallback::Map::getColour("Weather_" + name + "_Sky_Sunset_Color"),
@@ -676,6 +680,41 @@ namespace MWWorld
         stopSounds();
     }
 
+    const Weather* WeatherManager::getWeather(size_t index) const
+    {
+        if (index < mWeatherSettings.size())
+            return &mWeatherSettings[index];
+
+        return nullptr;
+    }
+
+    const Weather* WeatherManager::getWeather(const ESM::RefId& id) const
+    {
+        auto it = std::find_if(
+            mWeatherSettings.begin(), mWeatherSettings.end(), [id](const auto& weather) { return weather.mId == id; });
+
+        if (it != mWeatherSettings.end())
+            return &*it;
+
+        return nullptr;
+    }
+
+    void WeatherManager::changeWeather(const ESM::RefId& regionID, const ESM::RefId& weatherID)
+    {
+        auto wIt = std::find_if(mWeatherSettings.begin(), mWeatherSettings.end(),
+            [weatherID](const auto& weather) { return weather.mId == weatherID; });
+
+        if (wIt != mWeatherSettings.end())
+        {
+            auto rIt = mRegions.find(regionID);
+            if (rIt != mRegions.end())
+            {
+                rIt->second.setWeather(std::distance(mWeatherSettings.begin(), wIt));
+                regionalWeatherChanged(rIt->first, rIt->second);
+            }
+        }
+    }
+
     void WeatherManager::changeWeather(const ESM::RefId& regionID, const unsigned int weatherID)
     {
         // In Morrowind, this seems to have the following behavior, when applied to the current region:
@@ -819,12 +858,12 @@ namespace MWWorld
             if (mTimeSettings.mNightStart < mSunriseTime)
                 adjustedNightStart += 24.f;
 
-            const bool is_night = adjustedHour >= adjustedNightStart;
+            const bool isNight = adjustedHour >= adjustedNightStart;
             const float dayDuration = adjustedNightStart - mSunriseTime;
             const float nightDuration = 24.f - dayDuration;
 
             float orbit;
-            if (!is_night)
+            if (!isNight)
             {
                 float t = (adjustedHour - mSunriseTime) / dayDuration;
                 orbit = 1.f - 2.f * t;
@@ -838,7 +877,7 @@ namespace MWWorld
             // Hardcoded constant from Morrowind
             const osg::Vec3f sunDir(-400.f * orbit, 75.f, -100.f);
             mRendering.setSunDirection(sunDir);
-            mRendering.setNight(is_night);
+            mRendering.setNight(isNight);
         }
 
         float underwaterFog = mUnderwaterFog.getValue(time.getHour(), mTimeSettings, "Fog");
@@ -1053,10 +1092,11 @@ namespace MWWorld
         const std::string& name, float dlFactor, float dlOffset, const std::string& particleEffect)
     {
         static const float fStromWindSpeed = mStore.get<ESM::GameSetting>().find("fStromWindSpeed")->mValue.getFloat();
+        ESM::StringRefId id(name);
+        Weather weather(
+            id, mWeatherSettings.size(), name, fStromWindSpeed, mRainSpeed, dlFactor, dlOffset, particleEffect);
 
-        Weather weather(name, fStromWindSpeed, mRainSpeed, dlFactor, dlOffset, particleEffect);
-
-        mWeatherSettings.push_back(weather);
+        mWeatherSettings.push_back(std::move(weather));
     }
 
     inline void WeatherManager::importRegions()

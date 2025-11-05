@@ -534,15 +534,17 @@ namespace Stereo
             if (!Stereo::getMultiview())
             {
                 auto eye = static_cast<int>(Stereo::Manager::instance().getEye(cv));
-
-                if (msaa)
+                if (eye < 2)
                 {
-                    renderStage->setFrameBufferObject(mMultiviewFramebuffer->layerMsaaFbo(eye));
-                    renderStage->setMultisampleResolveFramebufferObject(mMultiviewFramebuffer->layerFbo(eye));
-                }
-                else
-                {
-                    renderStage->setFrameBufferObject(mMultiviewFramebuffer->layerFbo(eye));
+                    if (msaa)
+                    {
+                        renderStage->setFrameBufferObject(mMultiviewFramebuffer->layerMsaaFbo(eye));
+                        renderStage->setMultisampleResolveFramebufferObject(mMultiviewFramebuffer->layerFbo(eye));
+                    }
+                    else
+                    {
+                        renderStage->setFrameBufferObject(mMultiviewFramebuffer->layerFbo(eye));
+                    }
                 }
             }
 
@@ -570,7 +572,7 @@ namespace Stereo
     {
     }
 
-    MultiviewFramebuffer::~MultiviewFramebuffer() {}
+    MultiviewFramebuffer::~MultiviewFramebuffer() = default;
 
     void MultiviewFramebuffer::attachColorComponent(GLint sourceFormat, GLint sourceType, GLint internalFormat)
     {

@@ -29,7 +29,7 @@ namespace VFS
     class Manager;
 }
 
-namespace fx
+namespace Fx
 {
     using FlagsType = size_t;
 
@@ -85,7 +85,7 @@ namespace fx
         }
 
         // not safe to read/write in draw thread
-        std::shared_ptr<fx::Technique> mHandle = nullptr;
+        std::shared_ptr<Fx::Technique> mHandle = nullptr;
 
         FlagsType mFlags = 0;
 
@@ -172,7 +172,7 @@ namespace fx
 
         std::string getLastError() const { return mLastError; }
 
-        UniformMap::iterator findUniform(const std::string& name);
+        UniformMap::iterator findUniform(std::string_view name);
 
         bool getDynamic() const { return mDynamic; }
 
@@ -183,17 +183,17 @@ namespace fx
         bool getInternal() const { return mInternal; }
 
     private:
-        [[noreturn]] void error(const std::string& msg);
+        [[noreturn]] void error(std::string_view msg);
 
         void clear();
 
         std::string_view asLiteral() const;
 
         template <class T>
-        void expect(const std::string& err = "");
+        void expect(std::string_view err = {});
 
         template <class T, class T2>
-        void expect(const std::string& err = "");
+        void expect(std::string_view err = {});
 
         template <class T>
         bool isNext();

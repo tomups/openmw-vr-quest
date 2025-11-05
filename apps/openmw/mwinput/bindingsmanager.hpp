@@ -72,6 +72,8 @@ namespace MWInput
 
         void actionValueChanged(int action, float currentValue, float previousValue);
 
+        void saveBindings();
+
 //## VR_PATCH BEGIN
 // The VR input manager needs to forward XR inputs to ICS.
         ICS::InputControlSystem& ics();

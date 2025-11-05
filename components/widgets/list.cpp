@@ -46,8 +46,8 @@ namespace Gui
 
     void MWList::redraw(bool scrollbarShown)
     {
-        constexpr int _scrollBarWidth = 20; // fetch this from skin?
-        const int scrollBarWidth = scrollbarShown ? _scrollBarWidth : 0;
+        constexpr int scrollbarShownScrollBarWidth = 20; // fetch this from skin?
+        const int scrollBarWidth = scrollbarShown ? scrollbarShownScrollBarWidth : 0;
         int viewPosition = -mScrollView->getViewOffset().top;
 
         while (mScrollView->getChildCount())
@@ -109,12 +109,12 @@ namespace Gui
         mScrollView->setViewOffset(MyGUI::IntPoint(0, -viewPosition));
     }
 
-    void MWList::setPropertyOverride(std::string_view _key, std::string_view _value)
+    void MWList::setPropertyOverride(std::string_view key, std::string_view value)
     {
-        if (_key == "ListItemSkin")
-            mListItemSkin = _value;
+        if (key == "ListItemSkin")
+            mListItemSkin = value;
         else
-            Base::setPropertyOverride(_key, _value);
+            Base::setPropertyOverride(key, value);
     }
 
     size_t MWList::getItemCount()
@@ -147,22 +147,22 @@ namespace Gui
         mItems.clear();
     }
 
-    void MWList::onMouseWheelMoved(MyGUI::Widget* _sender, int _rel)
+    void MWList::onMouseWheelMoved(MyGUI::Widget* /*sender*/, int rel)
     {
         // NB view offset is negative
-        if (mScrollView->getViewOffset().top + _rel * 0.3f > 0)
+        if (mScrollView->getViewOffset().top + rel * 0.3f > 0)
             mScrollView->setViewOffset(MyGUI::IntPoint(0, 0));
         else
             mScrollView->setViewOffset(
-                MyGUI::IntPoint(0, static_cast<int>(mScrollView->getViewOffset().top + _rel * 0.3)));
+                MyGUI::IntPoint(0, static_cast<int>(mScrollView->getViewOffset().top + rel * 0.3)));
     }
 
-    void MWList::onItemSelected(MyGUI::Widget* _sender)
+    void MWList::onItemSelected(MyGUI::Widget* sender)
     {
-        std::string name = _sender->castType<MyGUI::Button>()->getCaption();
-        int id = *_sender->getUserData<int>();
+        std::string name = sender->castType<MyGUI::Button>()->getCaption();
+        int id = *sender->getUserData<int>();
         eventItemSelected(name, id);
-        eventWidgetSelected(_sender);
+        eventWidgetSelected(sender);
     }
 
     MyGUI::Button* MWList::getItemWidget(std::string_view name)
@@ -175,5 +175,10 @@ namespace Gui
     void MWList::scrollToTop()
     {
         mScrollView->setViewOffset(MyGUI::IntPoint(0, 0));
+    }
+
+    void MWList::setViewOffset(int offset)
+    {
+        mScrollView->setViewOffset(MyGUI::IntPoint(0, offset));
     }
 }

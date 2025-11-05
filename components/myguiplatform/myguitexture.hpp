@@ -17,7 +17,7 @@ namespace Resource
     class ImageManager;
 }
 
-namespace osgMyGUI
+namespace MyGUIPlatform
 {
 
     class OSGTexture final : public MyGUI::ITexture
@@ -70,7 +70,7 @@ namespace osgMyGUI
 
         MyGUI::IRenderTarget* getRenderTarget() override;
 
-        void setShader(const std::string& _shaderName) override;
+        void setShader(const std::string& shaderName) override;
 
         /*internal:*/
 //## VR_PATCH BEGIN

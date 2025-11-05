@@ -22,6 +22,7 @@
 namespace osg
 {
     class Vec3f;
+    class Vec4f;
     class Matrixf;
     class Quat;
     class Image;
@@ -111,6 +112,7 @@ namespace MWWorld
     class RefData;
     class Cell;
     class DateTimeManager;
+    class Weather;
 
     typedef std::vector<std::pair<MWWorld::Ptr, MWMechanics::Movement>> PtrMovementList;
 }
@@ -234,9 +236,21 @@ namespace MWBase
 
         virtual void changeWeather(const ESM::RefId& region, const unsigned int id) = 0;
 
-        virtual int getCurrentWeather() const = 0;
+        virtual void changeWeather(const ESM::RefId& region, const ESM::RefId& id) = 0;
 
-        virtual int getNextWeather() const = 0;
+        virtual const std::vector<MWWorld::Weather>& getAllWeather() const = 0;
+
+        virtual int getCurrentWeatherScriptId() const = 0;
+
+        virtual const MWWorld::Weather& getCurrentWeather() const = 0;
+
+        virtual const MWWorld::Weather* getWeather(size_t index) const = 0;
+
+        virtual const MWWorld::Weather* getWeather(const ESM::RefId& id) const = 0;
+
+        virtual int getNextWeatherScriptId() const = 0;
+
+        virtual const MWWorld::Weather* getNextWeather() const = 0;
 
         virtual float getWeatherTransition() const = 0;
 
@@ -408,7 +422,7 @@ namespace MWBase
         ///< Apply a health difference to any actors colliding with \a object.
         /// To hurt actors, healthPerSecond should be a positive value. For a negative value, actors will be healed.
 
-        virtual float getWindSpeed() = 0;
+        virtual float getWindSpeed() const = 0;
 
         virtual void getContainersOwnedBy(const MWWorld::ConstPtr& npc, std::vector<MWWorld::Ptr>& out) = 0;
         ///< get all containers in active cells owned by this Npc
@@ -496,8 +510,11 @@ namespace MWBase
         // Allow NPCs to use torches?
         virtual bool useTorches() const = 0;
 
+        virtual const osg::Vec4f& getSunLightPosition() const = 0;
         virtual float getSunVisibility() const = 0;
         virtual float getSunPercentage() const = 0;
+
+        virtual float getPhysicsFrameRateDt() const = 0;
 
         virtual bool findInteriorPositionInWorldSpace(const MWWorld::CellStore* cell, osg::Vec3f& result) = 0;
 
@@ -528,9 +545,6 @@ namespace MWBase
 
         /// Spawn a random creature from a levelled list next to the player
         virtual void spawnRandomCreature(const ESM::RefId& creatureList) = 0;
-
-        /// Spawn a blood effect for \a ptr at \a worldPosition
-        virtual void spawnBloodEffect(const MWWorld::Ptr& ptr, const osg::Vec3f& worldPosition) = 0;
 
         virtual void spawnEffect(VFS::Path::NormalizedView model, const std::string& textureOverride,
             const osg::Vec3f& worldPos, float scale = 1.f, bool isMagicVFX = true, bool useAmbientLight = true)
@@ -592,8 +606,7 @@ namespace MWBase
         virtual bool hasCollisionWithDoor(
             const MWWorld::ConstPtr& door, const osg::Vec3f& position, const osg::Vec3f& destination) const = 0;
 
-        virtual bool isAreaOccupiedByOtherActor(const osg::Vec3f& position, const float radius,
-            std::span<const MWWorld::ConstPtr> ignore, std::vector<MWWorld::Ptr>* occupyingActors = nullptr) const = 0;
+        virtual bool isAreaOccupiedByOtherActor(const MWWorld::ConstPtr& actor, const osg::Vec3f& position) const = 0;
 
         virtual void reportStats(unsigned int frameNumber, osg::Stats& stats) const = 0;
 

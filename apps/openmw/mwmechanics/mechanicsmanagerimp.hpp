@@ -75,7 +75,7 @@ namespace MWMechanics
         void setPlayerClass(const ESM::RefId& id) override;
         ///< Set player class to stock class.
 
-        void setPlayerClass(const ESM::Class& class_) override;
+        void setPlayerClass(const ESM::Class& value) override;
         ///< Set player class to custom class.
 
         void restoreDynamicStats(const MWWorld::Ptr& actor, double hours, bool sleep) override;
@@ -102,7 +102,7 @@ namespace MWMechanics
         ///< Perform a persuasion action on NPC
 
         /// Check if \a observer is potentially aware of \a ptr. Does not do a line of sight check!
-        bool awarenessCheck(const MWWorld::Ptr& ptr, const MWWorld::Ptr& observer) override;
+        bool awarenessCheck(const MWWorld::Ptr& ptr, const MWWorld::Ptr& observer, bool useCache = true) override;
 
         /// Makes \a ptr fight \a target. Also shouts a combat taunt.
         void startCombat(

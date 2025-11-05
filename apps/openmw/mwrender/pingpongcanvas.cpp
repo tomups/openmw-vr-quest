@@ -52,7 +52,7 @@ namespace MWRender
         mMultiviewResolveStateSet->addUniform(new osg::Uniform("lastShader", 0));
     }
 
-    void PingPongCanvas::setPasses(fx::DispatchArray&& passes)
+    void PingPongCanvas::setPasses(Fx::DispatchArray&& passes)
     {
         mPasses = std::move(passes);
     }
@@ -60,8 +60,8 @@ namespace MWRender
     void PingPongCanvas::setMask(bool underwater, bool exterior)
     {
         mMask = 0;
-        mMask |= underwater ? fx::Technique::Flag_Disable_Underwater : fx::Technique::Flag_Disable_Abovewater;
-        mMask |= exterior ? fx::Technique::Flag_Disable_Exteriors : fx::Technique::Flag_Disable_Interiors;
+        mMask |= underwater ? Fx::Technique::Flag_Disable_Underwater : Fx::Technique::Flag_Disable_Abovewater;
+        mMask |= exterior ? Fx::Technique::Flag_Disable_Exteriors : Fx::Technique::Flag_Disable_Interiors;
     }
 
     void PingPongCanvas::drawGeometry(osg::RenderInfo& renderInfo) const
@@ -315,15 +315,6 @@ namespace MWRender
                 {
                     pass.mRenderTarget->apply(state, osg::FrameBufferObject::DRAW_FRAMEBUFFER);
 
-                    if (pass.mRenderTexture->getNumMipmapLevels() > 0)
-                    {
-                        state.setActiveTextureUnit(0);
-                        state.applyTextureAttribute(0,
-                            pass.mRenderTarget->getAttachment(osg::FrameBufferObject::BufferComponent::COLOR_BUFFER0)
-                                .getTexture());
-                        ext->glGenerateMipmap(GL_TEXTURE_2D);
-                    }
-
                     lastApplied = pass.mRenderTarget->getHandle(state.getContextID());
                 }
                 else if (pass.mResolve && index == filtered.back())
@@ -359,6 +350,15 @@ namespace MWRender
                     mFallbackProgram->apply(state);
 
                 drawGeometry(renderInfo);
+
+                if (pass.mRenderTarget && pass.mRenderTexture->getNumMipmapLevels() > 0)
+                {
+                    state.setActiveTextureUnit(0);
+                    state.applyTextureAttribute(0,
+                        pass.mRenderTarget->getAttachment(osg::FrameBufferObject::BufferComponent::COLOR_BUFFER0)
+                            .getTexture());
+                    ext->glGenerateMipmap(GL_TEXTURE_2D);
+                }
 
                 state.popStateSet();
                 state.apply();

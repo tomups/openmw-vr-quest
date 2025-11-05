@@ -92,23 +92,23 @@ namespace
     };
 
     static osg::FrameBufferAttachment createFrameBufferAttachmentFromTemplate(
-        Usage usage, int width, int height, osg::Texture* template_, int samples)
+        Usage usage, int width, int height, osg::Texture* textureTemplate, int samples)
     {
         if (usage == Usage::RENDER_BUFFER && !Stereo::getMultiview())
         {
             osg::ref_ptr<osg::RenderBuffer> attachment
-                = new osg::RenderBuffer(width, height, template_->getInternalFormat(), samples);
+                = new osg::RenderBuffer(width, height, textureTemplate->getInternalFormat(), samples);
             return osg::FrameBufferAttachment(attachment);
         }
 
         auto texture = Stereo::createMultiviewCompatibleTexture(width, height, samples);
-        texture->setSourceFormat(template_->getSourceFormat());
-        texture->setSourceType(template_->getSourceType());
-        texture->setInternalFormat(template_->getInternalFormat());
-        texture->setFilter(osg::Texture2D::MIN_FILTER, template_->getFilter(osg::Texture2D::MIN_FILTER));
-        texture->setFilter(osg::Texture2D::MAG_FILTER, template_->getFilter(osg::Texture2D::MAG_FILTER));
-        texture->setWrap(osg::Texture::WRAP_S, template_->getWrap(osg::Texture2D::WRAP_S));
-        texture->setWrap(osg::Texture::WRAP_T, template_->getWrap(osg::Texture2D::WRAP_T));
+        texture->setSourceFormat(textureTemplate->getSourceFormat());
+        texture->setSourceType(textureTemplate->getSourceType());
+        texture->setInternalFormat(textureTemplate->getInternalFormat());
+        texture->setFilter(osg::Texture2D::MIN_FILTER, textureTemplate->getFilter(osg::Texture2D::MIN_FILTER));
+        texture->setFilter(osg::Texture2D::MAG_FILTER, textureTemplate->getFilter(osg::Texture2D::MAG_FILTER));
+        texture->setWrap(osg::Texture::WRAP_S, textureTemplate->getWrap(osg::Texture2D::WRAP_S));
+        texture->setWrap(osg::Texture::WRAP_T, textureTemplate->getWrap(osg::Texture2D::WRAP_T));
 
         return Stereo::createMultiviewCompatibleAttachment(texture);
     }
@@ -190,7 +190,7 @@ namespace MWRender
         auto distortion = loadTechnique("internal_distortion");
         distortion->setInternal(true);
         distortion->setLocked(true);
-        mInternalTechniques.push_back(distortion);
+        mInternalTechniques.push_back(std::move(distortion));
 
         osg::GraphicsContext* gc = viewer->getCamera()->getGraphicsContext();
         osg::GLExtensions* ext = gc->getState()->get<osg::GLExtensions>();
@@ -212,7 +212,7 @@ namespace MWRender
 
         mGLSLVersion = ext->glslLanguageVersion * 100;
         mUBO = ext->isUniformBufferObjectSupported && mGLSLVersion >= 330;
-        mStateUpdater = new fx::StateUpdater(mUBO);
+        mStateUpdater = new Fx::StateUpdater(mUBO);
 
         addChild(mHUDCamera);
         addChild(mRootNode);
@@ -265,10 +265,10 @@ namespace MWRender
 
     void PostProcessor::populateTechniqueFiles()
     {
-        for (const auto& path : mVFS->getRecursiveDirectoryIterator(fx::Technique::sSubdir))
+        for (const auto& path : mVFS->getRecursiveDirectoryIterator(Fx::Technique::sSubdir))
         {
             std::string_view fileExt = Misc::getFileExtension(path);
-            if (path.parent().parent().empty() && fileExt == fx::Technique::sExt)
+            if (path.parent().parent().empty() && fileExt == Fx::Technique::sExt)
             {
                 mTechniqueFiles.emplace(path);
             }
@@ -371,7 +371,7 @@ namespace MWRender
 
         for (auto& technique : mTechniques)
         {
-            if (technique->getStatus() == fx::Technique::Status::File_Not_exists)
+            if (technique->getStatus() == Fx::Technique::Status::File_Not_exists)
                 continue;
 
             const auto lastWriteTime = mVFS->getLastModified(technique->getFileName());
@@ -424,7 +424,7 @@ namespace MWRender
             createObjectsForFrame(frameId);
 
             mDirty = false;
-            mCanvases[frameId]->setPasses(fx::DispatchArray(mTemplateData));
+            mCanvases[frameId]->setPasses(Fx::DispatchArray(mTemplateData));
         }
 
         if ((mNormalsSupported && mNormals != mPrevNormals) || (mPassLights != mPrevPassLights))
@@ -589,7 +589,7 @@ namespace MWRender
         mNormals = false;
         mPassLights = false;
 
-        std::vector<fx::Types::RenderTarget> attachmentsToDirty;
+        std::vector<Fx::Types::RenderTarget> attachmentsToDirty;
 
         for (const auto& technique : mTechniques)
         {
@@ -603,7 +603,7 @@ namespace MWRender
                 continue;
             }
 
-            fx::DispatchNode node;
+            Fx::DispatchNode node;
 
             node.mFlags = technique->getFlags();
 
@@ -616,7 +616,7 @@ namespace MWRender
             if (technique->getLights())
                 mPassLights = true;
 
-            if (node.mFlags & fx::Technique::Flag_Disable_SunGlare)
+            if (node.mFlags & Fx::Technique::Flag_Disable_SunGlare)
                 sunglare = false;
 
             // required default samplers available to every shader pass
@@ -662,7 +662,7 @@ namespace MWRender
             for (const auto& pass : technique->getPasses())
             {
                 int subTexUnit = texUnit;
-                fx::DispatchNode::SubPass subPass;
+                Fx::DispatchNode::SubPass subPass;
 
                 pass->prepareStateSet(subPass.mStateSet, technique->getName());
 
@@ -697,7 +697,7 @@ namespace MWRender
                             [renderTarget](const auto& rt) { return renderTarget.mTarget == rt.mTarget; })
                         == attachmentsToDirty.cend())
                     {
-                        attachmentsToDirty.push_back(fx::Types::RenderTarget(renderTarget));
+                        attachmentsToDirty.push_back(Fx::Types::RenderTarget(renderTarget));
                     }
                 }
 
@@ -716,7 +716,7 @@ namespace MWRender
                             [renderTarget](const auto& rt) { return renderTarget.mTarget == rt.mTarget; })
                         == attachmentsToDirty.cend())
                     {
-                        attachmentsToDirty.push_back(fx::Types::RenderTarget(renderTarget));
+                        attachmentsToDirty.push_back(Fx::Types::RenderTarget(renderTarget));
                     }
                     subTexUnit++;
                 }
@@ -729,7 +729,7 @@ namespace MWRender
             mTemplateData.emplace_back(std::move(node));
         }
 
-        mCanvases[frameId]->setPasses(fx::DispatchArray(mTemplateData));
+        mCanvases[frameId]->setPasses(Fx::DispatchArray(mTemplateData));
 
         if (auto hud = MWBase::Environment::get().getWindowManager()->getPostProcessorHud())
             hud->updateTechniques();
@@ -741,7 +741,7 @@ namespace MWRender
     }
 
     PostProcessor::Status PostProcessor::enableTechnique(
-        std::shared_ptr<fx::Technique> technique, std::optional<int> location)
+        std::shared_ptr<Fx::Technique> technique, std::optional<int> location)
     {
         if (technique->getLocked() || (location.has_value() && location.value() < 0))
             return Status_Error;
@@ -756,7 +756,7 @@ namespace MWRender
         return Status_Toggled;
     }
 
-    PostProcessor::Status PostProcessor::disableTechnique(std::shared_ptr<fx::Technique> technique, bool dirty)
+    PostProcessor::Status PostProcessor::disableTechnique(std::shared_ptr<Fx::Technique> technique, bool dirty)
     {
         if (technique->getLocked())
             return Status_Error;
@@ -772,7 +772,7 @@ namespace MWRender
         return Status_Toggled;
     }
 
-    bool PostProcessor::isTechniqueEnabled(const std::shared_ptr<fx::Technique>& technique) const
+    bool PostProcessor::isTechniqueEnabled(const std::shared_ptr<Fx::Technique>& technique) const
     {
         if (auto it = std::find(mTechniques.begin(), mTechniques.end(), technique); it == mTechniques.end())
             return false;
@@ -780,13 +780,13 @@ namespace MWRender
         return technique->isValid();
     }
 
-    std::shared_ptr<fx::Technique> PostProcessor::loadTechnique(std::string_view name, bool loadNextFrame)
+    std::shared_ptr<Fx::Technique> PostProcessor::loadTechnique(std::string_view name, bool loadNextFrame)
     {
-        VFS::Path::Normalized path = fx::Technique::makeFileName(name);
+        VFS::Path::Normalized path = Fx::Technique::makeFileName(name);
         return loadTechnique(VFS::Path::NormalizedView(path), loadNextFrame);
     }
 
-    std::shared_ptr<fx::Technique> PostProcessor::loadTechnique(VFS::Path::NormalizedView path, bool loadNextFrame)
+    std::shared_ptr<Fx::Technique> PostProcessor::loadTechnique(VFS::Path::NormalizedView path, bool loadNextFrame)
     {
         for (const auto& technique : mTemplates)
             if (technique->getFileName() == path)
@@ -802,12 +802,12 @@ namespace MWRender
         else
             name = path.stem();
 
-        auto technique = std::make_shared<fx::Technique>(*mVFS, *mRendering.getResourceSystem()->getImageManager(),
+        auto technique = std::make_shared<Fx::Technique>(*mVFS, *mRendering.getResourceSystem()->getImageManager(),
             path, std::move(name), renderWidth(), renderHeight(), mUBO, mNormalsSupported);
 
         technique->compile();
 
-        if (technique->getStatus() != fx::Technique::Status::File_Not_exists)
+        if (technique->getStatus() != Fx::Technique::Status::File_Not_exists)
             technique->setLastModificationTime(mVFS->getLastModified(path));
 
         if (loadNextFrame)
@@ -864,7 +864,7 @@ namespace MWRender
     {
         for (auto& technique : mTemplates)
         {
-            if (technique->getStatus() == fx::Technique::Status::File_Not_exists)
+            if (technique->getStatus() == Fx::Technique::Status::File_Not_exists)
                 continue;
             technique->compile();
         }

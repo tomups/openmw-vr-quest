@@ -3,6 +3,8 @@
 #include <MyGUI_Button.h>
 #include <MyGUI_InputManager.h>
 
+#include <components/settings/values.hpp>
+
 #include "../mwbase/environment.hpp"
 #include "../mwbase/mechanicsmanager.hpp"
 #include "../mwbase/scriptmanager.hpp"
@@ -18,12 +20,12 @@
 
 #include "../mwscript/interpretercontext.hpp"
 
-#include "countdialog.hpp"
-#include "inventorywindow.hpp"
-
 #include "containeritemmodel.hpp"
+#include "countdialog.hpp"
 #include "draganddrop.hpp"
 #include "inventoryitemmodel.hpp"
+#include "inventorywindow.hpp"
+#include "itemtransfer.hpp"
 #include "itemview.hpp"
 #include "pickpocketitemmodel.hpp"
 #include "sortfilteritemmodel.hpp"
@@ -36,11 +38,12 @@
 namespace MWGui
 {
 
-    ContainerWindow::ContainerWindow(DragAndDrop* dragAndDrop)
+    ContainerWindow::ContainerWindow(DragAndDrop& dragAndDrop, ItemTransfer& itemTransfer)
 //## VR_PATCH BEGIN
         : WindowBase(VR::getVR() ? "openmw_container_window_vr.layout" : "openmw_container_window.layout")
 //## VR_PATCH END
-        , mDragAndDrop(dragAndDrop)
+        , mDragAndDrop(&dragAndDrop)
+        , mItemTransfer(&itemTransfer)
         , mSortModel(nullptr)
         , mModel(nullptr)
         , mSelectedItem(-1)
@@ -61,6 +64,12 @@ namespace MWGui
         mTakeButton->eventMouseButtonClick += MyGUI::newDelegate(this, &ContainerWindow::onTakeAllButtonClicked);
 
         setCoord(200, 0, 600, 300);
+
+        mControllerButtons.mA = "#{Interface:Take}";
+        mControllerButtons.mB = "#{Interface:Close}";
+        mControllerButtons.mX = "#{Interface:TakeAll}";
+        mControllerButtons.mR3 = "#{Interface:Info}";
+        mControllerButtons.mL2 = "#{Interface:Inventory}";
     }
 
     void ContainerWindow::onItemSelected(int index)
@@ -95,26 +104,46 @@ namespace MWGui
             name += MWGui::ToolTips::getSoulString(object.getCellRef());
             dialog->openCountDialog(name, "#{sTake}", count);
             dialog->eventOkClicked.clear();
-            dialog->eventOkClicked += MyGUI::newDelegate(this, &ContainerWindow::dragItem);
+            if (Settings::gui().mControllerMenus || MyGUI::InputManager::getInstance().isAltPressed())
+                dialog->eventOkClicked += MyGUI::newDelegate(this, &ContainerWindow::transferItem);
+            else
+                dialog->eventOkClicked += MyGUI::newDelegate(this, &ContainerWindow::dragItem);
         }
+        else if (Settings::gui().mControllerMenus || MyGUI::InputManager::getInstance().isAltPressed())
+            transferItem(nullptr, count);
         else
             dragItem(nullptr, count);
     }
 
-    void ContainerWindow::dragItem(MyGUI::Widget* sender, int count)
+    void ContainerWindow::dragItem(MyGUI::Widget* /*sender*/, std::size_t count)
     {
-        if (!mModel)
+        if (mModel == nullptr)
             return;
 
-        if (!onTakeItem(mModel->getItem(mSelectedItem), count))
+        const ItemStack item = mModel->getItem(mSelectedItem);
+
+        if (!mModel->onTakeItem(item.mBase, count))
             return;
 
         mDragAndDrop->startDrag(mSelectedItem, mSortModel, mModel, mItemView, count);
     }
 
+    void ContainerWindow::transferItem(MyGUI::Widget* /*sender*/, std::size_t count)
+    {
+        if (mModel == nullptr)
+            return;
+
+        const ItemStack item = mModel->getItem(mSelectedItem);
+
+        if (!mModel->onTakeItem(item.mBase, count))
+            return;
+
+        mItemTransfer->apply(item, count, *mItemView);
+    }
+
     void ContainerWindow::dropItem()
     {
-        if (!mModel)
+        if (mModel == nullptr)
             return;
 
         bool success = mModel->onDropItem(mDragAndDrop->mItem.mBase, mDragAndDrop->mDraggedCount);
@@ -179,10 +208,13 @@ namespace MWGui
         mSortModel = nullptr;
     }
 
+    void ContainerWindow::onOpen()
+    {
+        mItemTransfer->addTarget(*mItemView);
+    }
+
     void ContainerWindow::onClose()
     {
-        WindowBase::onClose();
-
         // Make sure the window was actually closed and not temporarily hidden.
         if (MWBase::Environment::get().getWindowManager()->containsMode(GM_Container))
             return;
@@ -193,14 +225,16 @@ namespace MWGui
         if (!mPtr.isEmpty())
             MWBase::Environment::get().getMechanicsManager()->onClose(mPtr);
         resetReference();
+
+        mItemTransfer->removeTarget(*mItemView);
     }
 
-    void ContainerWindow::onCloseButtonClicked(MyGUI::Widget* _sender)
+    void ContainerWindow::onCloseButtonClicked(MyGUI::Widget* /*sender*/)
     {
         MWBase::Environment::get().getWindowManager()->removeGuiMode(GM_Container);
     }
 
-    void ContainerWindow::onTakeAllButtonClicked(MyGUI::Widget* _sender)
+    void ContainerWindow::onTakeAllButtonClicked(MyGUI::Widget* /*sender*/)
     {
         if (!mModel)
             return;
@@ -240,9 +274,9 @@ namespace MWGui
                 MWBase::Environment::get().getWindowManager()->playSound(sound);
             }
 
-            const ItemStack& item = mModel->getItem(i);
+            const ItemStack item = mModel->getItem(i);
 
-            if (!onTakeItem(item, item.mCount))
+            if (!mModel->onTakeItem(item.mBase, item.mCount))
                 break;
 
             mModel->moveItem(item, item.mCount, playerModel);
@@ -251,7 +285,7 @@ namespace MWGui
         MWBase::Environment::get().getWindowManager()->removeGuiMode(GM_Container);
     }
 
-    void ContainerWindow::onDisposeCorpseButtonClicked(MyGUI::Widget* sender)
+    void ContainerWindow::onDisposeCorpseButtonClicked(MyGUI::Widget* /*sender*/)
     {
         if (mDragAndDrop == nullptr || !mDragAndDrop->mIsOnDragAndDrop)
         {
@@ -319,15 +353,56 @@ namespace MWGui
         MWBase::Environment::get().getWindowManager()->removeGuiMode(GM_Container);
     }
 
-    bool ContainerWindow::onTakeItem(const ItemStack& item, int count)
-    {
-        return mModel->onTakeItem(item.mBase, count);
-    }
-
     void ContainerWindow::onDeleteCustomData(const MWWorld::Ptr& ptr)
     {
         if (mModel && mModel->usesContainer(ptr))
             MWBase::Environment::get().getWindowManager()->removeGuiMode(GM_Container);
+    }
+
+    ControllerButtons* ContainerWindow::getControllerButtons()
+    {
+        if (mDisposeCorpseButton->getVisible())
+            mControllerButtons.mR1 = "#{Interface:DisposeOfCorpse}";
+        else
+            mControllerButtons.mR1.clear();
+        return &mControllerButtons;
+    }
+
+    bool ContainerWindow::onControllerButtonEvent(const SDL_ControllerButtonEvent& arg)
+    {
+        if (arg.button == SDL_CONTROLLER_BUTTON_A)
+        {
+            int index = mItemView->getControllerFocus();
+            if (index >= 0 && index < mItemView->getItemCount())
+                onItemSelected(index);
+        }
+        else if (arg.button == SDL_CONTROLLER_BUTTON_B)
+        {
+            onCloseButtonClicked(mCloseButton);
+        }
+        else if (arg.button == SDL_CONTROLLER_BUTTON_X)
+        {
+            onTakeAllButtonClicked(mTakeButton);
+        }
+        else if (arg.button == SDL_CONTROLLER_BUTTON_RIGHTSHOULDER)
+        {
+            if (mDisposeCorpseButton->getVisible())
+                onDisposeCorpseButtonClicked(mDisposeCorpseButton);
+        }
+        else if (arg.button == SDL_CONTROLLER_BUTTON_RIGHTSTICK || arg.button == SDL_CONTROLLER_BUTTON_DPAD_UP
+            || arg.button == SDL_CONTROLLER_BUTTON_DPAD_DOWN || arg.button == SDL_CONTROLLER_BUTTON_DPAD_LEFT
+            || arg.button == SDL_CONTROLLER_BUTTON_DPAD_RIGHT)
+        {
+            mItemView->onControllerButton(arg.button);
+        }
+
+        return true;
+    }
+
+    void ContainerWindow::setActiveControllerWindow(bool active)
+    {
+        mItemView->setActiveControllerWindow(active);
+        WindowBase::setActiveControllerWindow(active);
     }
 
     void ContainerWindow::onFrame(float dt)

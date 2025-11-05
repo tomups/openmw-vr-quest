@@ -10,6 +10,7 @@
 #include <MyGUI_Widget.h>
 
 #include <algorithm>
+#include <format>
 #include <memory>
 #include <string>
 #include <vector>
@@ -17,8 +18,6 @@
 #include <osg/Vec2f>
 #include <osg/Vec3f>
 #include <osg/Vec4f>
-
-#include <components/misc/strings/format.hpp>
 
 #include "types.hpp"
 
@@ -28,7 +27,7 @@ namespace Gui
     class AutoSizedButton;
 }
 
-namespace fx
+namespace Fx
 {
     namespace Widgets
     {
@@ -46,7 +45,7 @@ namespace fx
         public:
             virtual ~EditBase() = default;
 
-            void setData(const std::shared_ptr<fx::Types::UniformBase>& uniform, Index index = None)
+            void setData(const std::shared_ptr<Fx::Types::UniformBase>& uniform, Index index = None)
             {
                 mUniform = uniform;
                 mIndex = index;
@@ -57,7 +56,7 @@ namespace fx
             virtual void toDefault() = 0;
 
         protected:
-            std::shared_ptr<fx::Types::UniformBase> mUniform;
+            std::shared_ptr<Fx::Types::UniformBase> mUniform;
             Index mIndex;
         };
 
@@ -88,7 +87,7 @@ namespace fx
             {
                 mValue = value;
                 if constexpr (std::is_floating_point_v<T>)
-                    mValueLabel->setCaption(Misc::StringUtils::format("%.3f", mValue));
+                    mValueLabel->setCaption(std::format("{:.3f}", mValue));
                 else
                     mValueLabel->setCaption(std::to_string(mValue));
 
@@ -153,7 +152,7 @@ namespace fx
                 mDragger->eventMouseWheel += MyGUI::newDelegate(this, &EditNumber::notifyMouseWheel);
             }
 
-            void notifyMouseWheel(MyGUI::Widget* sender, int rel)
+            void notifyMouseWheel(MyGUI::Widget* /*sender*/, int rel)
             {
                 if (rel > 0)
                     increment(mUniform->mStep);
@@ -161,7 +160,7 @@ namespace fx
                     increment(-mUniform->mStep);
             }
 
-            void notifyMouseButtonDragged(MyGUI::Widget* sender, int left, int top, MyGUI::MouseButton id)
+            void notifyMouseButtonDragged(MyGUI::Widget* /*sender*/, int left, int top, MyGUI::MouseButton id)
             {
                 if (id != MyGUI::MouseButton::Left)
                     return;
@@ -189,7 +188,7 @@ namespace fx
                 mLastPointerX = left;
             }
 
-            void notifyMouseButtonPressed(MyGUI::Widget* sender, int left, int top, MyGUI::MouseButton id)
+            void notifyMouseButtonPressed(MyGUI::Widget* /*sender*/, int left, int top, MyGUI::MouseButton id)
             {
                 if (id != MyGUI::MouseButton::Left)
                     return;
@@ -268,7 +267,7 @@ namespace fx
             MYGUI_RTTI_DERIVED(UniformBase)
 
         public:
-            void init(const std::shared_ptr<fx::Types::UniformBase>& uniform);
+            void init(const std::shared_ptr<Fx::Types::UniformBase>& uniform);
 
             void toDefault();
 

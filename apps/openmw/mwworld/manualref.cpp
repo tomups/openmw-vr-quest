@@ -8,9 +8,9 @@ namespace
 {
 
     template <typename T>
-    void create(const MWWorld::Store<T>& list, const ESM::RefId& name, std::any& refValue, MWWorld::Ptr& ptrValue)
+    void create(const MWWorld::Store<T>& store, const ESM::RefId& name, std::any& refValue, MWWorld::Ptr& ptrValue)
     {
-        const T* base = list.find(name);
+        const T* base = store.find(name);
 
         ESM::CellRef cellRef;
         cellRef.blank();
@@ -22,7 +22,7 @@ namespace
 
     template <typename T>
     void create(
-        const MWWorld::Store<T>& list, const MWWorld::Ptr& templatePtr, std::any& refValue, MWWorld::Ptr& ptrValue)
+        const MWWorld::Store<T>& /*store*/, const MWWorld::Ptr& templatePtr, std::any& refValue, MWWorld::Ptr& ptrValue)
     {
         refValue = *static_cast<MWWorld::LiveCellRef<T>*>(templatePtr.getBase());
         ptrValue = MWWorld::Ptr(&std::any_cast<MWWorld::LiveCellRef<T>&>(refValue), nullptr);
@@ -92,16 +92,16 @@ namespace
 
 MWWorld::ManualRef::ManualRef(const MWWorld::ESMStore& store, const ESM::RefId& name, const int count)
 {
-    auto cb = [&](const auto& store) { create(store, name, mRef, mPtr); };
+    auto cb = [&](const auto& typedStore) { create(typedStore, name, mRef, mPtr); };
     visitRefStore(store, name, cb);
 
     mPtr.getCellRef().setCount(count);
 }
 
-MWWorld::ManualRef::ManualRef(const ESMStore& store, const Ptr& template_, const int count)
+MWWorld::ManualRef::ManualRef(const ESMStore& store, const Ptr& templatePtr, const int count)
 {
-    auto cb = [&](const auto& store) { create(store, template_, mRef, mPtr); };
-    visitRefStore(store, template_.getCellRef().getRefId(), cb);
+    auto cb = [&](const auto& typedStore) { create(typedStore, templatePtr, mRef, mPtr); };
+    visitRefStore(store, templatePtr.getCellRef().getRefId(), cb);
 
     mPtr.getCellRef().setCount(count);
     mPtr.getCellRef().unsetRefNum();

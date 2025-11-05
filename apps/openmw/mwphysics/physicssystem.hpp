@@ -287,11 +287,13 @@ namespace MWPhysics
             std::for_each(mAnimatedObjects.begin(), mAnimatedObjects.end(), function);
         }
 
-        bool isAreaOccupiedByOtherActor(const osg::Vec3f& position, const float radius,
-            std::span<const MWWorld::ConstPtr> ignore, std::vector<MWWorld::Ptr>* occupyingActors) const;
+        bool isAreaOccupiedByOtherActor(
+            const MWWorld::LiveCellRefBase* actor, const osg::Vec3f& position, float radius) const;
 
         void reportStats(unsigned int frameNumber, osg::Stats& stats) const;
         void reportCollision(const btVector3& position, const btVector3& normal);
+
+        float mPhysicsDt;
 
     private:
         void updateWater();
@@ -335,8 +337,6 @@ namespace MWPhysics
         std::unique_ptr<MWRender::DebugDrawer> mDebugDrawer;
 
         osg::ref_ptr<osg::Group> mParentNode;
-
-        float mPhysicsDt;
 
         std::size_t mSimulationsCounter = 0;
         std::array<std::vector<Simulation>, 2> mSimulations;

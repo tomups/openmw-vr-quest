@@ -6,6 +6,8 @@
 
 #include "../mwworld/containerstore.hpp"
 
+#include <components/misc/notnullptr.hpp>
+
 namespace MWGui
 {
     namespace Widgets
@@ -18,11 +20,12 @@ namespace MWGui
     class DragAndDrop;
     class SortFilterItemModel;
     class CompanionItemModel;
+    class ItemTransfer;
 
     class CompanionWindow : public WindowBase, public ReferenceInterface, public MWWorld::ContainerStoreListener
     {
     public:
-        CompanionWindow(DragAndDrop* dragAndDrop, MessageBoxManager* manager);
+        explicit CompanionWindow(DragAndDrop& dragAndDrop, ItemTransfer& itemTransfer, MessageBoxManager* manager);
 
         bool exit() override;
 
@@ -37,6 +40,12 @@ namespace MWGui
 
         std::string_view getWindowIdForLua() const override { return "Companion"; }
 
+        bool onControllerButtonEvent(const SDL_ControllerButtonEvent& arg) override;
+        void setActiveControllerWindow(bool active) override;
+
+        MWGui::ItemView* getItemView() { return mItemView; }
+        CompanionItemModel* getModel() { return mModel; }
+
     private:
         ItemView* mItemView;
         SortFilterItemModel* mSortModel;
@@ -44,7 +53,8 @@ namespace MWGui
         int mSelectedItem;
         bool mUpdateNextFrame;
 
-        DragAndDrop* mDragAndDrop;
+        Misc::NotNullPtr<DragAndDrop> mDragAndDrop;
+        Misc::NotNullPtr<ItemTransfer> mItemTransfer;
 
         MyGUI::Button* mCloseButton;
         MyGUI::EditBox* mFilterEdit;
@@ -53,17 +63,22 @@ namespace MWGui
         MessageBoxManager* mMessageBoxManager;
 
         void onItemSelected(int index);
-        void onNameFilterChanged(MyGUI::EditBox* _sender);
+        void onNameFilterChanged(MyGUI::EditBox* sender);
         void onBackgroundSelected();
-        void dragItem(MyGUI::Widget* sender, int count);
+        void dragItem(MyGUI::Widget* sender, std::size_t count);
+        void transferItem(MyGUI::Widget* sender, std::size_t count);
 
         void onMessageBoxButtonClicked(int button);
 
         void updateEncumbranceBar();
 
-        void onCloseButtonClicked(MyGUI::Widget* _sender);
+        void onCloseButtonClicked(MyGUI::Widget* sender);
 
         void onReferenceUnavailable() override;
+
+        void onOpen() override;
+
+        void onClose() override;
     };
 
 }

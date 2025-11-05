@@ -25,7 +25,7 @@ MWState::CharacterManager::CharacterManager(std::filesystem::path saves, const s
                 Character character(characterDir, mGame);
 
                 if (character.begin() != character.end())
-                    mCharacters.push_back(character);
+                    mCharacters.push_back(std::move(character));
             }
         }
         mCharacters.sort();
@@ -81,8 +81,7 @@ MWState::Character* MWState::CharacterManager::createCharacter(const std::string
         path = mPath / test.str();
     }
 
-    mCharacters.emplace_back(path, mGame);
-    return &mCharacters.back();
+    return &mCharacters.emplace_front(path, mGame);
 }
 
 std::list<MWState::Character>::iterator MWState::CharacterManager::findCharacter(const MWState::Character* character)

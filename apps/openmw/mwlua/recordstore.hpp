@@ -1,10 +1,16 @@
 #ifndef MWLUA_RECORDSTORE_H
 #define MWLUA_RECORDSTORE_H
 
-#include <sol/sol.hpp>
+#include <type_traits>
 
-#include <components/esm/defs.hpp>
-#include <components/lua/luastate.hpp>
+#include <sol/forward.hpp>
+#include <sol/overload.hpp>
+#include <sol/state_view.hpp>
+#include <sol/table.hpp>
+#include <sol/types.hpp>
+#include <sol/unsafe_function.hpp>
+#include <sol/usertype.hpp>
+
 #include <components/lua/util.hpp>
 
 #include "apps/openmw/mwbase/environment.hpp"
@@ -41,18 +47,18 @@ namespace MWLua
         using StoreT = MWWorld::Store<T>;
         sol::state_view lua = context.sol();
         sol::usertype<StoreT> storeT = lua.new_usertype<StoreT>(recordName + "WorldStore");
-        storeT[sol::meta_function::to_string] = [recordName](const StoreT& store) {
-            return "{" + std::to_string(store.getSize()) + " " + recordName + " records}";
+        storeT[sol::meta_function::to_string] = [recordName](const StoreT& self) {
+            return "{" + std::to_string(self.getSize()) + " " + recordName + " records}";
         };
-        storeT[sol::meta_function::length] = [](const StoreT& store) { return store.getSize(); };
+        storeT[sol::meta_function::length] = [](const StoreT& self) { return self.getSize(); };
         storeT[sol::meta_function::index] = sol::overload(
-            [](const StoreT& store, size_t index) -> const T* {
-                if (index == 0 || index > store.getSize())
+            [](const StoreT& self, size_t index) -> const T* {
+                if (index == 0 || index > self.getSize())
                     return nullptr;
-                return store.at(LuaUtil::fromLuaIndex(index));
+                return self.at(LuaUtil::fromLuaIndex(index));
             },
-            [](const StoreT& store, std::string_view id) -> const T* {
-                return store.search(ESM::RefId::deserializeText(id));
+            [](const StoreT& self, std::string_view id) -> const T* {
+                return self.search(ESM::RefId::deserializeText(id));
             });
         storeT[sol::meta_function::ipairs] = lua["ipairsForArray"].template get<sol::function>();
         storeT[sol::meta_function::pairs] = lua["ipairsForArray"].template get<sol::function>();
@@ -61,4 +67,5 @@ namespace MWLua
         table["records"] = &store;
     }
 }
+
 #endif // MWLUA_RECORDSTORE_H

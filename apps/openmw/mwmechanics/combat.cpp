@@ -12,6 +12,7 @@
 
 #include "../mwbase/dialoguemanager.hpp"
 #include "../mwbase/environment.hpp"
+#include "../mwbase/luamanager.hpp"
 #include "../mwbase/mechanicsmanager.hpp"
 #include "../mwbase/soundmanager.hpp"
 #include "../mwbase/windowmanager.hpp"
@@ -240,11 +241,8 @@ namespace MWMechanics
 
             if (Misc::Rng::roll0to99(world->getPrng()) >= getHitChance(attacker, victim, skillValue))
             {
-                victim.getClass().onHit(victim, damage, false, projectile, attacker, osg::Vec3f(), false,
-//## VR_PATCH BEGIN
-// Vr uses attack strength to determine haptic feedback strength
-                    attackStrength, MWMechanics::DamageSourceType::Ranged);
-//## VR_PATCH END
+                MWBase::Environment::get().getLuaManager()->onHit(attacker, victim, weapon, projectile, 0,
+                    attackStrength, damage, false, hitPosition, false, MWMechanics::DamageSourceType::Ranged);
                 MWMechanics::reduceWeaponCondition(damage, false, weapon, attacker);
                 return;
             }
@@ -302,8 +300,8 @@ namespace MWMechanics
                     victim.getClass().getContainerStore(victim).add(projectile, 1);
             }
 
-            victim.getClass().onHit(
-//## VR_PATCH BEGIN
+            MWBase::Environment::get().getLuaManager()->onHit(attacker, victim, weapon, projectile, 0, attackStrength,
+                damage, true, hitPosition, true, MWMechanics::DamageSourceType::Ranged);
 // Vr uses attack strength to determine haptic feedback strength
                 victim, damage, true, projectile, attacker, hitPosition, true, attackStrength, MWMechanics::DamageSourceType::Ranged);
 //## VR_PATCH END

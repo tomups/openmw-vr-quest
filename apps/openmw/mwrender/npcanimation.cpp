@@ -401,14 +401,12 @@ namespace MWRender
     {
         if (mViewMode == VM_FirstPerson)
         {
-            static bool prototypeAdded = false;
-            if (!prototypeAdded)
-            {
+            [[maybe_unused]] static const bool prototypeAdded = [&] {
                 osg::ref_ptr<osgUtil::RenderBin> depthClearBin(new osgUtil::RenderBin);
                 depthClearBin->setDrawCallback(new DepthClearCallback());
                 osgUtil::RenderBin::addRenderBinPrototype("DepthClear", depthClearBin);
-                prototypeAdded = true;
-            }
+                return true;
+            }();
             mObjectRoot->getOrCreateStateSet()->setRenderBinDetails(
                 RenderBin_FirstPerson, "DepthClear", osg::StateSet::OVERRIDE_RENDERBIN_DETAILS);
         }
@@ -618,8 +616,8 @@ namespace MWRender
                 ESM::PartReferenceType parts[] = { ESM::PRT_Groin, ESM::PRT_Skirt, ESM::PRT_RLeg, ESM::PRT_LLeg,
                     ESM::PRT_RUpperarm, ESM::PRT_LUpperarm, ESM::PRT_RKnee, ESM::PRT_LKnee, ESM::PRT_RForearm,
                     ESM::PRT_LForearm, ESM::PRT_Cuirass };
-                size_t parts_size = sizeof(parts) / sizeof(parts[0]);
-                for (size_t p = 0; p < parts_size; ++p)
+                const size_t partsSize = sizeof(parts) / sizeof(parts[0]);
+                for (size_t p = 0; p < partsSize; ++p)
                     reserveIndividualPart(parts[p], slotlist[i].mSlot, prio);
             }
             else if (slotlist[i].mSlot == MWWorld::InventoryStore::Slot_Skirt)
@@ -1153,14 +1151,14 @@ namespace MWRender
     const std::vector<const ESM::BodyPart*>& NpcAnimation::getBodyParts(
         const ESM::RefId& race, bool female, bool firstPerson, bool werewolf)
     {
-        static const int Flag_FirstPerson = 1 << 1;
-        static const int Flag_Female = 1 << 0;
+        constexpr int flagFirstPerson = 1 << 1;
+        constexpr int flagFemale = 1 << 0;
 
         int flags = (werewolf ? -1 : 0);
         if (female)
-            flags |= Flag_Female;
+            flags |= flagFemale;
         if (firstPerson)
-            flags |= Flag_FirstPerson;
+            flags |= flagFirstPerson;
 
         RaceMapping::iterator found = sRaceMapping.find(std::make_pair(race, flags));
         if (found != sRaceMapping.end())

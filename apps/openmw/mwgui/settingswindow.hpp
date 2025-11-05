@@ -1,6 +1,7 @@
 #ifndef MWGUI_SETTINGS_H
 #define MWGUI_SETTINGS_H
 
+#include <components/files/configurationmanager.hpp>
 #include <components/lua_ui/adapter.hpp>
 
 #include "windowbase.hpp"
@@ -10,9 +11,11 @@ namespace MWGui
     class SettingsWindow : public WindowBase
     {
     public:
-        SettingsWindow();
+        SettingsWindow(Files::ConfigurationManager& cfgMgr);
 
         void onOpen() override;
+
+        void onClose() override;
 
         void onFrame(float duration) override;
 
@@ -25,6 +28,8 @@ namespace MWGui
         void updateWindowModeSettings();
 
         void onResChange(int, int) override;
+
+        bool onControllerButtonEvent(const SDL_ControllerButtonEvent& arg) override;
 
     protected:
         MyGUI::TabControl* mSettingsTab;
@@ -69,48 +74,50 @@ namespace MWGui
         LuaUi::LuaAdapter* mScriptAdapter;
         int mCurrentPage;
 
-        void onTabChanged(MyGUI::TabControl* _sender, size_t index);
-        void onOkButtonClicked(MyGUI::Widget* _sender);
-        void onTextureFilteringChanged(MyGUI::ComboBox* _sender, size_t pos);
+        void onTabChanged(MyGUI::TabControl* sender, size_t index);
+        void onOkButtonClicked(MyGUI::Widget* sender);
+        void onTextureFilteringChanged(MyGUI::ComboBox* sender, size_t pos);
         void onSliderChangePosition(MyGUI::ScrollBar* scroller, size_t pos);
-        void onButtonToggled(MyGUI::Widget* _sender);
-        void onResolutionSelected(MyGUI::ListBox* _sender, size_t index);
+        void onButtonToggled(MyGUI::Widget* sender);
+        void onResolutionSelected(MyGUI::ListBox* sender, size_t index);
         void onResolutionAccept();
         void onResolutionCancel();
         void highlightCurrentResolution();
 
+        void onRefractionButtonClicked(MyGUI::Widget* sender);
+        void onWaterTextureSizeChanged(MyGUI::ComboBox* sender, size_t pos);
+        void onWaterReflectionDetailChanged(MyGUI::ComboBox* sender, size_t pos);
+        void onWaterRainRippleDetailChanged(MyGUI::ComboBox* sender, size_t pos);
 //## VR_PATCH BEGIN
+        // MERGETODO: Upstream added the 4 onRefaction, onWater handlers above. Test
         MyGUI::ComboBox* mVRMirrorTextureEye;
 
         void onVRMirrorTextureEyeChanged(MyGUI::ComboBox* _sender, size_t pos);
 //## VR_PATCH END
 
-        void onRefractionButtonClicked(MyGUI::Widget* _sender);
-        void onWaterTextureSizeChanged(MyGUI::ComboBox* _sender, size_t pos);
-        void onWaterReflectionDetailChanged(MyGUI::ComboBox* _sender, size_t pos);
-        void onWaterRainRippleDetailChanged(MyGUI::ComboBox* _sender, size_t pos);
 
-        void onLightingMethodButtonChanged(MyGUI::ComboBox* _sender, size_t pos);
-        void onLightsResetButtonClicked(MyGUI::Widget* _sender);
-        void onMaxLightsChanged(MyGUI::ComboBox* _sender, size_t pos);
+        void onLightingMethodButtonChanged(MyGUI::ComboBox* sender, size_t pos);
+        void onLightsResetButtonClicked(MyGUI::Widget* sender);
+        void onMaxLightsChanged(MyGUI::ComboBox* sender, size_t pos);
 
-        void onPrimaryLanguageChanged(MyGUI::ComboBox* _sender, size_t pos) { onLanguageChanged(0, _sender, pos); }
-        void onSecondaryLanguageChanged(MyGUI::ComboBox* _sender, size_t pos) { onLanguageChanged(1, _sender, pos); }
-        void onLanguageChanged(size_t langPriority, MyGUI::ComboBox* _sender, size_t pos);
-        void onGmstOverridesL10nChanged(MyGUI::Widget* _sender);
+        void onPrimaryLanguageChanged(MyGUI::ComboBox* sender, size_t pos) { onLanguageChanged(0, sender, pos); }
+        void onSecondaryLanguageChanged(MyGUI::ComboBox* sender, size_t pos) { onLanguageChanged(1, sender, pos); }
+        void onLanguageChanged(size_t langPriority, MyGUI::ComboBox* sender, size_t pos);
+        void onGmstOverridesL10nChanged(MyGUI::Widget* sender);
 
-        void onWindowModeChanged(MyGUI::ComboBox* _sender, size_t pos);
-        void onVSyncModeChanged(MyGUI::ComboBox* _sender, size_t pos);
+        void onWindowModeChanged(MyGUI::ComboBox* sender, size_t pos);
+        void onVSyncModeChanged(MyGUI::ComboBox* sender, size_t pos);
 
-        void onRebindAction(MyGUI::Widget* _sender);
-        void onInputTabMouseWheel(MyGUI::Widget* _sender, int _rel);
-        void onResetDefaultBindings(MyGUI::Widget* _sender);
+        void onRebindAction(MyGUI::Widget* sender);
+        void onInputTabMouseWheel(MyGUI::Widget* sender, int rel);
+        void onResetDefaultBindings(MyGUI::Widget* sender);
         void onResetDefaultBindingsAccept();
-        void onKeyboardSwitchClicked(MyGUI::Widget* _sender);
-        void onControllerSwitchClicked(MyGUI::Widget* _sender);
+        void onKeyboardSwitchClicked(MyGUI::Widget* sender);
+        void onControllerSwitchClicked(MyGUI::Widget* sender);
 
 //## VR_PATCH BEGIN
-        void onWindowResize(MyGUI::Window* _sender) override;
+        // MERGETODO: Why was it marked override?
+        void onWindowResize(MyGUI::Window* sender);
 //## VR_PATCH END
 
         void onScriptFilterChange(MyGUI::EditBox*);
@@ -128,6 +135,7 @@ namespace MWGui
 
     private:
         void resetScrollbars();
+        Files::ConfigurationManager& mCfgMgr;
     };
 }
 

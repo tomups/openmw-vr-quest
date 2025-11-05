@@ -128,10 +128,8 @@ namespace MWWorld
         throw std::runtime_error("class cannot hit");
     }
 
-    void Class::onHit(const Ptr& ptr, float damage, bool ishealth, const Ptr& object, const Ptr& attacker,
-//## VR_PATCH BEGIN
-        const osg::Vec3f& hitPosition, bool successful, float hitStrength, const MWMechanics::DamageSourceType sourceType) const
-//## VR_PATCH END
+    void Class::onHit(const Ptr& ptr, const std::map<std::string, float>& damages, ESM::RefId object,
+        const Ptr& attacker, bool successful, const MWMechanics::DamageSourceType sourceType) const
     {
         throw std::runtime_error("class cannot be hit");
     }
@@ -216,7 +214,7 @@ namespace MWWorld
         return std::make_pair(std::vector<int>(), false);
     }
 
-    ESM::RefId Class::getEquipmentSkill(const ConstPtr& ptr) const
+    ESM::RefId Class::getEquipmentSkill(const ConstPtr& ptr, bool useLuaInterfaceIfAvailable) const
     {
         return {};
     }
@@ -246,7 +244,7 @@ namespace MWWorld
         return false;
     }
 
-    float Class::getArmorRating(const MWWorld::Ptr& ptr) const
+    float Class::getArmorRating(const MWWorld::Ptr& ptr, bool useLuaInterfaceIfAvailable) const
     {
         throw std::runtime_error("Class does not support armor rating");
     }
@@ -463,11 +461,6 @@ namespace MWWorld
         throw std::runtime_error("class does not support skills");
     }
 
-    int Class::getBloodTexture(const MWWorld::ConstPtr& ptr) const
-    {
-        throw std::runtime_error("class does not support gore");
-    }
-
     void Class::readAdditionalState(const MWWorld::Ptr& ptr, const ESM::ObjectState& state) const {}
 
     void Class::writeAdditionalState(const MWWorld::ConstPtr& ptr, ESM::ObjectState& state) const {}
@@ -497,11 +490,16 @@ namespace MWWorld
         float capacity = getCapacity(ptr);
         float encumbrance = getEncumbrance(ptr);
 
+        // Intentional deviation: Morrowind doesn't do this
+        // but handling (0 / 0) as 1.0 encumbrance feels like a clear oversight
         if (encumbrance == 0)
             return 0.f;
 
+        // Another deviation: handle (non-zero encumbrance / zero capacity) as "overencumbered"
+        // Morrowind uses 1, but this means that for zero capacity,
+        // normalized encumbrance cannot be used to detect overencumbrance
         if (capacity == 0)
-            return 1.f;
+            return 1.f + 1e-6f;
 
         return encumbrance / capacity;
     }
@@ -525,7 +523,8 @@ namespace MWWorld
         return -1;
     }
 
-    float Class::getEffectiveArmorRating(const ConstPtr& armor, const Ptr& actor) const
+    float Class::getSkillAdjustedArmorRating(
+        const ConstPtr& armor, const Ptr& actor, bool useLuaInterfaceIfAvailable) const
     {
         throw std::runtime_error("class does not support armor ratings");
     }

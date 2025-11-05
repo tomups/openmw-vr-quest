@@ -361,9 +361,9 @@ bool Wizard::UnshieldWorker::installDirectories(
 
     QStringList directories(findDirectories(dirName, path, recursive));
 
-    for (const QString& dir : directories)
+    for (const QString& subDir : directories)
     {
-        QFileInfo info(dir);
+        QFileInfo info(subDir);
         emit textChanged(tr("Installing: %1 directory").arg(info.fileName()));
         if (!copyDirectory(info.absoluteFilePath(), getPath() + QDir::separator() + info.fileName(), keepSource))
             return false;
@@ -769,15 +769,15 @@ bool Wizard::UnshieldWorker::installComponent(Component component, const QString
     QStringList datafiles(findDirectories(QLatin1String("Data Files"), temp.absolutePath()));
     datafiles.append(findDirectories(QLatin1String("Data Files"), info.absolutePath()));
 
-    for (const QString& dir : datafiles)
+    for (const QString& dataDir : datafiles)
     {
-        QFileInfo info(dir);
-        emit textChanged(tr("Installing: %1 directory").arg(info.fileName()));
+        QFileInfo dataDirInfo(dataDir);
+        emit textChanged(tr("Installing: %1 directory").arg(dataDirInfo.fileName()));
 
-        if (!copyDirectory(info.absoluteFilePath(), getPath()))
+        if (!copyDirectory(dataDirInfo.absoluteFilePath(), getPath()))
         {
             emit error(tr("Could not install directory!"),
-                tr("Installing %1 to %2 failed.").arg(info.absoluteFilePath(), getPath()));
+                tr("Installing %1 to %2 failed.").arg(dataDirInfo.absoluteFilePath(), getPath()));
             return false;
         }
     }
@@ -900,9 +900,9 @@ QString Wizard::UnshieldWorker::findFile(const QString& fileName, const QString&
 QStringList Wizard::UnshieldWorker::findFiles(
     const QString& fileName, const QString& path, int depth, bool recursive, bool directories, Qt::MatchFlags flags)
 {
-    static const int MAXIMUM_DEPTH = 10;
+    constexpr int maximumDepth = 10;
 
-    if (depth >= MAXIMUM_DEPTH)
+    if (depth >= maximumDepth)
     {
         qWarning("Maximum directory depth limit reached.");
         return QStringList();

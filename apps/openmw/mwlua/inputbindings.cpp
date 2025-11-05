@@ -7,12 +7,14 @@
 #include <components/lua/inputactions.hpp>
 #include <components/lua/luastate.hpp>
 #include <components/sdlutil/events.hpp>
+#include <components/settings/values.hpp>
 
 #include "../mwbase/environment.hpp"
 #include "../mwbase/inputmanager.hpp"
 #include "../mwbase/windowmanager.hpp"
 #include "../mwinput/actions.hpp"
 
+#include "context.hpp"
 #include "luamanagerimp.hpp"
 
 namespace sol
@@ -82,7 +84,7 @@ namespace MWLua
             inputActions[sol::meta_function::index]
                 = [](LuaUtil::InputAction::Registry& registry, std::string_view key) { return registry[key]; };
             {
-                auto pairs = [](LuaUtil::InputAction::Registry& registry) {
+                auto pairs = [](LuaUtil::InputAction::Registry& self) {
                     auto next = [](LuaUtil::InputAction::Registry& registry, std::string_view key)
                         -> sol::optional<std::tuple<std::string, LuaUtil::InputAction::Info>> {
                         std::optional<std::string> nextKey(registry.nextKey(key));
@@ -91,7 +93,7 @@ namespace MWLua
                         else
                             return std::make_tuple(*nextKey, registry[*nextKey].value());
                     };
-                    return std::make_tuple(next, registry, registry.firstKey());
+                    return std::make_tuple(next, self, self.firstKey());
                 };
                 inputActions[sol::meta_function::pairs] = pairs;
             }
@@ -120,7 +122,7 @@ namespace MWLua
             inputTriggers[sol::meta_function::index]
                 = [](LuaUtil::InputTrigger::Registry& registry, std::string_view key) { return registry[key]; };
             {
-                auto pairs = [](LuaUtil::InputTrigger::Registry& registry) {
+                auto pairs = [](LuaUtil::InputTrigger::Registry& self) {
                     auto next = [](LuaUtil::InputTrigger::Registry& registry, std::string_view key)
                         -> sol::optional<std::tuple<std::string, LuaUtil::InputTrigger::Info>> {
                         std::optional<std::string> nextKey(registry.nextKey(key));
@@ -129,7 +131,7 @@ namespace MWLua
                         else
                             return std::make_tuple(*nextKey, registry[*nextKey].value());
                     };
-                    return std::make_tuple(next, registry, registry.firstKey());
+                    return std::make_tuple(next, self, self.firstKey());
                 };
                 inputTriggers[sol::meta_function::pairs] = pairs;
             }
@@ -239,6 +241,7 @@ namespace MWLua
         api["isMouseButtonPressed"]
             = [](int button) -> bool { return SDL_GetMouseState(nullptr, nullptr) & SDL_BUTTON(button); };
         api["_isGamepadCursorActive"] = [input]() -> bool { return input->isGamepadGuiCursorEnabled(); };
+        api["_isControllerMenusEnabled"] = []() -> bool { return Settings::gui().mControllerMenus; };
         api["_setGamepadCursorActive"] = [input](bool v) {
             input->setGamepadGuiCursorEnabled(v);
             MWBase::Environment::get().getWindowManager()->setCursorActive(v);

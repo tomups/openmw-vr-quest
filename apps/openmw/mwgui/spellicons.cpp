@@ -46,7 +46,7 @@ namespace MWGui
                 newEffectSource.mRemainingTime = effect.mTimeLeft;
                 newEffectSource.mSource = params.getDisplayName();
                 newEffectSource.mTotalTime = effect.mDuration;
-                effects[effect.mEffectId].push_back(newEffectSource);
+                effects[effect.mEffectId].push_back(std::move(newEffectSource));
             }
         }
 

@@ -106,7 +106,7 @@ namespace MWGui
             newSpell.mSelected = (MWBase::Environment::get().getWindowManager()->getSelectedSpell() == spell->mId);
             newSpell.mActive = true;
             newSpell.mCount = 1;
-            mSpells.push_back(newSpell);
+            mSpells.push_back(std::move(newSpell));
         }
 
         MWWorld::InventoryStore& invStore = mActor.getClass().getInventoryStore(mActor);
@@ -164,7 +164,7 @@ namespace MWGui
 
                 newSpell.mActive = invStore.isEquipped(item);
             }
-            mSpells.push_back(newSpell);
+            mSpells.push_back(std::move(newSpell));
         }
 
         std::stable_sort(mSpells.begin(), mSpells.end(), sortSpells);

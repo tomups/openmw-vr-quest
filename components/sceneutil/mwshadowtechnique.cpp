@@ -27,11 +27,12 @@
 #include <osg/ClipControl>
 
 #include <sstream>
-#include <deque>
 #include <vector>
 
 #include "glextensions.hpp"
 #include "shadowsbin.hpp"
+
+// NOLINTBEGIN(readability-identifier-naming)
 
 namespace {
 
@@ -2761,7 +2762,7 @@ bool MWShadowTechnique::adjustPerspectiveShadowMapCameraSettings(osgUtil::Render
     }
 #endif
 
-#if 1
+#if 0
     if (renderStage)
     {
 #if 1
@@ -2983,7 +2984,7 @@ bool MWShadowTechnique::adjustPerspectiveShadowMapCameraSettings(osgUtil::Render
     OSG_NOTICE<<"convexHull max_z_ratio = "<<max_z_ratio<<std::endl;
 #endif
 
-    #if 1
+    #if 0
     if (renderStage)
     {
 #if 1
@@ -3381,4 +3382,7 @@ osg::ref_ptr<osg::StateSet> SceneUtil::MWShadowTechnique::getOrCreateShadowsBinS
     }
     return _shadowsBinStateSet;
 }
+
+// NOLINTEND(readability-identifier-naming)
+
 // clang-format on

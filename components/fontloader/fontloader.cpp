@@ -276,8 +276,8 @@ namespace Gui
     {
         Log(Debug::Info) << "Loading font file " << fileName;
 
-        osgMyGUI::DataManager* dataManager
-            = dynamic_cast<osgMyGUI::DataManager*>(&osgMyGUI::DataManager::getInstance());
+        MyGUIPlatform::DataManager* dataManager
+            = dynamic_cast<MyGUIPlatform::DataManager*>(&MyGUIPlatform::DataManager::getInstance());
         if (!dataManager)
         {
             Log(Debug::Error) << "Can not load TrueType font " << fontId << ": osgMyGUI::DataManager is not available.";
@@ -287,7 +287,7 @@ namespace Gui
         // TODO: it may be worth to take in account resolution change, but it is not safe to replace used assets
         std::unique_ptr<MyGUI::IDataStream> layersStream(dataManager->getData("openmw_layers.xml"));
         MyGUI::IntSize bookSize = getBookSize(layersStream.get());
-        float bookScale = osgMyGUI::ScalingLayer::getScaleFactor(bookSize);
+        float bookScale = MyGUIPlatform::ScalingLayer::getScaleFactor(bookSize);
 
         const auto oldDataPath = dataManager->getDataPath({});
         dataManager->setResourcePath("fonts");
@@ -395,8 +395,8 @@ namespace Gui
         if (one != 1)
             fail(*file, fileName, "Unexpected value");
 
-        char name_[284];
-        file->read(name_, sizeof(name_));
+        char nameBuffer[284];
+        file->read(nameBuffer, sizeof(nameBuffer));
         if (!file->good())
             fail(*file, fileName, "File too small to be a valid font");
 
@@ -408,7 +408,7 @@ namespace Gui
         file.reset();
 
         // Create the font texture
-        const std::string name(name_);
+        const std::string name(nameBuffer);
         const std::string bitmapFilename = "fonts/" + name + ".tex";
 
         Files::IStreamPtr bitmapFile = mVFS->get(bitmapFilename);
@@ -662,10 +662,10 @@ namespace Gui
         MyGUI::ResourceManager::getInstance().addResource(bookFont);
     }
 
-    void FontLoader::overrideLineHeight(MyGUI::xml::ElementPtr _node, std::string_view _file, MyGUI::Version _version)
+    void FontLoader::overrideLineHeight(MyGUI::xml::ElementPtr node, std::string_view file, MyGUI::Version version)
     {
         // We should adjust line height for MyGUI widgets depending on font size
-        MyGUI::xml::ElementEnumerator resourceNode = _node->getElementEnumerator();
+        MyGUI::xml::ElementEnumerator resourceNode = node->getElementEnumerator();
         while (resourceNode.next("Resource"))
         {
             auto type = resourceNode->findAttribute("type");
@@ -687,7 +687,7 @@ namespace Gui
             }
         }
 
-        MyGUI::ResourceManager::getInstance().loadFromXmlNode(_node, _file, _version);
+        MyGUI::ResourceManager::getInstance().loadFromXmlNode(node, file, version);
     }
 
     std::string_view FontLoader::getFontForFace(std::string_view face)

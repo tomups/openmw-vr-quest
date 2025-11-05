@@ -1,6 +1,7 @@
 #ifndef GAME_MWBASE_LUAMANAGER_H
 #define GAME_MWBASE_LUAMANAGER_H
 
+#include <filesystem>
 #include <map>
 #include <string>
 #include <variant>
@@ -8,6 +9,7 @@
 #include <SDL_events.h>
 
 #include "../mwgui/mode.hpp"
+#include "../mwmechanics/damagesourcetype.hpp"
 #include "../mwrender/animationpriority.hpp"
 #include "../mwworld/ptr.hpp"
 #include <components/sdlutil/events.hpp>
@@ -37,6 +39,11 @@ namespace LuaUtil
     {
         class Registry;
     }
+}
+
+namespace osg
+{
+    class Vec3f;
 }
 
 namespace MWBase
@@ -69,13 +76,19 @@ namespace MWBase
             const MWRender::AnimPriority& priority, int blendMask, bool autodisable, float speedmult,
             std::string_view start, std::string_view stop, float startpoint, uint32_t loops, bool loopfallback)
             = 0;
+        virtual void jailTimeServed(const MWWorld::Ptr& actor, int days) = 0;
         virtual void skillLevelUp(const MWWorld::Ptr& actor, ESM::RefId skillId, std::string_view source) = 0;
         virtual void skillUse(const MWWorld::Ptr& actor, ESM::RefId skillId, int useType, float scale) = 0;
+        virtual void onHit(const MWWorld::Ptr& attacker, const MWWorld::Ptr& victim, const MWWorld::Ptr& weapon,
+            const MWWorld::Ptr& ammo, int attackType, float attackStrength, float damage, bool isHealth,
+            const osg::Vec3f& hitPos, bool successful, MWMechanics::DamageSourceType)
+            = 0;
         virtual void exteriorCreated(MWWorld::CellStore& cell) = 0;
         virtual void actorDied(const MWWorld::Ptr& actor) = 0;
         virtual void questUpdated(const ESM::RefId& questId, int stage) = 0;
         // `arg` is either forwarded from MWGui::pushGuiMode or empty
         virtual void uiModeChanged(const MWWorld::Ptr& arg) = 0;
+        virtual void savePermanentStorage(const std::filesystem::path& userConfigPath) = 0;
         virtual void vrRecentered(bool vertical, bool horizontal) = 0;
 
         // TODO: notify LuaManager about other events

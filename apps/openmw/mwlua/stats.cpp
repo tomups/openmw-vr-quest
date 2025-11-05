@@ -1,9 +1,11 @@
 #include "stats.hpp"
 
 #include <algorithm>
-#include <memory>
 #include <optional>
+#include <string>
 #include <string_view>
+#include <type_traits>
+#include <utility>
 #include <variant>
 
 #include <components/esm3/loadclas.hpp>
@@ -105,8 +107,7 @@ namespace MWLua
 
         sol::object get(const Context& context, ESM::StringRefId attributeId) const
         {
-            const auto& ptr = mObject.ptr();
-            if (!ptr.getClass().isNpc())
+            if (!mObject.ptr().getClass().isNpc())
                 return sol::nil;
 
             return getValue(context, mObject, &setNpcValue, attributeId, "skillIncreasesForAttribute",
@@ -140,8 +141,7 @@ namespace MWLua
 
         sol::object get(const Context& context, int specialization) const
         {
-            const auto& ptr = mObject.ptr();
-            if (!ptr.getClass().isNpc())
+            if (!mObject.ptr().getClass().isNpc())
                 return sol::nil;
 
             return getValue(context, mObject, &setNpcValue, specialization, "skillIncreasesForSpecialization",
@@ -190,8 +190,7 @@ namespace MWLua
 
         sol::object getProgress(const Context& context) const
         {
-            const auto& ptr = mObject.ptr();
-            if (!ptr.getClass().isNpc())
+            if (!mObject.ptr().getClass().isNpc())
                 return sol::nil;
 
             return getValue(context, mObject, &setNpcValue, std::monostate{}, "progress",

@@ -17,6 +17,7 @@
 #include <components/files/conversion.hpp>
 #include <components/files/memorystream.hpp>
 #include <components/l10n/manager.hpp>
+#include <components/misc/strings/format.hpp>
 #include <components/misc/strings/lower.hpp>
 #include <components/misc/timeconvert.hpp>
 #include <components/myguiplatform/myguitexture.hpp>
@@ -28,6 +29,7 @@
 #include "../mwbase/world.hpp"
 #include "../mwworld/datetimemanager.hpp"
 #include "../mwworld/esmstore.hpp"
+#include "../mwworld/timestamp.hpp"
 
 #include "../mwstate/character.hpp"
 
@@ -87,6 +89,9 @@ namespace MWGui
 
         // To avoid accidental deletions
         mDeleteButton->setNeedKeyFocus(false);
+
+        mControllerButtons.mA = "#{Interface:Select}";
+        mControllerButtons.mB = "#{Interface:Cancel}";
     }
 
     void SaveGameDialog::onSlotActivated(MyGUI::ListBox* sender, size_t pos)
@@ -168,6 +173,28 @@ namespace MWGui
         WindowModal::onOpen();
 
         mSaveNameEdit->setCaption({});
+        if (Settings::gui().mControllerMenus && mSaving)
+        {
+            // For controller mode, set a default save file name. The format is
+            // "Day 24 - Last Steed 7 p.m."
+            const MWWorld::DateTimeManager& timeManager = *MWBase::Environment::get().getWorld()->getTimeManager();
+            std::string_view month = timeManager.getMonthName();
+            int hour = static_cast<int>(timeManager.getTimeStamp().getHour());
+            bool pm = hour >= 12;
+            if (hour >= 13)
+                hour -= 12;
+            if (hour == 0)
+                hour = 12;
+
+            ESM::EpochTimeStamp currentDate = timeManager.getEpochTimeStamp();
+            std::string daysPassed
+                = Misc::StringUtils::format("#{Calendar:day} %i", timeManager.getTimeStamp().getDay());
+            std::string_view formattedHour(pm ? "#{Calendar:pm}" : "#{Calendar:am}");
+            std::string autoFilename = Misc::StringUtils::format(
+                "%s - %i %s %i %s", daysPassed, currentDate.mDay, month, hour, formattedHour);
+
+            mSaveNameEdit->setCaptionWithReplacing(autoFilename);
+        }
         if (mSaving)
             MWBase::Environment::get().getWindowManager()->setKeyFocusWidget(mSaveNameEdit);
 //## VR_PATCH BEGIN
@@ -189,6 +216,13 @@ namespace MWGui
         mCurrentSlot = nullptr;
         mSaveList->removeAllItems();
         onSlotSelected(mSaveList, MyGUI::ITEM_NONE);
+
+        if (Settings::gui().mControllerMenus)
+        {
+            mOkButtonFocus = true;
+            mOkButton->setStateSelected(true);
+            mCancelButton->setStateSelected(false);
+        }
 
         MWBase::StateManager* mgr = MWBase::Environment::get().getStateManager();
         if (mgr->characterBegin() == mgr->characterEnd())
@@ -217,10 +251,10 @@ namespace MWGui
                 else
                 {
                     // Find the localised name for this class from the store
-                    const ESM::Class* class_
+                    const ESM::Class* playerClass
                         = MWBase::Environment::get().getESMStore()->get<ESM::Class>().search(signature.mPlayerClassId);
-                    if (class_)
-                        className = class_->mName;
+                    if (playerClass)
+                        className = playerClass->mName;
                     else
                         className = "?"; // From an older savegame format that did not support custom classes properly.
                 }
@@ -289,12 +323,12 @@ namespace MWGui
         center();
     }
 
-    void SaveGameDialog::onCancelButtonClicked(MyGUI::Widget* sender)
+    void SaveGameDialog::onCancelButtonClicked(MyGUI::Widget* /*sender*/)
     {
         setVisible(false);
     }
 
-    void SaveGameDialog::onDeleteButtonClicked(MyGUI::Widget* sender)
+    void SaveGameDialog::onDeleteButtonClicked(MyGUI::Widget* /*sender*/)
     {
         if (mCurrentSlot)
             confirmDeleteSave();
@@ -377,13 +411,13 @@ namespace MWGui
         }
     }
 
-    void SaveGameDialog::onKeyButtonPressed(MyGUI::Widget* _sender, MyGUI::KeyCode key, MyGUI::Char character)
+    void SaveGameDialog::onKeyButtonPressed(MyGUI::Widget* /*sender*/, MyGUI::KeyCode key, MyGUI::Char character)
     {
         if (key == MyGUI::KeyCode::Delete && mCurrentSlot)
             confirmDeleteSave();
     }
 
-    void SaveGameDialog::onOkButtonClicked(MyGUI::Widget* sender)
+    void SaveGameDialog::onOkButtonClicked(MyGUI::Widget* /*sender*/)
     {
         accept();
     }
@@ -552,7 +586,58 @@ namespace MWGui
         texture->setResizeNonPowerOfTwoHint(false);
         texture->setUnRefImageDataAfterApply(true);
 
-        mScreenshotTexture = std::make_unique<osgMyGUI::OSGTexture>(texture);
+        mScreenshotTexture = std::make_unique<MyGUIPlatform::OSGTexture>(texture);
         mScreenshot->setRenderItemTexture(mScreenshotTexture.get());
+    }
+
+    ControllerButtons* SaveGameDialog::getControllerButtons()
+    {
+        mControllerButtons.mY = mSaving ? "" : "#{OMWEngine:LoadingSelectCharacter}";
+        return &mControllerButtons;
+    }
+
+    bool SaveGameDialog::onControllerButtonEvent(const SDL_ControllerButtonEvent& arg)
+    {
+        if (arg.button == SDL_CONTROLLER_BUTTON_A)
+        {
+            if (mOkButtonFocus)
+                onOkButtonClicked(mOkButton);
+            else
+                onCancelButtonClicked(mCancelButton);
+            MWBase::Environment::get().getWindowManager()->playSound(ESM::RefId::stringRefId("Menu Click"));
+        }
+        else if (arg.button == SDL_CONTROLLER_BUTTON_B)
+        {
+            onCancelButtonClicked(mCancelButton);
+        }
+        else if (arg.button == SDL_CONTROLLER_BUTTON_Y)
+        {
+            size_t index = mCharacterSelection->getIndexSelected();
+            index = wrap(index + 1, mCharacterSelection->getItemCount());
+            mCharacterSelection->setIndexSelected(index);
+            onCharacterSelected(mCharacterSelection, index);
+            MWBase::Environment::get().getWindowManager()->playSound(ESM::RefId::stringRefId("Menu Click"));
+        }
+        else if (arg.button == SDL_CONTROLLER_BUTTON_DPAD_UP)
+        {
+            MWBase::WindowManager* winMgr = MWBase::Environment::get().getWindowManager();
+            winMgr->setKeyFocusWidget(mSaveList);
+            winMgr->injectKeyPress(MyGUI::KeyCode::ArrowUp, 0, false);
+        }
+        else if (arg.button == SDL_CONTROLLER_BUTTON_DPAD_DOWN)
+        {
+            MWBase::WindowManager* winMgr = MWBase::Environment::get().getWindowManager();
+            winMgr->setKeyFocusWidget(mSaveList);
+            winMgr->injectKeyPress(MyGUI::KeyCode::ArrowDown, 0, false);
+        }
+        else if ((arg.button == SDL_CONTROLLER_BUTTON_DPAD_LEFT && !mOkButtonFocus)
+            || (arg.button == SDL_CONTROLLER_BUTTON_DPAD_RIGHT && mOkButtonFocus))
+        {
+            mOkButtonFocus = !mOkButtonFocus;
+            mOkButton->setStateSelected(mOkButtonFocus);
+            mCancelButton->setStateSelected(!mOkButtonFocus);
+        }
+
+        return true;
     }
 }

@@ -42,7 +42,6 @@
 #include <components/sceneutil/clone.hpp>
 #include <components/sceneutil/controller.hpp>
 #include <components/sceneutil/depth.hpp>
-#include <components/sceneutil/extradata.hpp>
 #include <components/sceneutil/lightmanager.hpp>
 #include <components/sceneutil/optimizer.hpp>
 #include <components/sceneutil/riggeometryosgaextension.hpp>
@@ -447,15 +446,6 @@ namespace Resource
         Resource::NifFileManager* nifFileManager, Resource::BgsmFileManager* bgsmFileManager, double expiryDelay)
         : ResourceManager(vfs, expiryDelay)
         , mShaderManager(new Shader::ShaderManager)
-        , mForceShaders(false)
-        , mClampLighting(true)
-        , mAutoUseNormalMaps(false)
-        , mAutoUseSpecularMaps(false)
-        , mApplyLightingToEnvMaps(false)
-        , mLightingMethod(SceneUtil::LightingMethod::FFP)
-        , mConvertAlphaTestToAlphaToCoverage(false)
-        , mAdjustCoverageForAlphaTest(false)
-        , mSupportsNormalsRT(false)
         , mSharedStateManager(new SharedStateManager)
         , mImageManager(imageManager)
         , mNifFileManager(nifFileManager)
@@ -463,8 +453,8 @@ namespace Resource
         , mMinFilter(osg::Texture::LINEAR_MIPMAP_LINEAR)
         , mMagFilter(osg::Texture::LINEAR)
         , mMaxAnisotropy(1)
-        , mUnRefImageDataAfterApply(false)
         , mParticleSystemMask(~0u)
+        , mLightingMethod(SceneUtil::LightingMethod::FFP)
     {
     }
 
@@ -700,6 +690,10 @@ namespace Resource
                 ReplaceAnimationUnderscoresVisitor renamingVisitor;
                 node->accept(renamingVisitor);
             }
+
+            // Replace osg::Depth with reverse-Z-compatible SceneUtil::AutoDepth
+            SceneUtil::ReplaceDepthVisitor replaceDepthVisitor;
+            node->accept(replaceDepthVisitor);
 
             for (osg::Node* foundRigNode : rigFinder.mFoundNodes)
             {
@@ -975,10 +969,17 @@ namespace Resource
         return loadNonNif(errorMarker, file, mImageManager);
     }
 
+    void SceneManager::loadSelectionMarker(
+        osg::ref_ptr<osg::Group> parentNode, const char* markerData, long long markerSize) const
+    {
+        Files::IMemStream file(markerData, markerSize);
+        constexpr VFS::Path::NormalizedView selectionMarker("selectionmarker.osgt");
+        parentNode->addChild(loadNonNif(selectionMarker, file, mImageManager));
+    }
+
     osg::ref_ptr<osg::Node> SceneManager::cloneErrorMarker()
     {
-        if (!mErrorMarker)
-            mErrorMarker = loadErrorMarker();
+        std::call_once(mErrorMarkerFlag, [this] { mErrorMarker = loadErrorMarker(); });
 
         return static_cast<osg::Node*>(mErrorMarker->clone(osg::CopyOp::DEEP_COPY_ALL));
     }
@@ -994,9 +995,6 @@ namespace Resource
             try
             {
                 loaded = load(path, mVFS, mImageManager, mNifFileManager, mBgsmFileManager);
-
-                SceneUtil::ProcessExtraDataVisitor extraDataVisitor(this);
-                loaded->accept(extraDataVisitor);
             }
             catch (const std::exception& e)
             {
@@ -1010,9 +1008,6 @@ namespace Resource
             SetFilterSettingsControllerVisitor setFilterSettingsControllerVisitor(
                 mMinFilter, mMagFilter, mMaxAnisotropy);
             loaded->accept(setFilterSettingsControllerVisitor);
-
-            SceneUtil::ReplaceDepthVisitor replaceDepthVisitor;
-            loaded->accept(replaceDepthVisitor);
 
             osg::ref_ptr<Shader::ShaderVisitor> shaderVisitor(createShaderVisitor());
             loaded->accept(*shaderVisitor);

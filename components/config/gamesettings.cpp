@@ -25,11 +25,6 @@ namespace
 Config::GameSettings::GameSettings(const Files::ConfigurationManager& cfg)
     : mCfgMgr(cfg)
 {
-#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
-    // this needs calling once so Qt can see its stream operators, which it needs when dragging and dropping
-    // it's automatic with Qt 6
-    qRegisterMetaTypeStreamOperators<SettingValue>("Config::SettingValue");
-#endif
 }
 
 void Config::GameSettings::validatePaths()
@@ -207,7 +202,7 @@ bool Config::GameSettings::readFile(
 
     if (settings.isEmpty())
     {
-        settings = cache; // This is the first time we read a file
+        settings = std::move(cache); // This is the first time we read a file
         validatePaths();
         return true;
     }

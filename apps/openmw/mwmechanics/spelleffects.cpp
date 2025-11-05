@@ -44,18 +44,16 @@ namespace
         return effect.mMinMagnitude + Misc::Rng::rollDice(effect.mMaxMagnitude - effect.mMinMagnitude + 1, prng);
     }
 
-    void modifyAiSetting(const MWWorld::Ptr& target, const ESM::ActiveEffect& effect,
-        ESM::MagicEffect::Effects creatureEffect, MWMechanics::AiSetting setting, float magnitude, bool& invalid)
+    ESM::ActiveEffect::Flags modifyAiSetting(const MWWorld::Ptr& target, const ESM::ActiveEffect& effect,
+        ESM::MagicEffect::Effects creatureEffect, MWMechanics::AiSetting setting, float magnitude)
     {
         if (target == MWMechanics::getPlayer() || (effect.mEffectId == creatureEffect) == target.getClass().isNpc())
-            invalid = true;
-        else
-        {
-            auto& creatureStats = target.getClass().getCreatureStats(target);
-            auto stat = creatureStats.getAiSetting(setting);
-            stat.setModifier(static_cast<int>(stat.getModifier() + magnitude));
-            creatureStats.setAiSetting(setting, stat);
-        }
+            return ESM::ActiveEffect::Flag_Invalid;
+        auto& creatureStats = target.getClass().getCreatureStats(target);
+        auto stat = creatureStats.getAiSetting(setting);
+        stat.setModifier(static_cast<int>(stat.getModifier() + magnitude));
+        creatureStats.setAiSetting(setting, stat);
+        return ESM::ActiveEffect::Flag_Applied;
     }
 
     void adjustDynamicStat(const MWWorld::Ptr& target, int index, float magnitude, bool allowDecreaseBelowZero = false,
@@ -359,8 +357,7 @@ namespace
         // Notify the target actor they've been hit
         bool isHarmful = magicEffect->mData.mFlags & ESM::MagicEffect::Harmful;
         if (target.getClass().isActor() && target != caster && !caster.isEmpty() && isHarmful)
-            target.getClass().onHit(
-                target, 0.0f, true, MWWorld::Ptr(), caster, osg::Vec3f(), true, -1, MWMechanics::DamageSourceType::Magical);
+            target.getClass().onHit(target, {}, {}, caster, true, MWMechanics::DamageSourceType::Magical);
         // Apply resistances
         if (!(effect.mFlags & ESM::ActiveEffect::Flag_Ignore_Resistances))
         {
@@ -377,8 +374,11 @@ namespace
                     MWBase::Environment::get().getWindowManager()->messageBox("#{sMagicTargetResisted}");
                 return MWMechanics::MagicApplicationResult::Type::REMOVED;
             }
-            effect.mMinMagnitude *= magnitudeMult;
-            effect.mMaxMagnitude *= magnitudeMult;
+            else if (!(magicEffect->mData.mFlags & ESM::MagicEffect::NoMagnitude))
+            {
+                effect.mMinMagnitude *= magnitudeMult;
+                effect.mMaxMagnitude *= magnitudeMult;
+            }
         }
         return MWMechanics::MagicApplicationResult::Type::APPLIED;
     }
@@ -396,27 +396,44 @@ namespace
         { ESM::MagicEffect::BoundShield, "sMagicBoundShieldID" },
         { ESM::MagicEffect::BoundSpear, "sMagicBoundSpearID" },
     };
+
+    using SpellsPurge = void (MWMechanics::Spells::*)();
+    void purgePermanent(const MWWorld::Ptr& target, SpellsPurge method, ESM::Spell::SpellType type)
+    {
+        MWMechanics::CreatureStats& stats = target.getClass().getCreatureStats(target);
+        (stats.getSpells().*method)();
+        stats.getActiveSpells().purge(
+            [type](const MWMechanics::ActiveSpells::ActiveSpellParams& params) {
+                if (params.hasFlag(ESM::ActiveSpells::Flag_SpellStore))
+                {
+                    const ESM::Spell* spell = params.getSpell();
+                    return spell && spell->mData.mType == type;
+                }
+                return false;
+            },
+            target);
+    }
 }
 
 namespace MWMechanics
 {
 
-    void applyMagicEffect(const MWWorld::Ptr& target, const MWWorld::Ptr& caster,
-        const ActiveSpells::ActiveSpellParams& spellParams, ESM::ActiveEffect& effect, bool& invalid,
-        bool& receivedMagicDamage, bool& affectedHealth, bool& recalculateMagicka)
+    ESM::ActiveEffect::Flags applyMagicEffect(const MWWorld::Ptr& target, const MWWorld::Ptr& caster,
+        const ActiveSpells::ActiveSpellParams& spellParams, ESM::ActiveEffect& effect, bool& receivedMagicDamage,
+        bool& affectedHealth, bool& recalculateMagicka)
     {
         const auto world = MWBase::Environment::get().getWorld();
-        bool godmode = target == getPlayer() && world->getGodModeState();
+        const bool godmode = target == getPlayer() && world->getGodModeState();
         switch (effect.mEffectId)
         {
             case ESM::MagicEffect::CureCommonDisease:
-                target.getClass().getCreatureStats(target).getSpells().purgeCommonDisease();
+                purgePermanent(target, &Spells::purgeCommonDisease, ESM::Spell::ST_Disease);
                 break;
             case ESM::MagicEffect::CureBlightDisease:
-                target.getClass().getCreatureStats(target).getSpells().purgeBlightDisease();
+                purgePermanent(target, &Spells::purgeBlightDisease, ESM::Spell::ST_Blight);
                 break;
             case ESM::MagicEffect::RemoveCurse:
-                target.getClass().getCreatureStats(target).getSpells().purgeCurses();
+                purgePermanent(target, &Spells::purgeCurses, ESM::Spell::ST_Curse);
                 break;
             case ESM::MagicEffect::CureCorprusDisease:
                 target.getClass().getCreatureStats(target).getActiveSpells().purgeEffect(
@@ -450,7 +467,7 @@ namespace MWMechanics
             case ESM::MagicEffect::AlmsiviIntervention:
             case ESM::MagicEffect::DivineIntervention:
                 if (target != getPlayer())
-                    invalid = true;
+                    return ESM::ActiveEffect::Flag_Invalid;
                 else if (world->isTeleportingEnabled())
                 {
                     std::string_view marker
@@ -475,7 +492,7 @@ namespace MWMechanics
                 break;
             case ESM::MagicEffect::Mark:
                 if (target != getPlayer())
-                    invalid = true;
+                    return ESM::ActiveEffect::Flag_Invalid;
                 else if (world->isTeleportingEnabled())
                     world->getPlayer().markPosition(target.getCell(), target.getRefData().getPosition());
                 else if (caster == getPlayer())
@@ -483,7 +500,7 @@ namespace MWMechanics
                 break;
             case ESM::MagicEffect::Recall:
                 if (target != getPlayer())
-                    invalid = true;
+                    return ESM::ActiveEffect::Flag_Invalid;
                 else if (world->isTeleportingEnabled())
                 {
                     MWWorld::CellStore* markedCell = nullptr;
@@ -509,7 +526,7 @@ namespace MWMechanics
             case ESM::MagicEffect::CommandHumanoid:
                 if (caster.isEmpty() || !caster.getClass().isActor() || target == getPlayer()
                     || (effect.mEffectId == ESM::MagicEffect::CommandCreature) == target.getClass().isNpc())
-                    invalid = true;
+                    return ESM::ActiveEffect::Flag_Invalid;
                 else if (effect.mMagnitude >= target.getClass().getCreatureStats(target).getLevel())
                 {
                     MWMechanics::AiFollow package(caster, true);
@@ -517,41 +534,37 @@ namespace MWMechanics
                 }
                 break;
             case ESM::MagicEffect::ExtraSpell:
-                if (target.getClass().hasInventoryStore(target))
+                if (!target.getClass().hasInventoryStore(target))
+                    return ESM::ActiveEffect::Flag_Invalid;
+                if (target != getPlayer())
                 {
-                    if (target != getPlayer())
+                    auto& store = target.getClass().getInventoryStore(target);
+                    for (int slot = 0; slot < MWWorld::InventoryStore::Slots; ++slot)
                     {
-                        auto& store = target.getClass().getInventoryStore(target);
-                        for (int slot = 0; slot < MWWorld::InventoryStore::Slots; ++slot)
+                        // Unequip everything except weapons, torches, and pants
+                        switch (slot)
                         {
-                            // Unequip everything except weapons, torches, and pants
-                            switch (slot)
+                            case MWWorld::InventoryStore::Slot_Ammunition:
+                            case MWWorld::InventoryStore::Slot_CarriedRight:
+                            case MWWorld::InventoryStore::Slot_Pants:
+                                continue;
+                            case MWWorld::InventoryStore::Slot_CarriedLeft:
                             {
-                                case MWWorld::InventoryStore::Slot_Ammunition:
-                                case MWWorld::InventoryStore::Slot_CarriedRight:
-                                case MWWorld::InventoryStore::Slot_Pants:
+                                auto carried = store.getSlot(slot);
+                                if (carried == store.end() || carried.getType() != MWWorld::ContainerStore::Type_Armor)
                                     continue;
-                                case MWWorld::InventoryStore::Slot_CarriedLeft:
-                                {
-                                    auto carried = store.getSlot(slot);
-                                    if (carried == store.end()
-                                        || carried.getType() != MWWorld::ContainerStore::Type_Armor)
-                                        continue;
-                                    [[fallthrough]];
-                                }
-                                default:
-                                    store.unequipSlot(slot);
+                                [[fallthrough]];
                             }
+                            default:
+                                store.unequipSlot(slot);
                         }
                     }
                 }
-                else
-                    invalid = true;
                 break;
             case ESM::MagicEffect::TurnUndead:
                 if (target.getClass().isNpc()
                     || target.get<ESM::Creature>()->mBase->mData.mType != ESM::Creature::Undead)
-                    invalid = true;
+                    return ESM::ActiveEffect::Flag_Invalid;
                 else
                 {
                     auto& creatureStats = target.getClass().getCreatureStats(target);
@@ -562,32 +575,33 @@ namespace MWMechanics
                 break;
             case ESM::MagicEffect::FrenzyCreature:
             case ESM::MagicEffect::FrenzyHumanoid:
-                modifyAiSetting(
-                    target, effect, ESM::MagicEffect::FrenzyCreature, AiSetting::Fight, effect.mMagnitude, invalid);
-                break;
+                return modifyAiSetting(
+                    target, effect, ESM::MagicEffect::FrenzyCreature, AiSetting::Fight, effect.mMagnitude);
             case ESM::MagicEffect::CalmCreature:
             case ESM::MagicEffect::CalmHumanoid:
-                modifyAiSetting(
-                    target, effect, ESM::MagicEffect::CalmCreature, AiSetting::Fight, -effect.mMagnitude, invalid);
-                if (!invalid && effect.mMagnitude > 0)
+            {
+                ESM::ActiveEffect::Flags applied = modifyAiSetting(
+                    target, effect, ESM::MagicEffect::CalmCreature, AiSetting::Fight, -effect.mMagnitude);
+                if (applied != ESM::ActiveEffect::Flag_Applied)
+                    return applied;
+                if (effect.mMagnitude > 0)
                 {
                     auto& creatureStats = target.getClass().getCreatureStats(target);
                     creatureStats.getAiSequence().stopCombat();
                 }
                 break;
+            }
             case ESM::MagicEffect::DemoralizeCreature:
             case ESM::MagicEffect::DemoralizeHumanoid:
-                modifyAiSetting(
-                    target, effect, ESM::MagicEffect::DemoralizeCreature, AiSetting::Flee, effect.mMagnitude, invalid);
-                break;
+                return modifyAiSetting(
+                    target, effect, ESM::MagicEffect::DemoralizeCreature, AiSetting::Flee, effect.mMagnitude);
             case ESM::MagicEffect::RallyCreature:
             case ESM::MagicEffect::RallyHumanoid:
-                modifyAiSetting(
-                    target, effect, ESM::MagicEffect::RallyCreature, AiSetting::Flee, -effect.mMagnitude, invalid);
-                break;
+                return modifyAiSetting(
+                    target, effect, ESM::MagicEffect::RallyCreature, AiSetting::Flee, -effect.mMagnitude);
             case ESM::MagicEffect::Charm:
                 if (!target.getClass().isNpc())
-                    invalid = true;
+                    return ESM::ActiveEffect::Flag_Invalid;
                 break;
             case ESM::MagicEffect::Sound:
                 if (target == getPlayer())
@@ -624,16 +638,12 @@ namespace MWMechanics
             case ESM::MagicEffect::SummonCreature04:
             case ESM::MagicEffect::SummonCreature05:
                 if (!target.isInCell())
-                    invalid = true;
-                else
-                    effect.mArg = summonCreature(effect.mEffectId, target);
+                    return ESM::ActiveEffect::Flag_Invalid;
+                effect.mArg = summonCreature(effect.mEffectId, target);
                 break;
             case ESM::MagicEffect::BoundGloves:
                 if (!target.getClass().hasInventoryStore(target))
-                {
-                    invalid = true;
-                    break;
-                }
+                    return ESM::ActiveEffect::Flag_Invalid;
                 addBoundItem(ESM::RefId::stringRefId(world->getStore()
                                                          .get<ESM::GameSetting>()
                                                          .find("sMagicBoundRightGauntletID")
@@ -653,10 +663,7 @@ namespace MWMechanics
             case ESM::MagicEffect::BoundShield:
             {
                 if (!target.getClass().hasInventoryStore(target))
-                {
-                    invalid = true;
-                    break;
-                }
+                    return ESM::ActiveEffect::Flag_Invalid;
                 const std::string& item = sBoundItemsMap.at(effect.mEffectId);
                 const MWWorld::Store<ESM::GameSetting>& gmst = world->getStore().get<ESM::GameSetting>();
                 const ESM::RefId itemId = ESM::RefId::stringRefId(gmst.find(item)->mValue.getString());
@@ -695,9 +702,7 @@ namespace MWMechanics
                     damageAttribute(target, effect, effect.mMagnitude);
                 break;
             case ESM::MagicEffect::DamageSkill:
-                if (!target.getClass().isNpc())
-                    invalid = true;
-                else if (!godmode)
+                if (!godmode && target.getClass().isNpc())
                 {
                     // Damage Skill abilities reduce base skill :todd:
                     if (spellParams.hasFlag(ESM::ActiveSpells::Flag_AffectsBaseValues))
@@ -715,9 +720,7 @@ namespace MWMechanics
                 restoreAttribute(target, effect, effect.mMagnitude);
                 break;
             case ESM::MagicEffect::RestoreSkill:
-                if (!target.getClass().isNpc())
-                    invalid = true;
-                else
+                if (target.getClass().isNpc())
                     restoreSkill(target, effect, effect.mMagnitude);
                 break;
             case ESM::MagicEffect::RestoreHealth:
@@ -747,7 +750,9 @@ namespace MWMechanics
             case ESM::MagicEffect::DrainHealth:
             case ESM::MagicEffect::DrainMagicka:
             case ESM::MagicEffect::DrainFatigue:
-                if (!godmode)
+                if (godmode)
+                    return ESM::ActiveEffect::Flag_Remove;
+                else
                 {
                     int index = effect.mEffectId - ESM::MagicEffect::DrainHealth;
                     // Unlike Absorb and Damage effects Drain effects can bring stats below zero
@@ -766,8 +771,9 @@ namespace MWMechanics
                         target, effect.mEffectId - ESM::MagicEffect::FortifyHealth, effect.mMagnitude, false, true);
                 break;
             case ESM::MagicEffect::DrainAttribute:
-                if (!godmode)
-                    damageAttribute(target, effect, effect.mMagnitude);
+                if (godmode)
+                    return ESM::ActiveEffect::Flag_Remove;
+                damageAttribute(target, effect, effect.mMagnitude);
                 break;
             case ESM::MagicEffect::FortifyAttribute:
                 // Abilities affect base stats, but not for drain
@@ -783,23 +789,23 @@ namespace MWMechanics
                     fortifyAttribute(target, effect, effect.mMagnitude);
                 break;
             case ESM::MagicEffect::DrainSkill:
-                if (!target.getClass().isNpc())
-                    invalid = true;
-                else if (!godmode)
-                    damageSkill(target, effect, effect.mMagnitude);
+                if (godmode || !target.getClass().isNpc())
+                    return ESM::ActiveEffect::Flag_Remove;
+                damageSkill(target, effect, effect.mMagnitude);
                 break;
             case ESM::MagicEffect::FortifySkill:
-                if (!target.getClass().isNpc())
-                    invalid = true;
-                else if (spellParams.hasFlag(ESM::ActiveSpells::Flag_AffectsBaseValues))
+                if (target.getClass().isNpc())
                 {
-                    // Abilities affect base stats, but not for drain
-                    auto& npcStats = target.getClass().getNpcStats(target);
-                    auto& skill = npcStats.getSkill(effect.getSkillOrAttribute());
-                    skill.setBase(skill.getBase() + effect.mMagnitude);
+                    if (spellParams.hasFlag(ESM::ActiveSpells::Flag_AffectsBaseValues))
+                    {
+                        // Abilities affect base stats, but not for drain
+                        auto& npcStats = target.getClass().getNpcStats(target);
+                        auto& skill = npcStats.getSkill(effect.getSkillOrAttribute());
+                        skill.setBase(skill.getBase() + effect.mMagnitude);
+                    }
+                    else
+                        fortifySkill(target, effect, effect.mMagnitude);
                 }
-                else
-                    fortifySkill(target, effect, effect.mMagnitude);
                 break;
             case ESM::MagicEffect::FortifyMaximumMagicka:
                 recalculateMagicka = true;
@@ -807,7 +813,9 @@ namespace MWMechanics
             case ESM::MagicEffect::AbsorbHealth:
             case ESM::MagicEffect::AbsorbMagicka:
             case ESM::MagicEffect::AbsorbFatigue:
-                if (!godmode)
+                if (godmode)
+                    return ESM::ActiveEffect::Flag_Remove;
+                else
                 {
                     int index = effect.mEffectId - ESM::MagicEffect::AbsorbHealth;
                     adjustDynamicStat(target, index, -effect.mMagnitude);
@@ -818,7 +826,9 @@ namespace MWMechanics
                 }
                 break;
             case ESM::MagicEffect::AbsorbAttribute:
-                if (!godmode)
+                if (godmode)
+                    return ESM::ActiveEffect::Flag_Remove;
+                else
                 {
                     damageAttribute(target, effect, effect.mMagnitude);
                     if (!caster.isEmpty())
@@ -826,22 +836,20 @@ namespace MWMechanics
                 }
                 break;
             case ESM::MagicEffect::AbsorbSkill:
-                if (!target.getClass().isNpc())
-                    invalid = true;
-                else if (!godmode)
+                if (godmode)
+                    return ESM::ActiveEffect::Flag_Remove;
+                else
                 {
-                    damageSkill(target, effect, effect.mMagnitude);
-                    if (!caster.isEmpty())
+                    if (target.getClass().isNpc())
+                        damageSkill(target, effect, effect.mMagnitude);
+                    if (!caster.isEmpty() && caster.getClass().isNpc())
                         fortifySkill(caster, effect, effect.mMagnitude);
                 }
                 break;
             case ESM::MagicEffect::DisintegrateArmor:
             {
                 if (!target.getClass().hasInventoryStore(target))
-                {
-                    invalid = true;
-                    break;
-                }
+                    return ESM::ActiveEffect::Flag_Invalid;
                 if (godmode)
                     break;
                 static const std::array<int, 9> priorities{
@@ -864,18 +872,18 @@ namespace MWMechanics
             }
             case ESM::MagicEffect::DisintegrateWeapon:
                 if (!target.getClass().hasInventoryStore(target))
-                {
-                    invalid = true;
-                    break;
-                }
+                    return ESM::ActiveEffect::Flag_Invalid;
                 if (!godmode)
                     disintegrateSlot(target, MWWorld::InventoryStore::Slot_CarriedRight, effect.mMagnitude);
                 break;
         }
+        return ESM::ActiveEffect::Flag_Applied;
     }
 
     bool shouldRemoveEffect(const MWWorld::Ptr& target, const ESM::ActiveEffect& effect)
     {
+        if (effect.mFlags & ESM::ActiveEffect::Flag_Invalid)
+            return true;
         const auto world = MWBase::Environment::get().getWorld();
         switch (effect.mEffectId)
         {
@@ -914,10 +922,10 @@ namespace MWMechanics
     }
 
     MagicApplicationResult applyMagicEffect(const MWWorld::Ptr& target, const MWWorld::Ptr& caster,
-        ActiveSpells::ActiveSpellParams& spellParams, ESM::ActiveEffect& effect, float dt)
+        ActiveSpells::ActiveSpellParams& spellParams, ESM::ActiveEffect& effect, float dt, bool playNonLooping)
     {
         const auto world = MWBase::Environment::get().getWorld();
-        bool invalid = false;
+        int32_t applied = ESM::ActiveEffect::Flag_Remove;
         bool receivedMagicDamage = false;
         bool recalculateMagicka = false;
         bool affectedHealth = false;
@@ -927,8 +935,8 @@ namespace MWMechanics
             for (auto& otherEffect : spellParams.getEffects())
             {
                 if (isCorprusEffect(otherEffect))
-                    applyMagicEffect(target, caster, spellParams, otherEffect, invalid, receivedMagicDamage,
-                        affectedHealth, recalculateMagicka);
+                    applyMagicEffect(target, caster, spellParams, otherEffect, receivedMagicDamage, affectedHealth,
+                        recalculateMagicka);
             }
             if (target == getPlayer())
                 MWBase::Environment::get().getWindowManager()->messageBox("#{sMagicCorprusWorsens}");
@@ -970,7 +978,7 @@ namespace MWMechanics
                 }
             }
             else
-                invalid = true;
+                applied |= ESM::ActiveEffect::Flag_Invalid;
         }
         else if (effect.mEffectId == ESM::MagicEffect::Open)
         {
@@ -1002,25 +1010,27 @@ namespace MWMechanics
                 }
             }
             else
-                invalid = true;
+                applied |= ESM::ActiveEffect::Flag_Invalid;
         }
         else if (!target.getClass().isActor())
         {
-            invalid = true;
+            applied |= ESM::ActiveEffect::Flag_Invalid;
         }
         else
         {
             // Morrowind.exe doesn't apply magic effects while the menu is open, we do because we like to see stats
-            // updated instantly. We don't want to teleport instantly though
+            // updated instantly. We don't want to teleport instantly though. Nor do we want to force players to drink
+            // invisibility potions in the "right" order
             if (!dt
                 && (effect.mEffectId == ESM::MagicEffect::Recall
                     || effect.mEffectId == ESM::MagicEffect::DivineIntervention
-                    || effect.mEffectId == ESM::MagicEffect::AlmsiviIntervention))
+                    || effect.mEffectId == ESM::MagicEffect::AlmsiviIntervention
+                    || effect.mEffectId == ESM::MagicEffect::Invisibility))
                 return { MagicApplicationResult::Type::APPLIED, receivedMagicDamage, affectedHealth };
             auto& stats = target.getClass().getCreatureStats(target);
             auto& magnitudes = stats.getMagicEffects();
             if (!spellParams.hasFlag(ESM::ActiveSpells::Flag_AffectsBaseValues)
-                && !(effect.mFlags & ESM::ActiveEffect::Flag_Applied))
+                && !(effect.mFlags & ESM::ActiveEffect::Flag_Remove))
             {
                 MagicApplicationResult::Type result
                     = applyProtections(target, caster, spellParams, effect, magicEffect);
@@ -1030,11 +1040,14 @@ namespace MWMechanics
             float oldMagnitude = 0.f;
             if (effect.mFlags & ESM::ActiveEffect::Flag_Applied)
                 oldMagnitude = effect.mMagnitude;
-            else
+            else if (!(effect.mFlags & ESM::ActiveEffect::Flag_Remove))
             {
-                if (!spellParams.hasFlag(ESM::ActiveSpells::Flag_Equipment)
-                    && !spellParams.hasFlag(ESM::ActiveSpells::Flag_Lua))
-                    playEffects(target, *magicEffect, spellParams.hasFlag(ESM::ActiveSpells::Flag_Temporary));
+                bool isTemporary = spellParams.hasFlag(ESM::ActiveSpells::Flag_Temporary);
+                bool isEquipment = spellParams.hasFlag(ESM::ActiveSpells::Flag_Equipment);
+
+                if (!spellParams.hasFlag(ESM::ActiveSpells::Flag_Lua))
+                    playEffects(target, *magicEffect, (isTemporary || (isEquipment && playNonLooping)));
+
                 if (effect.mEffectId == ESM::MagicEffect::Soultrap && !target.getClass().isNpc()
                     && target.getType() == ESM::Creature::sRecordId
                     && target.get<ESM::Creature>()->mBase->mData.mSoul == 0 && caster == getPlayer())
@@ -1062,25 +1075,27 @@ namespace MWMechanics
                 }
             }
             if (effect.mEffectId == ESM::MagicEffect::Corprus)
+            {
                 spellParams.worsen();
+                applied |= ESM::ActiveEffect::Flag_Applied;
+            }
             else
-                applyMagicEffect(target, caster, spellParams, effect, invalid, receivedMagicDamage, affectedHealth,
-                    recalculateMagicka);
+                applied |= applyMagicEffect(
+                    target, caster, spellParams, effect, receivedMagicDamage, affectedHealth, recalculateMagicka);
             effect.mMagnitude = magnitude;
             magnitudes.add(EffectKey(effect.mEffectId, effect.getSkillOrAttribute()),
                 EffectParam(effect.mMagnitude - oldMagnitude));
         }
         effect.mTimeLeft -= dt;
-        if (invalid)
+        if (applied & ESM::ActiveEffect::Flag_Invalid)
         {
             effect.mTimeLeft = 0;
-            effect.mFlags |= ESM::ActiveEffect::Flag_Remove;
             auto anim = world->getAnimation(target);
             if (anim)
                 anim->removeEffect(ESM::MagicEffect::indexToName(effect.mEffectId));
+            // Note that we can't return REMOVED here because the effect still needs to be detectable
         }
-        else
-            effect.mFlags |= ESM::ActiveEffect::Flag_Applied | ESM::ActiveEffect::Flag_Remove;
+        effect.mFlags |= applied;
         if (recalculateMagicka)
             target.getClass().getCreatureStats(target).recalculateMagicka();
         return { MagicApplicationResult::Type::APPLIED, receivedMagicDamage, affectedHealth };
@@ -1091,7 +1106,6 @@ namespace MWMechanics
     {
         const auto world = MWBase::Environment::get().getWorld();
         auto& magnitudes = target.getClass().getCreatureStats(target).getMagicEffects();
-        bool invalid;
         switch (effect.mEffectId)
         {
             case ESM::MagicEffect::CommandCreature:
@@ -1119,18 +1133,16 @@ namespace MWMechanics
             break;
             case ESM::MagicEffect::FrenzyCreature:
             case ESM::MagicEffect::FrenzyHumanoid:
-                modifyAiSetting(
-                    target, effect, ESM::MagicEffect::FrenzyCreature, AiSetting::Fight, -effect.mMagnitude, invalid);
+                modifyAiSetting(target, effect, ESM::MagicEffect::FrenzyCreature, AiSetting::Fight, -effect.mMagnitude);
                 break;
             case ESM::MagicEffect::CalmCreature:
             case ESM::MagicEffect::CalmHumanoid:
-                modifyAiSetting(
-                    target, effect, ESM::MagicEffect::CalmCreature, AiSetting::Fight, effect.mMagnitude, invalid);
+                modifyAiSetting(target, effect, ESM::MagicEffect::CalmCreature, AiSetting::Fight, effect.mMagnitude);
                 break;
             case ESM::MagicEffect::DemoralizeCreature:
             case ESM::MagicEffect::DemoralizeHumanoid:
                 modifyAiSetting(
-                    target, effect, ESM::MagicEffect::DemoralizeCreature, AiSetting::Flee, -effect.mMagnitude, invalid);
+                    target, effect, ESM::MagicEffect::DemoralizeCreature, AiSetting::Flee, -effect.mMagnitude);
                 break;
             case ESM::MagicEffect::NightEye:
             {
@@ -1149,8 +1161,7 @@ namespace MWMechanics
             break;
             case ESM::MagicEffect::RallyCreature:
             case ESM::MagicEffect::RallyHumanoid:
-                modifyAiSetting(
-                    target, effect, ESM::MagicEffect::RallyCreature, AiSetting::Flee, effect.mMagnitude, invalid);
+                modifyAiSetting(target, effect, ESM::MagicEffect::RallyCreature, AiSetting::Flee, effect.mMagnitude);
                 break;
             case ESM::MagicEffect::Sound:
                 if (magnitudes.getOrDefault(effect.mEffectId).getModifier() <= 0.f && target == getPlayer())
@@ -1250,18 +1261,22 @@ namespace MWMechanics
                     fortifyAttribute(target, effect, -effect.mMagnitude);
                 break;
             case ESM::MagicEffect::DrainSkill:
-                restoreSkill(target, effect, effect.mMagnitude);
+                if (target.getClass().isNpc())
+                    restoreSkill(target, effect, effect.mMagnitude);
                 break;
             case ESM::MagicEffect::FortifySkill:
-                // Abilities affect base stats, but not for drain
-                if (spellParams.hasFlag(ESM::ActiveSpells::Flag_AffectsBaseValues))
+                if (target.getClass().isNpc())
                 {
-                    auto& npcStats = target.getClass().getNpcStats(target);
-                    auto& skill = npcStats.getSkill(effect.getSkillOrAttribute());
-                    skill.setBase(skill.getBase() - effect.mMagnitude);
+                    // Abilities affect base stats, but not for drain
+                    if (spellParams.hasFlag(ESM::ActiveSpells::Flag_AffectsBaseValues))
+                    {
+                        auto& npcStats = target.getClass().getNpcStats(target);
+                        auto& skill = npcStats.getSkill(effect.getSkillOrAttribute());
+                        skill.setBase(skill.getBase() - effect.mMagnitude);
+                    }
+                    else
+                        fortifySkill(target, effect, -effect.mMagnitude);
                 }
-                else
-                    fortifySkill(target, effect, -effect.mMagnitude);
                 break;
             case ESM::MagicEffect::FortifyMaximumMagicka:
                 target.getClass().getCreatureStats(target).recalculateMagicka();
@@ -1276,9 +1291,10 @@ namespace MWMechanics
             break;
             case ESM::MagicEffect::AbsorbSkill:
             {
+                if (target.getClass().isNpc())
+                    restoreSkill(target, effect, effect.mMagnitude);
                 const auto caster = world->searchPtrViaActorId(spellParams.getCasterActorId());
-                restoreSkill(target, effect, effect.mMagnitude);
-                if (!caster.isEmpty())
+                if (!caster.isEmpty() && caster.getClass().isNpc())
                     fortifySkill(caster, effect, -effect.mMagnitude);
             }
             break;

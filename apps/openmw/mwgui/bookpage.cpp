@@ -105,6 +105,18 @@ namespace MWGui
         Styles mStyles;
         MyGUI::IntRect mRect;
 
+        void setColour(size_t section, size_t line, size_t run, const MyGUI::Colour& colour) const override
+        {
+            if (section >= mSections.size())
+                return;
+            if (line >= mSections[section].mLines.size())
+                return;
+            if (run >= mSections[section].mLines[line].mRuns.size())
+                return;
+
+            mSections[section].mLines[line].mRuns[run].mStyle->mNormalColour = colour;
+        }
+
         virtual ~TypesetBookImpl() {}
 
         Range addContent(const BookTypesetter::Utf8Span& text)
@@ -125,7 +137,7 @@ namespace MWGui
         }
 
         template <typename Visitor>
-        void visitRuns(int top, int bottom, MyGUI::IFont* Font, Visitor const& visitor) const
+        void visitRuns(int top, int bottom, MyGUI::IFont* font, Visitor const& visitor) const
         {
             for (Sections::const_iterator i = mSections.begin(); i != mSections.end(); ++i)
             {
@@ -138,7 +150,7 @@ namespace MWGui
                         continue;
 
                     for (Runs::const_iterator k = j->mRuns.begin(); k != j->mRuns.end(); ++k)
-                        if (!Font || k->mStyle->mFont == Font)
+                        if (!font || k->mStyle->mFont == font)
                             visitor(*i, *j, *k);
                 }
             }
@@ -301,16 +313,16 @@ namespace MWGui
         Style* createHotStyle(Style* baseStyle, const Colour& normalColour, const Colour& hoverColour,
             const Colour& activeColour, InteractiveId id, bool unique) override
         {
-            StyleImpl* BaseStyle = static_cast<StyleImpl*>(baseStyle);
+            StyleImpl* const baseStyleImpl = static_cast<StyleImpl*>(baseStyle);
 
             if (!unique)
                 for (Styles::iterator i = mBook->mStyles.begin(); i != mBook->mStyles.end(); ++i)
-                    if (i->match(BaseStyle->mFont, hoverColour, activeColour, normalColour, id))
+                    if (i->match(baseStyleImpl->mFont, hoverColour, activeColour, normalColour, id))
                         return &*i;
 
             StyleImpl& style = *mBook->mStyles.insert(mBook->mStyles.end(), StyleImpl());
 
-            style.mFont = BaseStyle->mFont;
+            style.mFont = baseStyleImpl->mFont;
             style.mHotColour = hoverColour;
             style.mActiveColour = activeColour;
             style.mNormalColour = normalColour;
@@ -351,10 +363,10 @@ namespace MWGui
             assert(end <= mCurrentContent->size());
             assert(begin <= mCurrentContent->size());
 
-            Utf8Point begin_ = mCurrentContent->data() + begin;
-            Utf8Point end_ = mCurrentContent->data() + end;
+            const Utf8Point contentBegin = mCurrentContent->data() + begin;
+            const Utf8Point contentEnd = mCurrentContent->data() + end;
 
-            writeImpl(static_cast<StyleImpl*>(style), begin_, end_);
+            writeImpl(static_cast<StyleImpl*>(style), contentBegin, contentEnd);
         }
 
         void lineBreak(float margin) override
@@ -494,9 +506,9 @@ namespace MWGui
             return mBook;
         }
 
-        void writeImpl(StyleImpl* style, Utf8Stream::Point _begin, Utf8Stream::Point _end)
+        void writeImpl(StyleImpl* style, Utf8Stream::Point begin, Utf8Stream::Point end)
         {
-            Utf8Stream stream(_begin, _end);
+            Utf8Stream stream(begin, end);
 
             while (!stream.eof())
             {
@@ -512,8 +524,8 @@ namespace MWGui
                 if (ucsBreakingSpace(stream.peek()) && !mPartialWord.empty())
                     add_partial_text();
 
-                int word_width = 0;
-                int space_width = 0;
+                int wordWidth = 0;
+                int spaceWidth = 0;
 
                 Utf8Stream::Point lead = stream.current();
 
@@ -521,7 +533,7 @@ namespace MWGui
                 {
                     MWGui::GlyphInfo info = GlyphInfo(style->mFont, stream.peek());
                     if (info.charFound)
-                        space_width += static_cast<int>(info.advance + info.bearingX);
+                        spaceWidth += static_cast<int>(info.advance + info.bearingX);
                     stream.consume();
                 }
 
@@ -531,7 +543,7 @@ namespace MWGui
                 {
                     MWGui::GlyphInfo info = GlyphInfo(style->mFont, stream.peek());
                     if (info.charFound)
-                        word_width += static_cast<int>(info.advance + info.bearingX);
+                        wordWidth += static_cast<int>(info.advance + info.bearingX);
                     stream.consume();
                 }
 
@@ -541,9 +553,9 @@ namespace MWGui
                     break;
 
                 if (lead != origin)
-                    mPartialWhitespace.emplace_back(style, lead, origin, space_width);
+                    mPartialWhitespace.emplace_back(style, lead, origin, spaceWidth);
                 if (origin != extent)
-                    mPartialWord.emplace_back(style, origin, extent, word_width);
+                    mPartialWord.emplace_back(style, origin, extent, wordWidth);
             }
         }
 
@@ -553,17 +565,17 @@ namespace MWGui
                 return;
 
             const int fontHeight = Settings::gui().mFontSize;
-            int space_width = 0;
-            int word_width = 0;
+            int spaceWidth = 0;
+            int wordWidth = 0;
 
             for (PartialTextConstIterator i = mPartialWhitespace.begin(); i != mPartialWhitespace.end(); ++i)
-                space_width += i->mWidth;
+                spaceWidth += i->mWidth;
             for (PartialTextConstIterator i = mPartialWord.begin(); i != mPartialWord.end(); ++i)
-                word_width += i->mWidth;
+                wordWidth += i->mWidth;
 
             int left = mLine ? mLine->mRect.right : 0;
 
-            if (left + space_width + word_width > mPageWidth)
+            if (left + spaceWidth + wordWidth > mPageWidth)
             {
                 mLine = nullptr;
                 mRun = nullptr;
@@ -750,9 +762,9 @@ namespace MWGui
             RenderXform mRenderXform;
             MyGUI::VertexColourType mVertexColourType;
 
-            GlyphStream(MyGUI::IFont* font, float left, float top, float Z, MyGUI::Vertex* vertices,
+            explicit GlyphStream(MyGUI::IFont* font, float left, float top, float z, MyGUI::Vertex* vertices,
                 RenderXform const& renderXform)
-                : mZ(Z)
+                : mZ(z)
                 , mC(0)
                 , mFont(font)
                 , mOrigin(left, top)
@@ -888,7 +900,7 @@ namespace MWGui
 
             // this isn't really a sub-widget, its just a "drawitem" which
             // should have its own interface
-            void createDrawItem(MyGUI::ITexture* _texture, MyGUI::ILayerNode* _node) override {}
+            void createDrawItem(MyGUI::ITexture* /*texture*/, MyGUI::ILayerNode* /*node*/) override {}
             void destroyDrawItem() override {}
         };
 
@@ -952,9 +964,9 @@ namespace MWGui
         {
             if (mFocusItem != nullptr)
             {
-                MyGUI::IFont* Font = mBook->affectedFont(mFocusItem);
+                MyGUI::IFont* const font = mBook->affectedFont(mFocusItem);
 
-                ActiveTextFormats::iterator i = mActiveTextFormats.find(Font);
+                ActiveTextFormats::iterator i = mActiveTextFormats.find(font);
 
                 if (mNode && i != mActiveTextFormats.end())
                     mNode->outOfDate(i->second->mRenderItem);
@@ -1110,26 +1122,26 @@ namespace MWGui
 
         struct CreateActiveFormat
         {
-            PageDisplay* this_;
+            PageDisplay* mPageDisplay;
 
-            CreateActiveFormat(PageDisplay* this_)
-                : this_(this_)
+            explicit CreateActiveFormat(PageDisplay* pageDisplay)
+                : mPageDisplay(pageDisplay)
             {
             }
 
             void operator()(Section const& section, Line const& line, Run const& run) const
             {
-                MyGUI::IFont* Font = run.mStyle->mFont;
+                MyGUI::IFont* const font = run.mStyle->mFont;
 
-                ActiveTextFormats::iterator j = this_->mActiveTextFormats.find(Font);
+                ActiveTextFormats::iterator j = mPageDisplay->mActiveTextFormats.find(font);
 
-                if (j == this_->mActiveTextFormats.end())
+                if (j == mPageDisplay->mActiveTextFormats.end())
                 {
-                    auto textFormat = std::make_unique<TextFormat>(Font, this_);
+                    auto textFormat = std::make_unique<TextFormat>(font, mPageDisplay);
 
-                    textFormat->mTexture = Font->getTextureFont();
+                    textFormat->mTexture = font->getTextureFont();
 
-                    j = this_->mActiveTextFormats.insert(std::make_pair(Font, std::move(textFormat))).first;
+                    j = mPageDisplay->mActiveTextFormats.insert(std::make_pair(font, std::move(textFormat))).first;
                 }
 
                 j->second->mCountVertex += run.mPrintableChars * 6;
@@ -1177,39 +1189,39 @@ namespace MWGui
 
         struct RenderRun
         {
-            PageDisplay* this_;
-            GlyphStream& glyphStream;
+            PageDisplay* mPageDisplay;
+            GlyphStream& mGlyphStream;
 
-            RenderRun(PageDisplay* this_, GlyphStream& glyphStream)
-                : this_(this_)
-                , glyphStream(glyphStream)
+            explicit RenderRun(PageDisplay* pageDisplay, GlyphStream& glyphStream)
+                : mPageDisplay(pageDisplay)
+                , mGlyphStream(glyphStream)
             {
             }
 
             void operator()(Section const& section, Line const& line, Run const& run) const
             {
-                bool isActive = run.mStyle->mInteractiveId && (run.mStyle == this_->mFocusItem);
+                bool isActive = run.mStyle->mInteractiveId && (run.mStyle == mPageDisplay->mFocusItem);
 
                 MyGUI::Colour colour = isActive
-                    ? (this_->mItemActive ? run.mStyle->mActiveColour : run.mStyle->mHotColour)
+                    ? (mPageDisplay->mItemActive ? run.mStyle->mActiveColour : run.mStyle->mHotColour)
                     : run.mStyle->mNormalColour;
 
-                glyphStream.reset(static_cast<float>(section.mRect.left + line.mRect.left + run.mLeft),
+                mGlyphStream.reset(static_cast<float>(section.mRect.left + line.mRect.left + run.mLeft),
                     static_cast<float>(line.mRect.top), colour);
 
                 Utf8Stream stream(run.mRange);
 
                 while (!stream.eof())
                 {
-                    Utf8Stream::UnicodeChar code_point = stream.consume();
+                    const Utf8Stream::UnicodeChar codePoint = stream.consume();
 
-                    if (ucsCarriageReturn(code_point))
+                    if (ucsCarriageReturn(codePoint))
                         continue;
 
-                    if (!ucsSpace(code_point))
-                        glyphStream.emitGlyph(code_point);
+                    if (!ucsSpace(codePoint))
+                        mGlyphStream.emitGlyph(codePoint);
                     else
-                        glyphStream.emitSpace(code_point);
+                        mGlyphStream.emitSpace(codePoint);
                 }
             }
         };
@@ -1231,10 +1243,10 @@ namespace MWGui
             GlyphStream glyphStream(textFormat.mFont, static_cast<float>(mCoord.left),
                 static_cast<float>(mCoord.top - mViewTop), z /*mNode->getNodeDepth()*/, vertices, renderXform);
 
-            int visit_top = (std::max)(mViewTop, mViewTop + int(renderXform.clipTop));
-            int visit_bottom = (std::min)(mViewBottom, mViewTop + int(renderXform.clipBottom));
+            const int visitTop = std::max(mViewTop, mViewTop + static_cast<int>(renderXform.clipTop));
+            const int visitBottom = std::min(mViewBottom, mViewTop + static_cast<int>(renderXform.clipBottom));
 
-            mBook->visitRuns(visit_top, visit_bottom, textFormat.mFont, RenderRun(this, glyphStream));
+            mBook->visitRuns(visitTop, visitBottom, textFormat.mFont, RenderRun(this, glyphStream));
 
             textFormat.mRenderItem->setLastVertexCount(glyphStream.end() - vertices);
         }
@@ -1288,6 +1300,12 @@ namespace MWGui
 
         void unadviseLinkClicked() override { mPageDisplay->mLinkClicked = std::function<void(InteractiveId)>(); }
 
+        void setFocusItem(BookTypesetter::Style* itemStyle) override
+        {
+            mPageDisplay->mFocusItem = static_cast<TypesetBookImpl::StyleImpl*>(itemStyle);
+            mPageDisplay->dirtyFocusItem();
+        }
+
     protected:
         void initialiseOverride() override
         {
@@ -1303,7 +1321,7 @@ namespace MWGui
             }
         }
 
-        void onMouseLostFocus(Widget* _new) override
+        void onMouseLostFocus(MyGUI::Widget* /*newWidget*/) override
         {
             // NOTE: MyGUI also fires eventMouseLostFocus for widgets that are about to be destroyed (if they had
             // focus). Child widgets may already be destroyed! So be careful.

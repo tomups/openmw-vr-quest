@@ -130,7 +130,7 @@ add_component_dir (vfs
 
 add_component_dir (resource
     scenemanager keyframemanager imagemanager animblendrulesmanager bulletshapemanager bulletshape niffilemanager objectcache multiobjectcache resourcesystem
-    resourcemanager stats animation foreachbulletobject errormarker cachestats bgsmfilemanager
+    resourcemanager stats animation foreachbulletobject errormarker selectionmarker cachestats bgsmfilemanager
     )
 
 add_component_dir (shader
@@ -323,8 +323,12 @@ ENDIF()
 add_component_dir (files
     linuxpath androidpath windowspath macospath fixedpath multidircollection collections configurationmanager
     constrainedfilestream memorystream hash configfileparser openfile constrainedfilestreambuf conversion
-    istreamptr streamwithbuffer
+    istreamptr streamwithbuffer utils
     )
+
+if(NOT CMAKE_CXX_COMPILER_ID STREQUAL "MSVC" AND NOT CMAKE_CXX_COMPILER_FRONTEND_VARIANT STREQUAL "MSVC")
+    set_source_files_properties(files/configfileparser.cpp PROPERTIES COMPILE_FLAGS -Wno-shadow)
+endif()
 
 add_component_dir (compiler
     context controlparser errorhandler exception exprparser extensions fileparser generator
@@ -409,6 +413,7 @@ add_component_dir(detournavigator
     areatype
     asyncnavmeshupdater
     bounds
+    cellgridbounds
     changetype
     collisionshapetype
     commulativeaabb

@@ -188,7 +188,7 @@
 --
 --   * `loops` - a number >= 0, the number of times the animation should loop after the first play (default: 0).
 --   * `priority` - Either a single #Priority value that will be assigned to all bone groups. Or a table mapping bone groups to its priority (default: PRIORITY.Default).
---   * `blendMask` - A mask of which bone groups to include in the animation (Default: BLEND_MASK.All.
+--   * `blendMask` - A mask of which bone groups to include in the animation (Default: BLEND_MASK.All).
 --   * `autoDisable` - If true, the animation will be immediately  removed upon finishing, which means information will not be possible to query once completed. (Default: true)
 --   * `speed` - a floating point number >= 0, the speed at which the animation should play (default: 1)
 --   * `startKey` - the animation key at which the animation should start (default: "start")
@@ -229,7 +229,7 @@
 --   * `boneName` - name of the bone to attach the vfx to. (default: "")
 --   * `particleTextureOverride` - name of the particle texture to use. (default: "")
 --   * `vfxId` - a string ID that can be used to remove the effect later, using #removeVfx, and to avoid duplicate effects. The default value of "" can have duplicates. To avoid interaction with the engine, use unique identifiers unrelated to magic effect IDs. The engine uses this identifier to add and remove magic effects based on what effects are active on the actor. If this is set equal to the @{openmw.core#MagicEffectId} identifier of the magic effect being added, for example core.magic.EFFECT_TYPE.FireDamage, then the engine will remove it once the fire damage effect on the actor reaches 0. (Default: "").
---   * `useAmbientLighting` - boolean, vfx get a white ambient light attached in Morrowind. If false don't attach this. (default: true)
+--   * `useAmbientLight` - boolean, vfx get a white ambient light attached in Morrowind. If false don't attach this. (default: true)
 --
 -- @usage local mgef = core.magic.effects.records[myEffectName]
 -- anim.addVfx(self, 'VFX_Hands', {boneName = 'Bip01 L Hand', particleTextureOverride = mgef.particle, loop = mgef.continuousVfx, vfxId = mgef.id..'_myuniquenamehere'})
@@ -242,7 +242,7 @@
 --   model = types.Static.record(mgef.hitStatic).model,
 --   options = {
 --     vfxId = mgef.id,
---     particuleTextureOverride = mgef.particle,
+--     particleTextureOverride = mgef.particle,
 --     loop = false,
 --   }
 -- })
@@ -254,7 +254,7 @@
 -- Can only be used on self.
 -- @function [parent=#animation] removeVfx
 -- @param openmw.core#GameObject actor
--- @param #number vfxId an integer ID that uniquely identifies the VFX to remove
+-- @param #string vfxId a string ID that uniquely identifies the VFX to remove
 
 ---
 -- Removes all vfx from the actor.

@@ -47,7 +47,7 @@ namespace LuaUtil
         }
     }
 
-    void ScriptsContainer::printError(int scriptId, std::string_view msg, const std::exception& e)
+    void ScriptsContainer::printError(int scriptId, std::string_view msg, const std::exception& e) const
     {
         Log(Debug::Error) << mNamePrefix << "[" << scriptPath(scriptId) << "] " << msg << ": " << e.what();
     }
@@ -215,12 +215,13 @@ namespace LuaUtil
                                 return true;
                         }
                     }
+                    return false;
                 }
-                else if constexpr (std::is_same_v<T, LoadedData>)
+                else
                 {
+                    static_assert(std::is_same_v<T, LoadedData>, "Non-exhaustive visitor");
                     return variant.mScripts.count(scriptId) != 0;
                 }
-                return false;
             },
             mData);
     }
@@ -358,10 +359,10 @@ namespace LuaUtil
         if (it == data.mEventHandlers.end())
             return;
         mLua.protectedCall([&](LuaView& view) {
-            sol::object data;
+            sol::object object;
             try
             {
-                data = LuaUtil::deserialize(view.sol(), eventData, mSerializer);
+                object = LuaUtil::deserialize(view.sol(), eventData, mSerializer);
             }
             catch (std::exception& e)
             {
@@ -374,7 +375,7 @@ namespace LuaUtil
                 const Handler& h = list[i];
                 try
                 {
-                    sol::object res = LuaUtil::call({ this, h.mScriptId }, h.mFn, data);
+                    sol::object res = LuaUtil::call({ this, h.mScriptId }, h.mFn, object);
                     if (res.is<bool>() && !res.as<bool>())
                         break; // Skip other handlers if 'false' was returned.
                 }
@@ -407,7 +408,7 @@ namespace LuaUtil
 
     void ScriptsContainer::save(ESM::LuaScripts& data)
     {
-        if (UnloadedData* unloadedData = std::get_if<UnloadedData>(&mData))
+        if (const UnloadedData* unloadedData = std::get_if<UnloadedData>(&mData))
         {
             data.mScripts = unloadedData->mScripts;
             return;

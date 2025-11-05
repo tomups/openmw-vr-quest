@@ -43,14 +43,14 @@
         }                                                                                                              \
     } while (0)
 
-namespace osgMyGUI
+namespace MyGUIPlatform
 {
 
     class GUICamera;
 
     class Drawable : public osg::Drawable
     {
-        osgMyGUI::RenderManager* mParent;
+        MyGUIPlatform::RenderManager* mParent;
         osg::ref_ptr<osg::StateSet> mStateSet;
 
     public:
@@ -63,12 +63,12 @@ namespace osgMyGUI
             {
             }
 
-            void setRenderManager(osgMyGUI::RenderManager* renderManager) { mRenderManager = renderManager; }
+            void setRenderManager(MyGUIPlatform::RenderManager* renderManager) { mRenderManager = renderManager; }
 
             void operator()(osg::Node*, osg::NodeVisitor*) { mRenderManager->update(); }
 
         private:
-            osgMyGUI::RenderManager* mRenderManager;
+            MyGUIPlatform::RenderManager* mRenderManager;
         };
 
         // Stage 1: collect draw calls. Run during the Cull traversal.
@@ -180,7 +180,7 @@ namespace osgMyGUI
     public:
 //## VR_PATCH BEGIN
 // In VR each filter/layer gets its own drawable and associated RTT camera
-        Drawable(std::string filter = "", osg::StateSet* stateset = nullptr, osgMyGUI::RenderManager* parent = nullptr,
+        Drawable(std::string filter = "", osg::StateSet* stateset = nullptr, MyGUIPlatform::RenderManager* parent = nullptr,
             osgMyGUI::GUICamera* camera = nullptr)
             : mParent(parent)
             , mStateSet(stateset)
@@ -597,13 +597,13 @@ namespace osgMyGUI
     void RenderManager::update()
     {
         static MyGUI::Timer timer;
-        static unsigned long last_time = timer.getMilliseconds();
-        unsigned long now_time = timer.getMilliseconds();
-        unsigned long time = now_time - last_time;
+        static unsigned long lastLime = timer.getMilliseconds();
+        unsigned long nowTime = timer.getMilliseconds();
+        unsigned long time = nowTime - lastLime;
 
-        onFrameEvent((float)((double)(time) / (double)1000));
+        onFrameEvent(static_cast<float>(static_cast<double>(time) / 1000));
 
-        last_time = now_time;
+        lastLime = nowTime;
     }
 
 //## VR_PATCH BEGIN
@@ -721,15 +721,15 @@ namespace osgMyGUI
         return &item->second;
     }
 
-    bool RenderManager::checkTexture(MyGUI::ITexture* _texture)
+    bool RenderManager::checkTexture(MyGUI::ITexture* /*texture*/)
     {
         // We support external textures that aren't registered via this manager, so can't implement this method
         // sensibly.
         return true;
     }
 
-    void RenderManager::registerShader(
-        const std::string& _shaderName, const std::string& _vertexProgramFile, const std::string& _fragmentProgramFile)
+    void RenderManager::registerShader(const std::string& /*shaderName*/, const std::string& /*vertexProgramFile*/,
+        const std::string& /*fragmentProgramFile*/)
     {
         MYGUI_PLATFORM_LOG(Warning, "osgMyGUI::RenderManager::registerShader is not implemented");
     }

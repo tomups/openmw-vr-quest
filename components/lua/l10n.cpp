@@ -8,7 +8,7 @@ namespace
 {
     struct L10nContext
     {
-        std::shared_ptr<const l10n::MessageBundles> mData;
+        std::shared_ptr<const L10n::MessageBundles> mData;
     };
 
     void getICUArgs(std::string_view messageId, const sol::table& table, std::vector<icu::UnicodeString>& argNames,
@@ -52,9 +52,9 @@ namespace sol
 
 namespace LuaUtil
 {
-    sol::function initL10nLoader(lua_State* L, l10n::Manager* manager)
+    sol::function initL10nLoader(lua_State* state, L10n::Manager* manager)
     {
-        sol::state_view lua(L);
+        sol::state_view lua(state);
         sol::usertype<L10nContext> ctxDef = lua.new_usertype<L10nContext>("L10nContext");
         ctxDef[sol::meta_function::call]
             = [](const L10nContext& ctx, std::string_view key, sol::optional<sol::table> args) {
@@ -66,7 +66,7 @@ namespace LuaUtil
               };
 
         return sol::make_object(
-            lua, [manager](const std::string& contextName, sol::optional<std::string> fallbackLocale) {
+            lua, [manager](std::string_view contextName, sol::optional<std::string> fallbackLocale) {
                 if (fallbackLocale)
                     return L10nContext{ manager->getContext(contextName, *fallbackLocale) };
                 else

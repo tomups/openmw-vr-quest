@@ -11,6 +11,7 @@
 #include <components/esm3/quickkeys.hpp>
 #include <components/misc/resourcehelpers.hpp>
 #include <components/resource/resourcesystem.hpp>
+#include <components/settings/values.hpp>
 
 #include "../mwworld/class.hpp"
 #include "../mwworld/esmstore.hpp"
@@ -39,7 +40,6 @@ namespace MWGui
         , mKey(std::vector<keyData>(10))
         , mSelected(nullptr)
         , mActivated(nullptr)
-
     {
         getWidget(mOkButton, "OKButton");
         getWidget(mInstructionLabel, "InstructionLabel");
@@ -58,6 +58,12 @@ namespace MWGui
 
             unassign(&mKey[i]);
         }
+
+        if (Settings::gui().mControllerMenus)
+        {
+            mControllerButtons.mA = "#{Interface:Select}";
+            mControllerButtons.mB = "#{Interface:OK}";
+        }
     }
 
     void QuickKeysMenu::clear()
@@ -68,6 +74,8 @@ namespace MWGui
         {
             unassign(&mKey[i]);
         }
+
+        mTemp.clear();
     }
 
     inline void QuickKeysMenu::validate(int index)
@@ -84,9 +92,8 @@ namespace MWGui
             case ESM::QuickKeys::Type::MagicItem:
             {
                 MWWorld::Ptr item = *mKey[index].button->getUserData<MWWorld::Ptr>();
-                // Make sure the item is available and is not broken
-                if (item.isEmpty() || item.getCellRef().getCount() < 1
-                    || (item.getClass().hasItemHealth(item) && item.getClass().getItemHealth(item) <= 0))
+                // Make sure the item is available
+                if (item.isEmpty() || item.getCellRef().getCount() < 1)
                 {
                     // Try searching for a compatible replacement
                     item = store.findReplacement(mKey[index].id);
@@ -108,6 +115,13 @@ namespace MWGui
         for (int index = 0; index < 10; ++index)
         {
             validate(index);
+        }
+
+        if (Settings::gui().mControllerMenus)
+        {
+            mControllerFocus = 0;
+            for (size_t i = 0; i < mKey.size(); i++)
+                mKey[i].button->setControllerFocus(i == mControllerFocus);
         }
     }
 
@@ -187,12 +201,12 @@ namespace MWGui
         mAssignDialog->setVisible(true);
     }
 
-    void QuickKeysMenu::onOkButtonClicked(MyGUI::Widget* sender)
+    void QuickKeysMenu::onOkButtonClicked(MyGUI::Widget* /*sender*/)
     {
         MWBase::Environment::get().getWindowManager()->removeGuiMode(GM_QuickKeysMenu);
     }
 
-    void QuickKeysMenu::onItemButtonClicked(MyGUI::Widget* sender)
+    void QuickKeysMenu::onItemButtonClicked(MyGUI::Widget* /*sender*/)
     {
         if (!mItemSelectionDialog)
         {
@@ -207,7 +221,7 @@ namespace MWGui
         mAssignDialog->setVisible(false);
     }
 
-    void QuickKeysMenu::onMagicButtonClicked(MyGUI::Widget* sender)
+    void QuickKeysMenu::onMagicButtonClicked(MyGUI::Widget* /*sender*/)
     {
         if (!mMagicSelectionDialog)
         {
@@ -218,18 +232,18 @@ namespace MWGui
         mAssignDialog->setVisible(false);
     }
 
-    void QuickKeysMenu::onUnassignButtonClicked(MyGUI::Widget* sender)
+    void QuickKeysMenu::onUnassignButtonClicked(MyGUI::Widget* /*sender*/)
     {
         unassign(mSelected);
         mAssignDialog->setVisible(false);
     }
 
-    void QuickKeysMenu::onCancelButtonClicked(MyGUI::Widget* sender)
+    void QuickKeysMenu::onCancelButtonClicked(MyGUI::Widget* /*sender*/)
     {
         mAssignDialog->setVisible(false);
     }
 
-    void QuickKeysMenu::onAssignItem(MWWorld::Ptr item)
+    void QuickKeysMenu::assignItem(MWWorld::Ptr item)
     {
         assert(mSelected);
 
@@ -246,6 +260,12 @@ namespace MWGui
 
         if (mItemSelectionDialog)
             mItemSelectionDialog->setVisible(false);
+    }
+
+    void QuickKeysMenu::onAssignItem(MWWorld::Ptr item)
+    {
+        assignItem(item);
+        MWBase::Environment::get().getWindowManager()->playSound(item.getClass().getDownSoundId(item));
     }
 
     void QuickKeysMenu::onAssignItemCancel()
@@ -389,26 +409,17 @@ namespace MWGui
                 if (*it == item)
                     break;
             }
+
+            // Is the quickkey item not in the inventory?
             if (it == store.end())
-                item = nullptr;
-
-            // check the item is available and not broken
-            if (item.isEmpty() || item.getCellRef().getCount() < 1
-                || (item.getClass().hasItemHealth(item) && item.getClass().getItemHealth(item) <= 0))
             {
-                item = store.findReplacement(key->id);
-
-                if (item.isEmpty() || item.getCellRef().getCount() < 1)
-                {
-                    MWBase::Environment::get().getWindowManager()->messageBox("#{sQuickMenu5} " + key->name);
-
-                    return;
-                }
+                MWBase::Environment::get().getWindowManager()->messageBox("#{sQuickMenu5} " + key->name);
+                return;
             }
 
             if (key->type == ESM::QuickKeys::Type::Item)
             {
-                if (!store.isEquipped(item))
+                if (!store.isEquipped(item.getCellRef().getRefId()))
                     MWBase::Environment::get().getWindowManager()->useItem(item);
                 MWWorld::ConstContainerStoreIterator rightHand
                     = store.getSlot(MWWorld::InventoryStore::Slot_CarriedRight);
@@ -466,6 +477,39 @@ namespace MWGui
         MWBase::Environment::get().getWindowManager()->updateSpellWindow();
     }
 
+    bool QuickKeysMenu::onControllerButtonEvent(const SDL_ControllerButtonEvent& arg)
+    {
+        if (arg.button == SDL_CONTROLLER_BUTTON_A)
+            onQuickKeyButtonClicked(mKey[mControllerFocus].button);
+        if (arg.button == SDL_CONTROLLER_BUTTON_B)
+            onOkButtonClicked(mOkButton);
+        else if (arg.button == SDL_CONTROLLER_BUTTON_DPAD_UP || arg.button == SDL_CONTROLLER_BUTTON_DPAD_DOWN)
+            mControllerFocus = (mControllerFocus + 5) % 10;
+        else if (arg.button == SDL_CONTROLLER_BUTTON_DPAD_LEFT)
+        {
+            if (mControllerFocus == 0)
+                mControllerFocus = 4;
+            else if (mControllerFocus == 5)
+                mControllerFocus = 9;
+            else
+                mControllerFocus--;
+        }
+        else if (arg.button == SDL_CONTROLLER_BUTTON_DPAD_RIGHT)
+        {
+            if (mControllerFocus == 4)
+                mControllerFocus = 0;
+            else if (mControllerFocus == 9)
+                mControllerFocus = 5;
+            else
+                mControllerFocus++;
+        }
+
+        for (size_t i = 0; i < mKey.size(); i++)
+            mKey[i].button->setControllerFocus(i == mControllerFocus);
+
+        return true;
+    }
+
     // ---------------------------------------------------------------------------------------------------------
 
     QuickKeysMenuAssign::QuickKeysMenuAssign(QuickKeysMenu* parent)
@@ -501,7 +545,43 @@ namespace MWGui
         mCancelButton->setCoord((maxWidth - mCancelButton->getTextSize().width - 24) / 2 + 8, mCancelButton->getTop(),
             mCancelButton->getTextSize().width + 24, mCancelButton->getHeight());
 
+        if (Settings::gui().mControllerMenus)
+        {
+            mDisableGamepadCursor = true;
+            mItemButton->setStateSelected(true);
+            mControllerButtons.mA = "#{Interface:Select}";
+            mControllerButtons.mB = "#{Interface:Cancel}";
+        }
+
         center();
+    }
+
+    bool QuickKeysMenuAssign::onControllerButtonEvent(const SDL_ControllerButtonEvent& arg)
+    {
+        if (arg.button == SDL_CONTROLLER_BUTTON_A)
+        {
+            if (mControllerFocus == 0)
+                mParent->onItemButtonClicked(mItemButton);
+            else if (mControllerFocus == 1)
+                mParent->onMagicButtonClicked(mMagicButton);
+            else if (mControllerFocus == 2)
+                mParent->onUnassignButtonClicked(mUnassignButton);
+            else if (mControllerFocus == 3)
+                mParent->onCancelButtonClicked(mCancelButton);
+        }
+        else if (arg.button == SDL_CONTROLLER_BUTTON_B)
+            mParent->onCancelButtonClicked(mCancelButton);
+        else if (arg.button == SDL_CONTROLLER_BUTTON_DPAD_UP)
+            mControllerFocus = wrap(mControllerFocus - 1, 4);
+        else if (arg.button == SDL_CONTROLLER_BUTTON_DPAD_DOWN)
+            mControllerFocus = wrap(mControllerFocus + 1, 4);
+
+        mItemButton->setStateSelected(mControllerFocus == 0);
+        mMagicButton->setStateSelected(mControllerFocus == 1);
+        mUnassignButton->setStateSelected(mControllerFocus == 2);
+        mCancelButton->setStateSelected(mControllerFocus == 3);
+
+        return true;
     }
 
     void QuickKeysMenu::write(ESM::ESMWriter& writer)
@@ -556,6 +636,13 @@ namespace MWGui
         MWWorld::Ptr player = MWMechanics::getPlayer();
         MWWorld::InventoryStore& store = player.getClass().getInventoryStore(player);
 
+        auto assign = [this](ESM::QuickKeys::Type keyType, MWWorld::Ptr item) {
+            if (keyType == ESM::QuickKeys::Type::Item)
+                assignItem(item);
+            else // if (quickKey.mType == ESM::QuickKeys::Type::MagicItem)
+                onAssignMagicItem(item);
+        };
+
         int i = 0;
         for (ESM::QuickKeys::QuickKey& quickKey : keys.mKeys)
         {
@@ -576,16 +663,25 @@ namespace MWGui
                 {
                     // Find the item by id
                     MWWorld::Ptr item = store.findReplacement(quickKey.mId);
-
                     if (item.isEmpty())
-                        unassign(mSelected);
-                    else
                     {
-                        if (quickKey.mType == ESM::QuickKeys::Type::Item)
-                            onAssignItem(item);
-                        else // if (quickKey.mType == ESM::QuickKeys::Type::MagicItem)
-                            onAssignMagicItem(item);
+                        unassign(mSelected);
+                        if (!quickKey.mId.empty())
+                        {
+                            // Fallback to a temporary object for UI display purposes
+                            if (MWBase::Environment::get().getESMStore()->find(quickKey.mId) != 0)
+                            {
+                                // Tie temporary item lifetime to this window
+                                mTemp.emplace_back(*MWBase::Environment::get().getESMStore(), quickKey.mId, 0);
+                                assign(quickKey.mType, mTemp.back().getPtr());
+                            }
+                            else
+                                Log(Debug::Warning) << "Failed to load quick key " << (i + 1)
+                                                    << ": could not find object " << quickKey.mId;
+                        }
                     }
+                    else
+                        assign(quickKey.mType, item);
 
                     break;
                 }
@@ -613,10 +709,16 @@ namespace MWGui
         mMagicList->setHighlightSelected(false);
         mMagicList->eventSpellClicked += MyGUI::newDelegate(this, &MagicSelectionDialog::onModelIndexSelected);
 
+        if (Settings::gui().mControllerMenus)
+        {
+            mControllerButtons.mA = "#{Interface:Select}";
+            mControllerButtons.mB = "#{Interface:Cancel}";
+        }
+
         center();
     }
 
-    void MagicSelectionDialog::onCancelButtonClicked(MyGUI::Widget* sender)
+    void MagicSelectionDialog::onCancelButtonClicked(MyGUI::Widget* /*sender*/)
     {
         exit();
     }
@@ -644,4 +746,13 @@ namespace MWGui
             mParent->onAssignMagic(spell.mId);
     }
 
+    bool MagicSelectionDialog::onControllerButtonEvent(const SDL_ControllerButtonEvent& arg)
+    {
+        if (arg.button == SDL_CONTROLLER_BUTTON_B)
+            onCancelButtonClicked(mCancelButton);
+        else
+            mMagicList->onControllerButton(arg.button);
+
+        return true;
+    }
 }

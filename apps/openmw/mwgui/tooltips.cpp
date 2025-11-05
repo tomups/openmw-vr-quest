@@ -1,5 +1,6 @@
 #include "tooltips.hpp"
 
+#include <format>
 #include <iomanip>
 
 #include <MyGUI_Gui.h>
@@ -63,7 +64,8 @@ namespace MWGui
         if (!VR::getVR())
             mRemainingDelay = 0;
 //## VR_PATCH END
-        for (unsigned int i = 0; i < mMainWidget->getChildCount(); ++i)
+
+        for (size_t i = 0; i < mMainWidget->getChildCount(); ++i)
         {
             mMainWidget->getChildAt(i)->setVisible(false);
         }
@@ -88,7 +90,7 @@ namespace MWGui
         }
 
         // start by hiding everything
-        for (unsigned int i = 0; i < mMainWidget->getChildCount(); ++i)
+        for (size_t i = 0; i < mMainWidget->getChildCount(); ++i)
         {
             mMainWidget->getChildAt(i)->setVisible(false);
         }
@@ -105,7 +107,7 @@ namespace MWGui
 
         if (guiMode)
         {
-            if (!winMgr->getCursorVisible())
+            if (!winMgr->getCursorVisible() && !winMgr->getControllerTooltipVisible())
                 return;
             const MyGUI::IntPoint& mousePos = MyGUI::InputManager::getInstance().getMousePosition();
 
@@ -265,8 +267,7 @@ namespace MWGui
                             info.text = "#{sSchool}: " + MyGUI::TextIterator::toTagsString(school->mName).asUTF8();
                         }
                     }
-                    auto cost = focus->getUserString("SpellCost");
-                    if (!cost.empty() && cost != "0")
+                    if (focus->getUserString("SpellCost") == "true")
                         info.text
                             += MWGui::ToolTips::getValueString(MWMechanics::calcSpellCost(*spell), "#{sCastCost}");
                     info.effects = std::move(effects);
@@ -361,7 +362,7 @@ namespace MWGui
             MyGUI::Gui::getInstance().destroyWidget(mDynamicToolTipBox->getChildAt(0));
         }
 
-        for (unsigned int i = 0; i < mMainWidget->getChildCount(); ++i)
+        for (size_t i = 0; i < mMainWidget->getChildCount(); ++i)
         {
             mMainWidget->getChildAt(i)->setVisible(false);
         }
@@ -633,17 +634,17 @@ namespace MWGui
             {
                 mHorizontalScrollIndex = -totalSize.width;
             }
-            int horizontal_scroll = mHorizontalScrollIndex;
-            if (horizontal_scroll < 40)
+            int horizontalScroll = mHorizontalScrollIndex;
+            if (horizontalScroll < 40)
             {
-                horizontal_scroll = 40;
+                horizontalScroll = 40;
             }
             else
             {
-                horizontal_scroll = 80 - mHorizontalScrollIndex;
+                horizontalScroll = 80 - mHorizontalScrollIndex;
             }
             captionWidget->setPosition(
-                MyGUI::IntPoint(horizontal_scroll, captionWidget->getPosition().top + padding.top));
+                MyGUI::IntPoint(horizontalScroll, captionWidget->getPosition().top + padding.top));
         }
         else
         {
@@ -671,13 +672,13 @@ namespace MWGui
 
     std::string ToolTips::toString(const float value)
     {
-        std::ostringstream stream;
-
-        if (value != int(value))
-            stream << std::setprecision(3);
-
-        stream << value;
-        return stream.str();
+        std::string s = std::format("{:.2f}", value);
+        // Trim result so 1.00 turns into 1
+        while (!s.empty() && s.back() == '0')
+            s.pop_back();
+        if (!s.empty() && s.back() == '.')
+            s.pop_back();
+        return s;
     }
 
     std::string ToolTips::toString(const int value)
@@ -685,44 +686,39 @@ namespace MWGui
         return std::to_string(value);
     }
 
-    std::string ToolTips::getWeightString(const float weight, const std::string& prefix)
+    std::string ToolTips::getWeightString(const float weight, std::string_view prefix)
     {
         if (weight == 0)
             return {};
-        else
-            return "\n" + prefix + ": " + toString(weight);
+        return std::format("\n{}: {}", prefix, toString(weight));
     }
 
-    std::string ToolTips::getPercentString(const float value, const std::string& prefix)
+    std::string ToolTips::getPercentString(const float value, std::string_view prefix)
     {
         if (value == 0)
             return {};
-        else
-            return "\n" + prefix + ": " + toString(value * 100) + "%";
+        return std::format("\n{}: {}%", prefix, toString(value * 100));
     }
 
-    std::string ToolTips::getValueString(const int value, const std::string& prefix)
+    std::string ToolTips::getValueString(const int value, std::string_view prefix)
     {
         if (value == 0)
             return {};
-        else
-            return "\n" + prefix + ": " + toString(value);
+        return std::format("\n{}: {}", prefix, value);
     }
 
-    std::string ToolTips::getMiscString(const std::string& text, const std::string& prefix)
+    std::string ToolTips::getMiscString(std::string_view text, std::string_view prefix)
     {
         if (text.empty())
             return {};
-        else
-            return "\n" + prefix + ": " + text;
+        return std::format("\n{}: {}", prefix, text);
     }
 
     std::string ToolTips::getCountString(const int value)
     {
         if (value == 1)
             return {};
-        else
-            return " (" + MyGUI::utility::toString(value) + ")";
+        return std::format(" ({})", value);
     }
 
     std::string ToolTips::getSoulString(const MWWorld::CellRef& cellref)
@@ -735,8 +731,8 @@ namespace MWGui
         if (!creature)
             return {};
         if (creature->mName.empty())
-            return " (" + creature->mId.toDebugString() + ")";
-        return " (" + creature->mName + ")";
+            return std::format(" ({})", creature->mId.toDebugString());
+        return std::format(" ({})", creature->mName);
     }
 
     std::string ToolTips::getCellRefString(const MWWorld::CellRef& cellref)
@@ -769,22 +765,21 @@ namespace MWGui
         for (std::pair<ESM::RefId, int>& owner : itemOwners)
         {
             if (owner.second == std::numeric_limits<int>::max())
-                ret += std::string("\nStolen from ") + owner.first.toDebugString(); // for legacy (ESS) savegames
+                ret += std::format("\nStolen from {}", owner.first.toDebugString()); // for legacy (ESS) savegames
             else
-                ret += std::string("\nStolen ") + MyGUI::utility::toString(owner.second) + " from "
-                    + owner.first.toDebugString();
+                ret += std::format("\nStolen {} from {}", owner.second, owner.first.toDebugString());
         }
 
         ret += getMiscString(cellref.getGlobalVariable(), "Global");
         return ret;
     }
 
-    std::string ToolTips::getDurationString(float duration, const std::string& prefix)
+    std::string ToolTips::getDurationString(float duration, std::string_view prefix)
     {
         auto l10n = MWBase::Environment::get().getL10nManager()->getContext("Interface");
 
-        std::string ret;
-        ret = prefix + ": ";
+        std::string ret(prefix);
+        ret += ": ";
 
         if (duration < 1.f)
         {
@@ -887,7 +882,7 @@ namespace MWGui
         widget->setUserString("ImageTexture_AttributeImage", attribute->mIcon);
     }
 
-    void ToolTips::createSpecializationToolTip(MyGUI::Widget* widget, const std::string& name, int specId)
+    void ToolTips::createSpecializationToolTip(MyGUI::Widget* widget, std::string_view name, int specId)
     {
         widget->setUserString("Caption_Caption", name);
         std::string specText;

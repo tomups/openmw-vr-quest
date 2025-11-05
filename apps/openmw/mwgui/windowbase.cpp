@@ -7,6 +7,7 @@
 #include "../mwbase/environment.hpp"
 #include "../mwbase/windowmanager.hpp"
 
+#include <components/settings/values.hpp>
 #include <components/widgets/imagebutton.hpp>
 
 #include "draganddrop.hpp"
@@ -17,6 +18,22 @@
 #include <components/vr/vr.hpp>
 //## VR_PATCH END
 using namespace MWGui;
+
+int MWGui::wrap(int index, int max)
+{
+    if (index < 0)
+        return max - 1;
+    else if (index >= max)
+        return 0;
+    else
+        return index;
+}
+
+void MWGui::setControllerFocus(const std::vector<MyGUI::Button*>& buttons, int index, bool focused)
+{
+    if (index >= 0 && index < static_cast<int>(buttons.size()))
+        buttons[index]->setStateSelected(focused);
+}
 
 WindowBase::WindowBase(std::string_view parLayout)
     : Layout(parLayout)
@@ -45,7 +62,7 @@ void WindowBase::onTitleDoubleClicked()
         MWBase::Environment::get().getWindowManager()->toggleMaximized(this);
 }
 
-void WindowBase::onDoubleClick(MyGUI::Widget* _sender)
+void WindowBase::onDoubleClick(MyGUI::Widget* /*sender*/)
 {
     onTitleDoubleClicked();
 }
@@ -134,6 +151,7 @@ void WindowModal::onOpen()
 void WindowModal::onClose()
 {
     MWBase::Environment::get().getWindowManager()->removeCurrentModal(this);
+    MWBase::Environment::get().getWindowManager()->updateControllerButtonsOverlay();
 
     MyGUI::InputManager::getInstance().removeWidgetModal(mMainWidget);
 }

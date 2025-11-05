@@ -269,9 +269,12 @@ namespace MWWorld
             list.push_back((*it)->mId);
         }
     }
+
     template <class T, class Id>
     T* TypedDynamicStore<T, Id>::insert(const T& item, bool overrideOnly)
     {
+        if constexpr (std::is_same_v<decltype(item.mId), ESM::RefId>)
+            overrideOnly = overrideOnly && !item.mId.template is<ESM::GeneratedRefId>();
         if (overrideOnly)
         {
             auto it = mStatic.find(item.mId);
@@ -1354,6 +1357,7 @@ template class MWWorld::TypedDynamicStore<ESM4::SoundReference>;
 template class MWWorld::TypedDynamicStore<ESM4::Static>;
 template class MWWorld::TypedDynamicStore<ESM4::StaticCollection>;
 template class MWWorld::TypedDynamicStore<ESM4::Terminal>;
+template class MWWorld::TypedDynamicStore<ESM4::TextureSet>;
 template class MWWorld::TypedDynamicStore<ESM4::Tree>;
 template class MWWorld::TypedDynamicStore<ESM4::Weapon>;
 template class MWWorld::TypedDynamicStore<ESM4::World>;

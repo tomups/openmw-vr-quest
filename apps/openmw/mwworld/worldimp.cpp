@@ -531,13 +531,6 @@ namespace MWWorld
 
                 mStore.checkPlayer();
                 mPlayer->readRecord(reader, type);
-                if (getPlayerPtr().isInCell())
-                {
-                    if (getPlayerPtr().getCell()->isExterior())
-                        mWorldScene->preloadTerrain(getPlayerPtr().getRefData().getPosition().asVec3(),
-                            getPlayerPtr().getCell()->getCell()->getWorldSpace());
-                    mWorldScene->preloadCellWithSurroundings(*getPlayerPtr().getCell());
-                }
                 break;
             case ESM::REC_CSTA:
                 // We need to rebuild the ESMStore index in order to be able to lookup dynamic records while loading the
@@ -1493,6 +1486,8 @@ namespace MWWorld
     void World::queueMovement(const Ptr& ptr, const osg::Vec3f& velocity)
     {
         mPhysics->queueObjectMovement(ptr, velocity);
+        if (ptr == MWMechanics::getPlayer())
+            MWBase::Environment::get().getSoundManager()->setListenerVel(velocity);
     }
 
     void World::updateAnimatedCollisionShape(const Ptr& ptr)
@@ -1905,14 +1900,43 @@ namespace MWWorld
         return ESM::Cell::sDefaultWorldspaceId;
     }
 
-    int World::getCurrentWeather() const
+    const std::vector<MWWorld::Weather>& World::getAllWeather() const
     {
-        return mWeatherManager->getWeatherID();
+        return mWeatherManager->getAllWeather();
     }
 
-    int World::getNextWeather() const
+    int World::getCurrentWeatherScriptId() const
     {
-        return mWeatherManager->getNextWeatherID();
+        return mWeatherManager->getWeather().mScriptId;
+    }
+
+    const MWWorld::Weather& World::getCurrentWeather() const
+    {
+        return mWeatherManager->getWeather();
+    }
+
+    const MWWorld::Weather* World::getWeather(size_t index) const
+    {
+        return mWeatherManager->getWeather(index);
+    }
+
+    const MWWorld::Weather* World::getWeather(const ESM::RefId& id) const
+    {
+        return mWeatherManager->getWeather(id);
+    }
+
+    int World::getNextWeatherScriptId() const
+    {
+        auto next = mWeatherManager->getNextWeather();
+        if (next == nullptr)
+            return -1;
+
+        return next->mScriptId;
+    }
+
+    const MWWorld::Weather* World::getNextWeather() const
+    {
+        return mWeatherManager->getNextWeather();
     }
 
     float World::getWeatherTransition() const
@@ -1926,6 +1950,11 @@ namespace MWWorld
     }
 
     void World::changeWeather(const ESM::RefId& region, const unsigned int id)
+    {
+        mWeatherManager->changeWeather(region, id);
+    }
+
+    void World::changeWeather(const ESM::RefId& region, const ESM::RefId& id)
     {
         mWeatherManager->changeWeather(region, id);
     }
@@ -1956,7 +1985,7 @@ namespace MWWorld
 
                 newMarker.x = pos.pos[0];
                 newMarker.y = pos.pos[1];
-                mOut.push_back(newMarker);
+                mOut.push_back(std::move(newMarker));
             }
             return true;
         }
@@ -2551,7 +2580,7 @@ namespace MWWorld
         }
     }
 
-    float World::getWindSpeed()
+    float World::getWindSpeed() const
     {
         if (isCellExterior() || isCellQuasiExterior())
             return mWeatherManager->getWindSpeed();
@@ -3207,6 +3236,11 @@ namespace MWWorld
         }
     }
 
+    const osg::Vec4f& World::getSunLightPosition() const
+    {
+        return mRendering->getSunLightPosition();
+    }
+
     float World::getSunVisibility() const
     {
         return mWeatherManager->getSunVisibility();
@@ -3215,6 +3249,11 @@ namespace MWWorld
     float World::getSunPercentage() const
     {
         return mWeatherManager->getSunPercentage(getTimeStamp().getHour());
+    }
+
+    float World::getPhysicsFrameRateDt() const
+    {
+        return mPhysics->mPhysicsDt;
     }
 
     bool World::findInteriorPositionInWorldSpace(const MWWorld::CellStore* cell, osg::Vec3f& result)
@@ -3741,24 +3780,6 @@ namespace MWWorld
         }
     }
 
-    void World::spawnBloodEffect(const Ptr& ptr, const osg::Vec3f& worldPosition)
-    {
-        if (ptr == getPlayerPtr() && Settings::gui().mHitFader)
-            return;
-
-        std::string_view texture
-            = Fallback::Map::getString("Blood_Texture_" + std::to_string(ptr.getClass().getBloodTexture(ptr)));
-        if (texture.empty())
-            texture = Fallback::Map::getString("Blood_Texture_0");
-
-        // [0, 2]
-        const int number = Misc::Rng::rollDice(3);
-        const VFS::Path::Normalized model = Misc::ResourceHelpers::correctMeshPath(
-            VFS::Path::Normalized(Fallback::Map::getString("Blood_Model_" + std::to_string(number))));
-
-        mRendering->spawnEffect(model, texture, worldPosition, 1.0f, false, false);
-    }
-
     void World::spawnEffect(VFS::Path::NormalizedView model, const std::string& textureOverride,
         const osg::Vec3f& worldPos, float scale, bool isMagicVFX, bool useAmbientLight)
     {
@@ -3981,10 +4002,12 @@ namespace MWWorld
     }
 
 //## VR_PATCH END
-    bool World::isAreaOccupiedByOtherActor(const osg::Vec3f& position, const float radius,
-        std::span<const MWWorld::ConstPtr> ignore, std::vector<MWWorld::Ptr>* occupyingActors) const
+
+    bool World::isAreaOccupiedByOtherActor(const MWWorld::ConstPtr& actor, const osg::Vec3f& position) const
     {
-        return mPhysics->isAreaOccupiedByOtherActor(position, radius, ignore, occupyingActors);
+        const osg::Vec3f halfExtents = getPathfindingAgentBounds(actor).mHalfExtents;
+        const float maxHalfExtent = std::max(halfExtents.x(), std::max(halfExtents.y(), halfExtents.z()));
+        return mPhysics->isAreaOccupiedByOtherActor(actor.mRef, position, 2 * maxHalfExtent);
     }
 
     void World::reportStats(unsigned int frameNumber, osg::Stats& stats) const

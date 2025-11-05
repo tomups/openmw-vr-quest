@@ -106,16 +106,18 @@ namespace MWGui
             typedef MyGUI::delegates::MultiDelegate<MWSkill*> EventHandle_SkillVoid;
 
             /** Event : Skill clicked.\n
-                signature : void method(MWSkill* _sender)\n
+                signature : void method(MWSkill* sender)\n
             */
             EventHandle_SkillVoid eventClicked;
+
+            void setStateSelected(bool selected);
 
         protected:
             virtual ~MWSkill();
 
             void initialiseOverride() override;
 
-            void onClicked(MyGUI::Widget* _sender);
+            void onClicked(MyGUI::Widget* sender);
 
         private:
             void updateWidgets();
@@ -145,16 +147,18 @@ namespace MWGui
             typedef MyGUI::delegates::MultiDelegate<MWAttribute*> EventHandle_AttributeVoid;
 
             /** Event : Attribute clicked.\n
-                signature : void method(MWAttribute* _sender)\n
+                signature : void method(MWAttribute* sender)\n
             */
             EventHandle_AttributeVoid eventClicked;
+
+            void setStateSelected(bool selected);
 
         protected:
             ~MWAttribute() override = default;
 
             void initialiseOverride() override;
 
-            void onClicked(MyGUI::Widget* _sender);
+            void onClicked(MyGUI::Widget* sender);
 
         private:
             void updateWidgets();
@@ -190,6 +194,8 @@ namespace MWGui
                 std::vector<MyGUI::Widget*>& effects, MyGUI::Widget* creator, MyGUI::IntCoord& coord, int flags);
 
             const ESM::RefId& getSpellId() const { return mId; }
+
+            void setStateSelected(bool selected);
 
         protected:
             virtual ~MWSpell();
@@ -255,6 +261,8 @@ namespace MWGui
             void setSpellEffect(const SpellEffectParams& params);
 
             int getRequestedWidth() const { return mRequestedWidth; }
+
+            void setStateSelected(bool selected);
 
         protected:
             virtual ~MWSpellEffect();

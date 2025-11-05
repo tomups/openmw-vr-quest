@@ -44,13 +44,13 @@ namespace MWSound
         av_frame_free(&ptr);
     }
 
-    int FFmpegDecoder::readPacket(void* user_data, uint8_t* buf, int buf_size)
+    int FFmpegDecoder::readPacket(void* userData, uint8_t* buf, int bufSize)
     {
         try
         {
-            std::istream& stream = *static_cast<FFmpegDecoder*>(user_data)->mDataStream;
+            std::istream& stream = *static_cast<FFmpegDecoder*>(userData)->mDataStream;
             stream.clear();
-            stream.read((char*)buf, buf_size);
+            stream.read((char*)buf, bufSize);
             std::streamsize count = stream.gcount();
             if (count == 0)
                 return AVERROR_EOF;
@@ -74,9 +74,9 @@ namespace MWSound
         return -1;
     }
 
-    int64_t FFmpegDecoder::seek(void* user_data, int64_t offset, int whence)
+    int64_t FFmpegDecoder::seek(void* userData, int64_t offset, int whence)
     {
-        std::istream& stream = *static_cast<FFmpegDecoder*>(user_data)->mDataStream;
+        std::istream& stream = *static_cast<FFmpegDecoder*>(userData)->mDataStream;
 
         whence &= ~AVSEEK_FORCE;
 
@@ -111,11 +111,11 @@ namespace MWSound
         if (!mStream)
             return false;
 
-        std::ptrdiff_t stream_idx = mStream - mFormatCtx->streams;
+        std::ptrdiff_t streamIdx = mStream - mFormatCtx->streams;
         while (av_read_frame(mFormatCtx.get(), &mPacket) >= 0)
         {
             /* Check if the packet belongs to this stream */
-            if (stream_idx == mPacket.stream_index)
+            if (streamIdx == mPacket.stream_index)
             {
                 if (mPacket.pts != (int64_t)AV_NOPTS_VALUE)
                     mNextPts = av_q2d((*mStream)->time_base) * mPacket.pts;
@@ -131,7 +131,7 @@ namespace MWSound
 
     bool FFmpegDecoder::getAVAudioData()
     {
-        bool got_frame = false;
+        bool gotFrame = false;
 
         if (mCodecCtx->codec_type != AVMEDIA_TYPE_AUDIO)
             return false;
@@ -156,7 +156,7 @@ namespace MWSound
 
             if (mFrame->nb_samples == 0)
                 continue;
-            got_frame = true;
+            gotFrame = true;
 
             if (mSwr)
             {
@@ -186,7 +186,7 @@ namespace MWSound
             else
                 mFrameData = &mFrame->data[0];
 
-        } while (!got_frame);
+        } while (!gotFrame);
         mNextPts += (double)mFrame->nb_samples / mCodecCtx->sample_rate;
 
         return true;
@@ -416,11 +416,11 @@ namespace MWSound
 
         *samplerate = mCodecCtx->sample_rate;
 #if OPENMW_FFMPEG_5_OR_GREATER
-        AVChannelLayout ch_layout = mCodecCtx->ch_layout;
-        if (ch_layout.u.mask == 0)
-            av_channel_layout_default(&ch_layout, mCodecCtx->ch_layout.nb_channels);
+        AVChannelLayout chLayout = mCodecCtx->ch_layout;
+        if (chLayout.u.mask == 0)
+            av_channel_layout_default(&chLayout, mCodecCtx->ch_layout.nb_channels);
 
-        if (mOutputSampleFormat != mCodecCtx->sample_fmt || mOutputChannelLayout.u.mask != ch_layout.u.mask)
+        if (mOutputSampleFormat != mCodecCtx->sample_fmt || mOutputChannelLayout.u.mask != chLayout.u.mask)
 #else
         int64_t ch_layout = mCodecCtx->channel_layout;
         if (ch_layout == 0)
@@ -435,7 +435,7 @@ namespace MWSound
                 &mOutputChannelLayout, // output ch layout
                 mOutputSampleFormat, // output sample format
                 mCodecCtx->sample_rate, // output sample rate
-                &ch_layout, // input ch layout
+                &chLayout, // input ch layout
                 mCodecCtx->sample_fmt, // input sample format
                 mCodecCtx->sample_rate, // input sample rate
                 0, // logging level offset
@@ -522,16 +522,14 @@ namespace MWSound
 
         /* We need to make sure ffmpeg is initialized. Optionally silence warning
          * output from the lib */
-        static bool done_init = false;
-        if (!done_init)
-        {
+        [[maybe_unused]] static const bool doneInit = [] {
 // This is not needed anymore above FFMpeg version 4.0
 #if LIBAVCODEC_VERSION_INT < 3805796
             av_register_all();
 #endif
             av_log_set_level(AV_LOG_ERROR);
-            done_init = true;
-        }
+            return true;
+        }();
     }
 
     FFmpegDecoder::~FFmpegDecoder()

@@ -9,6 +9,35 @@ set(BUILTIN_DATA_FILES
     textures/omw_menu_scroll_right.dds
     textures/omw_menu_scroll_center_h.dds
     textures/omw_menu_scroll_center_v.dds
+    textures/omw_menu_icon_active.dds
+    textures/omw_psx_button_circle.dds
+    textures/omw_psx_button_dpad.dds
+    textures/omw_psx_button_square.dds
+    textures/omw_psx_button_triangle.dds
+    textures/omw_psx_button_x.dds
+    textures/omw_steam_button_a.dds
+    textures/omw_steam_button_b.dds
+    textures/omw_steam_button_dpad.dds
+    textures/omw_steam_button_l1.dds
+    textures/omw_steam_button_l2.dds
+    textures/omw_steam_button_l3.dds
+    textures/omw_steam_button_lstick.dds
+    textures/omw_steam_button_menu.dds
+    textures/omw_steam_button_r1.dds
+    textures/omw_steam_button_r2.dds
+    textures/omw_steam_button_r3.dds
+    textures/omw_steam_button_rstick.dds
+    textures/omw_steam_button_view.dds
+    textures/omw_steam_button_x.dds
+    textures/omw_steam_button_y.dds
+    textures/omw_switch_button_l.dds
+    textures/omw_switch_button_r.dds
+    textures/omw_switch_button_zl.dds
+    textures/omw_switch_button_zr.dds
+    textures/omw_xbox_button_lb.dds
+    textures/omw_xbox_button_lt.dds
+    textures/omw_xbox_button_rb.dds
+    textures/omw_xbox_button_rt.dds
     textures/omw/water_nm.png
 
     fonts/DejaVuFontLicense.txt
@@ -29,6 +58,7 @@ set(BUILTIN_DATA_FILES
     l10n/Calendar/en.yaml
     l10n/Calendar/ru.yaml
     l10n/Calendar/sv.yaml
+    l10n/Calendar/pl.yaml
 
     # Generic UI messages that can be reused by mods
     l10n/Interface/de.yaml
@@ -36,6 +66,7 @@ set(BUILTIN_DATA_FILES
     l10n/Interface/ru.yaml
     l10n/Interface/sv.yaml
     l10n/Interface/fr.yaml
+    l10n/Interface/pl.yaml
 
     # L10n for scripts/omw
     l10n/OMWCamera/de.yaml
@@ -43,12 +74,24 @@ set(BUILTIN_DATA_FILES
     l10n/OMWCamera/ru.yaml
     l10n/OMWCamera/sv.yaml
     l10n/OMWCamera/fr.yaml
+    l10n/OMWCamera/pl.yaml
+
+    l10n/OMWCombat/de.yaml
+    l10n/OMWCombat/en.yaml
+    l10n/OMWCombat/fr.yaml
+    l10n/OMWCombat/ru.yaml
+    l10n/OMWCombat/sv.yaml
+    l10n/OMWCombat/pl.yaml
+
     l10n/OMWControls/de.yaml
     l10n/OMWControls/en.yaml
     l10n/OMWControls/fr.yaml
     l10n/OMWControls/ru.yaml
     l10n/OMWControls/sv.yaml
+    l10n/OMWControls/pl.yaml
+    
     l10n/OMWVRInput/en.yaml
+    
     l10n/OMWVRUI/en.yaml
 
     # L10n for OpenMW menus and non-game-specific messages
@@ -57,6 +100,7 @@ set(BUILTIN_DATA_FILES
     l10n/OMWEngine/ru.yaml
     l10n/OMWEngine/sv.yaml
     l10n/OMWEngine/fr.yaml
+    l10n/OMWEngine/pl.yaml
 
     # L10n for music system
     l10n/OMWMusic/de.yaml
@@ -64,6 +108,7 @@ set(BUILTIN_DATA_FILES
     l10n/OMWMusic/ru.yaml
     l10n/OMWMusic/sv.yaml
     l10n/OMWMusic/fr.yaml
+    l10n/OMWMusic/pl.yaml
 
     # L10n for post-processing HUD and built-in shaders
     l10n/OMWShaders/de.yaml
@@ -71,6 +116,7 @@ set(BUILTIN_DATA_FILES
     l10n/OMWShaders/ru.yaml
     l10n/OMWShaders/sv.yaml
     l10n/OMWShaders/fr.yaml
+    l10n/OMWShaders/pl.yaml
 
     openmw_aux/util.lua
     openmw_aux/time.lua
@@ -89,6 +135,10 @@ set(BUILTIN_DATA_FILES
     scripts/omw/camera/settings.lua
     scripts/omw/camera/move360.lua
     scripts/omw/camera/first_person_auto_switch.lua
+    scripts/omw/combat/common.lua
+    scripts/omw/combat/global.lua
+    scripts/omw/combat/local.lua
+    scripts/omw/combat/menu.lua
     scripts/omw/console/global.lua
     scripts/omw/console/local.lua
     scripts/omw/console/player.lua
@@ -159,6 +209,7 @@ set(BUILTIN_DATA_FILES
     mygui/openmw_console.layout
     mygui/openmw_console.skin.xml
     mygui/openmw_container_window.layout
+    mygui/openmw_controllerbuttons.layout
     mygui/openmw_count_window.layout
     mygui/openmw_dialogue_window.layout
     mygui/openmw_dialogue_window.skin.xml
@@ -169,6 +220,7 @@ set(BUILTIN_DATA_FILES
     mygui/openmw_infobox.layout
     mygui/openmw_interactive_messagebox.layout
     mygui/openmw_interactive_messagebox_notransp.layout
+    mygui/openmw_inventory_tabs.layout
     mygui/openmw_inventory_window.layout
     mygui/openmw_journal.layout
     mygui/openmw_journal.skin.xml

@@ -1,6 +1,7 @@
 #include "record.hpp"
 #include "labels.hpp"
 
+#include <format>
 #include <iostream>
 #include <numeric>
 #include <sstream>
@@ -8,15 +9,13 @@
 #include <components/esm3/cellstate.hpp>
 #include <components/esm3/esmreader.hpp>
 #include <components/misc/strings/conversion.hpp>
-#include <components/misc/strings/format.hpp>
 
 namespace
 {
 
     void printAIPackage(const ESM::AIPackage& p)
     {
-        std::cout << "  AI Type: " << aiTypeLabel(p.mType) << " (" << Misc::StringUtils::format("0x%08X", p.mType)
-                  << ")" << std::endl;
+        std::cout << std::format("  AI Type: {} (0x{:08X})\n", aiTypeLabel(p.mType), std::uint32_t(p.mType));
         if (p.mType == ESM::AI_Wander)
         {
             std::cout << "    Distance: " << p.mWander.mDistance << std::endl;
@@ -51,7 +50,7 @@ namespace
         }
         else
         {
-            std::cout << "    BadPackage: " << Misc::StringUtils::format("0x%08X", p.mType) << std::endl;
+            std::cout << std::format("    BadPackage: 0x{:08X}\n", std::uint32_t(p.mType));
         }
 
         if (!p.mCellName.empty())
@@ -60,81 +59,81 @@ namespace
 
     std::string ruleString(const ESM::DialogueCondition& ss)
     {
-        std::string_view type_str = "INVALID";
-        std::string_view func_str;
+        std::string_view typeStr = "INVALID";
+        std::string_view funcStr;
 
         switch (ss.mFunction)
         {
             case ESM::DialogueCondition::Function_Global:
-                type_str = "Global";
-                func_str = ss.mVariable;
+                typeStr = "Global";
+                funcStr = ss.mVariable;
                 break;
             case ESM::DialogueCondition::Function_Local:
-                type_str = "Local";
-                func_str = ss.mVariable;
+                typeStr = "Local";
+                funcStr = ss.mVariable;
                 break;
             case ESM::DialogueCondition::Function_Journal:
-                type_str = "Journal";
-                func_str = ss.mVariable;
+                typeStr = "Journal";
+                funcStr = ss.mVariable;
                 break;
             case ESM::DialogueCondition::Function_Item:
-                type_str = "Item count";
-                func_str = ss.mVariable;
+                typeStr = "Item count";
+                funcStr = ss.mVariable;
                 break;
             case ESM::DialogueCondition::Function_Dead:
-                type_str = "Dead";
-                func_str = ss.mVariable;
+                typeStr = "Dead";
+                funcStr = ss.mVariable;
                 break;
             case ESM::DialogueCondition::Function_NotId:
-                type_str = "Not ID";
-                func_str = ss.mVariable;
+                typeStr = "Not ID";
+                funcStr = ss.mVariable;
                 break;
             case ESM::DialogueCondition::Function_NotFaction:
-                type_str = "Not Faction";
-                func_str = ss.mVariable;
+                typeStr = "Not Faction";
+                funcStr = ss.mVariable;
                 break;
             case ESM::DialogueCondition::Function_NotClass:
-                type_str = "Not Class";
-                func_str = ss.mVariable;
+                typeStr = "Not Class";
+                funcStr = ss.mVariable;
                 break;
             case ESM::DialogueCondition::Function_NotRace:
-                type_str = "Not Race";
-                func_str = ss.mVariable;
+                typeStr = "Not Race";
+                funcStr = ss.mVariable;
                 break;
             case ESM::DialogueCondition::Function_NotCell:
-                type_str = "Not Cell";
-                func_str = ss.mVariable;
+                typeStr = "Not Cell";
+                funcStr = ss.mVariable;
                 break;
             case ESM::DialogueCondition::Function_NotLocal:
-                type_str = "Not Local";
-                func_str = ss.mVariable;
+                typeStr = "Not Local";
+                funcStr = ss.mVariable;
                 break;
             default:
-                type_str = "Function";
-                func_str = ruleFunction(ss.mFunction);
+                typeStr = "Function";
+                funcStr = ruleFunction(ss.mFunction);
                 break;
         }
 
-        std::string_view oper_str = "??";
+        std::string_view operStr = "??";
         switch (ss.mComparison)
         {
             case ESM::DialogueCondition::Comp_Eq:
-                oper_str = "==";
+                operStr = "==";
                 break;
             case ESM::DialogueCondition::Comp_Ne:
-                oper_str = "!=";
+                operStr = "!=";
                 break;
             case ESM::DialogueCondition::Comp_Gt:
-                oper_str = "> ";
+                operStr = "> ";
                 break;
             case ESM::DialogueCondition::Comp_Ge:
-                oper_str = ">=";
+                operStr = ">=";
                 break;
             case ESM::DialogueCondition::Comp_Ls:
-                oper_str = "< ";
+                operStr = "< ";
                 break;
             case ESM::DialogueCondition::Comp_Le:
-                oper_str = "<=";
+                operStr = "<=";
                 break;
             default:
                 break;
@@ -143,8 +142,7 @@ namespace
         std::ostringstream stream;
         std::visit([&](auto value) { stream << value; }, ss.mValue);
 
-        std::string result
-            = Misc::StringUtils::format("%-12s %-32s %2s %s", type_str, func_str, oper_str, stream.str());
+        std::string result = std::format("{:<12} {:<32} {:2} {}", typeStr, funcStr, operStr, stream.str());
         return result;
     }
 
@@ -176,12 +174,10 @@ namespace
     {
         for (const ESM::Transport::Dest& dest : transport)
         {
-            std::cout << "  Destination Position: " << Misc::StringUtils::format("%12.3f", dest.mPos.pos[0]) << ","
-                      << Misc::StringUtils::format("%12.3f", dest.mPos.pos[1]) << ","
-                      << Misc::StringUtils::format("%12.3f", dest.mPos.pos[2]) << ")" << std::endl;
-            std::cout << "  Destination Rotation: " << Misc::StringUtils::format("%9.6f", dest.mPos.rot[0]) << ","
-                      << Misc::StringUtils::format("%9.6f", dest.mPos.rot[1]) << ","
-                      << Misc::StringUtils::format("%9.6f", dest.mPos.rot[2]) << ")" << std::endl;
+            std::cout << std::format("  Destination Position: ({:12.3f},{:12.3f},{:12.3f})\n", dest.mPos.pos[0],
+                dest.mPos.pos[1], dest.mPos.pos[2]);
+            std::cout << std::format("  Destination Rotation: ({:9.6f},{:9.6f},{:9.6f})\n", dest.mPos.rot[0],
+                dest.mPos.rot[1], dest.mPos.rot[2]);
             if (!dest.mCellName.empty())
                 std::cout << "  Destination Cell: " << dest.mCellName << std::endl;
         }
@@ -583,7 +579,7 @@ namespace EsmTool
             std::cout << "  Water Level: " << mData.mWater << std::endl;
         }
         else
-            std::cout << "  Map Color: " << Misc::StringUtils::format("0x%08X", mData.mMapColor) << std::endl;
+            std::cout << std::format("  Map Color: 0x{:08X}\n", mData.mMapColor);
         std::cout << "  RefId counter: " << mData.mRefNumCounter << std::endl;
         std::cout << "  Deleted: " << mIsDeleted << std::endl;
     }
@@ -594,7 +590,7 @@ namespace EsmTool
         std::cout << "  Name: " << mData.mName << std::endl;
         std::cout << "  Description: " << mData.mDescription << std::endl;
         std::cout << "  Playable: " << mData.mData.mIsPlayable << std::endl;
-        std::cout << "  AI Services: " << Misc::StringUtils::format("0x%08X", mData.mData.mServices) << std::endl;
+        std::cout << std::format("  AI Services: 0x{:08X}\n", mData.mData.mServices);
         for (size_t i = 0; i < mData.mData.mAttribute.size(); ++i)
             std::cout << "  Attribute" << (i + 1) << ": " << attributeLabel(mData.mData.mAttribute[i]) << " ("
                       << mData.mData.mAttribute[i] << ")" << std::endl;
@@ -642,8 +638,7 @@ namespace EsmTool
         std::cout << "  Flags: " << containerFlags(mData.mFlags) << std::endl;
         std::cout << "  Weight: " << mData.mWeight << std::endl;
         for (const ESM::ContItem& item : mData.mInventory.mList)
-            std::cout << "  Inventory: Count: " << Misc::StringUtils::format("%4d", item.mCount)
-                      << " Item: " << item.mItem << std::endl;
+            std::cout << std::format("  Inventory: Count: {:4d} Item: ", item.mCount) << item.mItem << std::endl;
         std::cout << "  Deleted: " << mIsDeleted << std::endl;
     }
 
@@ -680,8 +675,7 @@ namespace EsmTool
         std::cout << "  Gold: " << mData.mData.mGold << std::endl;
 
         for (const ESM::ContItem& item : mData.mInventory.mList)
-            std::cout << "  Inventory: Count: " << Misc::StringUtils::format("%4d", item.mCount)
-                      << " Item: " << item.mItem << std::endl;
+            std::cout << std::format("  Inventory: Count: {:4d} Item: ", item.mCount) << item.mItem << std::endl;
 
         for (const auto& spell : mData.mSpells.mList)
             std::cout << "  Spell: " << spell << std::endl;
@@ -693,7 +687,7 @@ namespace EsmTool
         std::cout << "    AI Fight:" << (int)mData.mAiData.mFight << std::endl;
         std::cout << "    AI Flee:" << (int)mData.mAiData.mFlee << std::endl;
         std::cout << "    AI Alarm:" << (int)mData.mAiData.mAlarm << std::endl;
-        std::cout << "    AI Services:" << Misc::StringUtils::format("0x%08X", mData.mAiData.mServices) << std::endl;
+        std::cout << std::format("    AI Services:0x{:08X}\n", mData.mAiData.mServices);
 
         for (const ESM::AIPackage& package : mData.mAiPackage.mList)
             printAIPackage(package);
@@ -1068,8 +1062,7 @@ namespace EsmTool
         }
 
         for (const ESM::ContItem& item : mData.mInventory.mList)
-            std::cout << "  Inventory: Count: " << Misc::StringUtils::format("%4d", item.mCount)
-                      << " Item: " << item.mItem << std::endl;
+            std::cout << std::format("  Inventory: Count: {:4d} Item: ", item.mCount) << item.mItem << std::endl;
 
         for (const auto& spell : mData.mSpells.mList)
             std::cout << "  Spell: " << spell << std::endl;
@@ -1081,7 +1074,7 @@ namespace EsmTool
         std::cout << "    AI Fight:" << (int)mData.mAiData.mFight << std::endl;
         std::cout << "    AI Flee:" << (int)mData.mAiData.mFlee << std::endl;
         std::cout << "    AI Alarm:" << (int)mData.mAiData.mAlarm << std::endl;
-        std::cout << "    AI Services:" << Misc::StringUtils::format("0x%08X", mData.mAiData.mServices) << std::endl;
+        std::cout << std::format("    AI Services:0x{:08X}\n", mData.mAiData.mServices);
 
         for (const ESM::AIPackage& package : mData.mAiPackage.mList)
             printAIPackage(package);
@@ -1192,8 +1185,8 @@ namespace EsmTool
             std::cout << "  Variable: " << variable << std::endl;
 
         std::cout << "  ByteCode: ";
-        for (const unsigned char& byte : mData.mScriptData)
-            std::cout << Misc::StringUtils::format("%02X", (int)(byte));
+        for (unsigned char byte : mData.mScriptData)
+            std::cout << std::format("{:02X}", byte);
         std::cout << std::endl;
 
         if (mPrintPlain)

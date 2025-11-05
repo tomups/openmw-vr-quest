@@ -19,7 +19,7 @@ namespace MWGui
             setPinButtonVisible(false);
     }
 
-    void WindowPinnableBase::onPinButtonPressed(MyGUI::Widget* _sender, int left, int top, MyGUI::MouseButton id)
+    void WindowPinnableBase::onPinButtonPressed(MyGUI::Widget* /*sender*/, int left, int top, MyGUI::MouseButton id)
     {
         if (id != MyGUI::MouseButton::Left)
             return;

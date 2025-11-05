@@ -94,9 +94,10 @@ namespace
 namespace MWPhysics
 {
     PhysicsSystem::PhysicsSystem(Resource::ResourceSystem* resourceSystem, osg::ref_ptr<osg::Group> parentNode)
-        : mShapeManager(
-            std::make_unique<Resource::BulletShapeManager>(resourceSystem->getVFS(), resourceSystem->getSceneManager(),
-                resourceSystem->getNifFileManager(), Settings::cells().mCacheExpiryDelay))
+        : mPhysicsDt(1.f / 60.f)
+        , mShapeManager(std::make_unique<Resource::BulletShapeManager>(resourceSystem->getVFS(),
+              resourceSystem->getSceneManager(), resourceSystem->getNifFileManager(),
+              Settings::cells().mCacheExpiryDelay))
         , mResourceSystem(resourceSystem)
         , mDebugDrawEnabled(false)
         , mTimeAccum(0.0f)
@@ -104,7 +105,6 @@ namespace MWPhysics
         , mWaterHeight(0)
         , mWaterEnabled(false)
         , mParentNode(std::move(parentNode))
-        , mPhysicsDt(1.f / 60.f)
     {
         mResourceSystem->addResourceManager(mShapeManager.get());
 
@@ -322,10 +322,8 @@ namespace MWPhysics
         btSphereShape shape(radius);
         const btQuaternion btrot = btQuaternion::getIdentity();
 
-        btTransform from_(btrot, Misc::Convert::toBullet(from));
-        btTransform to_(btrot, Misc::Convert::toBullet(to));
-
-        mTaskScheduler->convexSweepTest(&shape, from_, to_, callback);
+        mTaskScheduler->convexSweepTest(&shape, btTransform(btrot, Misc::Convert::toBullet(from)),
+            btTransform(btrot, Misc::Convert::toBullet(to)), callback);
 
         RayCastingResult result;
         result.mHit = callback.hasHit();
@@ -909,36 +907,18 @@ namespace MWPhysics
             mWaterCollisionObject.get(), CollisionType_Water, CollisionType_Actor | CollisionType_Projectile);
     }
 
-    bool PhysicsSystem::isAreaOccupiedByOtherActor(const osg::Vec3f& position, const float radius,
-        std::span<const MWWorld::ConstPtr> ignore, std::vector<MWWorld::Ptr>* occupyingActors) const
+    bool PhysicsSystem::isAreaOccupiedByOtherActor(
+        const MWWorld::LiveCellRefBase* actor, const osg::Vec3f& position, const float radius) const
     {
-        std::vector<const btCollisionObject*> ignoredObjects;
-        ignoredObjects.reserve(ignore.size());
-        for (const auto& v : ignore)
-            if (const auto it = mActors.find(v.mRef); it != mActors.end())
-                ignoredObjects.push_back(it->second->getCollisionObject());
-        std::sort(ignoredObjects.begin(), ignoredObjects.end());
-        ignoredObjects.erase(std::unique(ignoredObjects.begin(), ignoredObjects.end()), ignoredObjects.end());
-        const auto ignoreFilter = [&](const btCollisionObject* v) {
-            return std::binary_search(ignoredObjects.begin(), ignoredObjects.end(), v);
-        };
-        const auto bulletPosition = Misc::Convert::toBullet(position);
-        const auto aabbMin = bulletPosition - btVector3(radius, radius, radius);
-        const auto aabbMax = bulletPosition + btVector3(radius, radius, radius);
+        const btCollisionObject* ignoredObject = nullptr;
+        if (const auto it = mActors.find(actor); it != mActors.end())
+            ignoredObject = it->second->getCollisionObject();
+        const btVector3 bulletPosition = Misc::Convert::toBullet(position);
+        const btVector3 aabbMin = bulletPosition - btVector3(radius, radius, radius);
+        const btVector3 aabbMax = bulletPosition + btVector3(radius, radius, radius);
         const int mask = MWPhysics::CollisionType_Actor;
         const int group = MWPhysics::CollisionType_AnyPhysical;
-        if (occupyingActors == nullptr)
-        {
-            HasSphereCollisionCallback callback(bulletPosition, radius, mask, group, ignoreFilter,
-                static_cast<void (*)(const btCollisionObject*)>(nullptr));
-            mTaskScheduler->aabbTest(aabbMin, aabbMax, callback);
-            return callback.getResult();
-        }
-        const auto onCollision = [&](const btCollisionObject* object) {
-            if (PtrHolder* holder = static_cast<PtrHolder*>(object->getUserPointer()))
-                occupyingActors->push_back(holder->getPtr());
-        };
-        HasSphereCollisionCallback callback(bulletPosition, radius, mask, group, ignoreFilter, &onCollision);
+        HasSphereCollisionCallback callback(bulletPosition, radius, mask, group, ignoredObject);
         mTaskScheduler->aabbTest(aabbMin, aabbMax, callback);
         return callback.getResult();
     }

@@ -543,7 +543,7 @@ namespace MWMechanics
 
     bool CharacterController::onOpen() const
     {
-        if (mPtr.getType() == ESM::Container::sRecordId)
+        if (mPtr.getType() == ESM::Container::sRecordId && mAnimation)
         {
             if (!mAnimation->hasAnimation("containeropen"))
                 return true;
@@ -567,7 +567,7 @@ namespace MWMechanics
     {
         if (mPtr.getType() == ESM::Container::sRecordId)
         {
-            if (!mAnimation->hasAnimation("containerclose"))
+            if (!mAnimation || !mAnimation->hasAnimation("containerclose"))
                 return;
 
             float complete, startPoint = 0.f;
@@ -894,11 +894,12 @@ namespace MWMechanics
         if (mDeathState == CharState_None && MWBase::Environment::get().getWorld()->isSwimming(mPtr))
             mDeathState = CharState_SwimDeath;
 
-        if (mDeathState == CharState_None || !mAnimation->hasAnimation(deathStateToAnimGroup(mDeathState)))
+        if (mDeathState == CharState_None
+            || (mAnimation && !mAnimation->hasAnimation(deathStateToAnimGroup(mDeathState))))
             mDeathState = chooseRandomDeathState();
 
         // Do not interrupt scripted animation by death
-        if (isScriptedAnimPlaying())
+        if (!mAnimation || isScriptedAnimPlaying())
             return;
 
         playDeath(startpoint, mDeathState);
@@ -918,13 +919,10 @@ namespace MWMechanics
         return result;
     }
 
-    CharacterController::CharacterController(const MWWorld::Ptr& ptr, MWRender::Animation* anim)
+    CharacterController::CharacterController(const MWWorld::Ptr& ptr, MWRender::Animation& anim)
         : mPtr(ptr)
-        , mAnimation(anim)
+        , mAnimation(&anim)
     {
-        if (!mAnimation)
-            return;
-
         mAnimation->setTextKeyListener(this);
 
         const MWWorld::Class& cls = mPtr.getClass();
@@ -1001,16 +999,24 @@ namespace MWMechanics
 
     CharacterController::~CharacterController()
     {
+        detachAnimation();
+    }
+
+    void CharacterController::detachAnimation()
+    {
         if (mAnimation)
         {
             persistAnimationState();
             mAnimation->setTextKeyListener(nullptr);
+            mAnimation = nullptr;
         }
     }
 
     void CharacterController::handleTextKey(
         std::string_view groupname, SceneUtil::TextKeyMap::ConstIterator key, const SceneUtil::TextKeyMap& map)
     {
+        if (!mAnimation)
+            return;
         std::string_view evt = key->second;
 
         MWBase::Environment::get().getLuaManager()->animationTextKey(mPtr, key->second);
@@ -1074,23 +1080,17 @@ namespace MWMechanics
         std::string_view action = evt.substr(groupname.size() + 2);
         if (action == "equip attach")
         {
-            if (mUpperBodyState == UpperBodyState::Equipping)
-            {
-                if (groupname == "shield")
-                    mAnimation->showCarriedLeft(true);
-                else
-                    mAnimation->showWeapons(true);
-            }
+            if (groupname == "shield")
+                mAnimation->showCarriedLeft(true);
+            else if (mUpperBodyState == UpperBodyState::Equipping)
+                mAnimation->showWeapons(true);
         }
         else if (action == "unequip detach")
         {
-            if (mUpperBodyState == UpperBodyState::Unequipping)
-            {
-                if (groupname == "shield")
-                    mAnimation->showCarriedLeft(false);
-                else
-                    mAnimation->showWeapons(false);
-            }
+            if (groupname == "shield")
+                mAnimation->showCarriedLeft(false);
+            else if (mUpperBodyState == UpperBodyState::Unequipping)
+                mAnimation->showWeapons(false);
         }
         else if (action == "chop hit" || action == "slash hit" || action == "thrust hit" || action == "hit")
         {
@@ -1244,7 +1244,8 @@ namespace MWMechanics
 
     float CharacterController::calculateWindUp() const
     {
-        if (mCurrentWeapon.empty() || mWeaponType == ESM::Weapon::PickProbe || isRandomAttackAnimation(mCurrentWeapon))
+        if (!mAnimation || mCurrentWeapon.empty() || mWeaponType == ESM::Weapon::PickProbe
+            || isRandomAttackAnimation(mCurrentWeapon))
             return -1.f;
 
         float minAttackTime = mAnimation->getTextKeyTime(mCurrentWeapon + ": " + mAttackType + " min attack");
@@ -1404,7 +1405,7 @@ namespace MWMechanics
                 // We can not play un-equip animation if weapon changed since last update
                 if (!weaponChanged)
                 {
-                    // Note: we do not disable unequipping animation automatically to avoid body desync
+                    // Note: we do not disable the weapon unequipping animation automatically to avoid body desync
                     weapgroup = getWeaponAnimation(mWeaponType);
                     int unequipMask = MWRender::BlendMask_All;
                     mUpperBodyState = UpperBodyState::Unequipping;
@@ -1413,6 +1414,7 @@ namespace MWMechanics
                         && !(mWeaponType == ESM::Weapon::None && weaptype == ESM::Weapon::Spell))
                     {
                         unequipMask = unequipMask | ~MWRender::BlendMask_LeftArm;
+                        mAnimation->disable("shield");
                         playBlendedAnimation("shield", Priority_Block, MWRender::BlendMask_LeftArm, true, 1.0f,
                             "unequip start", "unequip stop", 0.0f, 0);
                     }
@@ -1470,6 +1472,7 @@ namespace MWMechanics
                             if (useShieldAnims && weaptype != ESM::Weapon::Spell)
                             {
                                 equipMask = equipMask | ~MWRender::BlendMask_LeftArm;
+                                mAnimation->disable("shield");
                                 playBlendedAnimation("shield", Priority_Block, MWRender::BlendMask_LeftArm, true, 1.0f,
                                     "equip start", "equip stop", 0.0f, 0);
                             }
@@ -1975,6 +1978,8 @@ namespace MWMechanics
 
     void CharacterController::update(float duration)
     {
+        if (!mAnimation)
+            return;
         MWBase::World* world = MWBase::Environment::get().getWorld();
         MWBase::SoundManager* sndMgr = MWBase::Environment::get().getSoundManager();
         const MWWorld::Class& cls = mPtr.getClass();
@@ -2328,17 +2333,13 @@ namespace MWMechanics
                 }
                 else
                 {
-                    // Do not play turning animation for player if rotation speed is very slow.
-                    // Actual threshold should take framerate in account.
-                    float rotationThreshold = (isPlayer ? 0.015f : 0.001f) * 60 * duration;
-
                     // It seems only bipedal actors use turning animations.
                     // Also do not use turning animations in the first-person view and when sneaking.
                     if (!sneak && !isFirstPersonPlayer && isBiped)
                     {
-                        if (effectiveRotation > rotationThreshold)
+                        if (effectiveRotation > 0.f)
                             movestate = inwater ? CharState_SwimTurnRight : CharState_TurnRight;
-                        else if (effectiveRotation < -rotationThreshold)
+                        else if (effectiveRotation < 0.f)
                             movestate = inwater ? CharState_SwimTurnLeft : CharState_TurnLeft;
                     }
                 }
@@ -2364,34 +2365,19 @@ namespace MWMechanics
                 vec.y() *= std::sqrt(1.0f - swimUpwardCoef * swimUpwardCoef);
             }
 
-            // Player can not use smooth turning as NPCs, so we play turning animation a bit to avoid jittering
-            if (isPlayer)
+            if (isBiped)
             {
-                float threshold = mCurrentMovement.find("swim") == std::string::npos ? 0.4f : 0.8f;
-                float complete;
-                bool animPlaying = mAnimation->getInfo(mCurrentMovement, &complete);
-                if (movestate == CharState_None && jumpstate == JumpState_None && isTurning())
-                {
-                    if (animPlaying && complete < threshold)
-                        movestate = mMovementState;
-                }
-            }
-            else
-            {
-                if (isBiped)
-                {
-                    if (mTurnAnimationThreshold > 0)
-                        mTurnAnimationThreshold -= duration;
+                if (mTurnAnimationThreshold > 0)
+                    mTurnAnimationThreshold -= duration;
 
-                    if (movestate == CharState_TurnRight || movestate == CharState_TurnLeft
-                        || movestate == CharState_SwimTurnRight || movestate == CharState_SwimTurnLeft)
-                    {
-                        mTurnAnimationThreshold = 0.05f;
-                    }
-                    else if (movestate == CharState_None && isTurning() && mTurnAnimationThreshold > 0)
-                    {
-                        movestate = mMovementState;
-                    }
+                if (movestate == CharState_TurnRight || movestate == CharState_TurnLeft
+                    || movestate == CharState_SwimTurnRight || movestate == CharState_SwimTurnLeft)
+                {
+                    mTurnAnimationThreshold = 0.05f;
+                }
+                else if (movestate == CharState_None && isTurning() && mTurnAnimationThreshold > 0)
+                {
+                    movestate = mMovementState;
                 }
             }
 
@@ -2420,11 +2406,10 @@ namespace MWMechanics
 
             if (isTurning())
             {
-                // Adjust animation speed from 1.0 to 1.5 multiplier
                 if (duration > 0)
                 {
                     float turnSpeed = std::min(1.5f, std::abs(rot.z()) / duration / static_cast<float>(osg::PI));
-                    mAnimation->adjustSpeedMult(mCurrentMovement, std::max(turnSpeed, 1.0f));
+                    mAnimation->adjustSpeedMult(mCurrentMovement, turnSpeed);
                 }
             }
             else if (mMovementState != CharState_None && mAdjustMovementAnimSpeed)
@@ -2576,7 +2561,7 @@ namespace MWMechanics
             ESM::AnimationState::ScriptedAnimation anim;
             anim.mGroup = iter->mGroup;
 
-            if (iter == mAnimQueue.begin())
+            if (iter == mAnimQueue.begin() && mAnimation)
             {
                 float complete;
                 size_t loopcount;
@@ -2590,7 +2575,7 @@ namespace MWMechanics
                 anim.mTime = 0.f;
             }
 
-            state.mScriptedAnims.push_back(anim);
+            state.mScriptedAnims.push_back(std::move(anim));
         }
     }
 
@@ -2622,7 +2607,7 @@ namespace MWMechanics
                     entry.mTime = (time - start) / (stop - start);
                 }
 
-                mAnimQueue.push_back(entry);
+                mAnimQueue.push_back(std::move(entry));
             }
 
             playAnimQueue();
@@ -2703,7 +2688,7 @@ namespace MWMechanics
             mAnimQueue.resize(1);
         }
 
-        mAnimQueue.push_back(entry);
+        mAnimQueue.push_back(std::move(entry));
 
         if (playImmediately)
             playAnimQueue(mode == 2);
@@ -2734,7 +2719,7 @@ namespace MWMechanics
 
         if (mAnimQueue.size() > 1)
             mAnimQueue.resize(1);
-        mAnimQueue.push_back(entry);
+        mAnimQueue.push_back(std::move(entry));
 
         if (mAnimQueue.size() == 1)
             playAnimQueue();
@@ -2793,23 +2778,18 @@ namespace MWMechanics
     void CharacterController::clearAnimQueue(bool clearScriptedAnims)
     {
         // Do not interrupt scripted animations, if we want to keep them
-        if ((!isScriptedAnimPlaying() || clearScriptedAnims) && !mAnimQueue.empty())
+        if (mAnimation && (!isScriptedAnimPlaying() || clearScriptedAnims) && !mAnimQueue.empty())
             mAnimation->disable(mAnimQueue.front().mGroup);
 
         if (clearScriptedAnims)
         {
-            mAnimation->setPlayScriptedOnly(false);
+            if (mAnimation)
+                mAnimation->setPlayScriptedOnly(false);
             mAnimQueue.clear();
             return;
         }
 
-        for (AnimationQueue::iterator it = mAnimQueue.begin(); it != mAnimQueue.end();)
-        {
-            if (!it->mScripted)
-                it = mAnimQueue.erase(it);
-            else
-                ++it;
-        }
+        std::erase_if(mAnimQueue, [](const AnimationQueueEntry& entry) { return !entry.mScripted; });
     }
 
     void CharacterController::forceStateUpdate()
@@ -2918,6 +2898,8 @@ namespace MWMechanics
 
     void CharacterController::setVisibility(float visibility) const
     {
+        if (!mAnimation)
+            return;
         // We should take actor's invisibility in account
         if (mPtr.getClass().isActor())
         {
@@ -2978,7 +2960,7 @@ namespace MWMechanics
 
     bool CharacterController::isReadyToBlock() const
     {
-        return updateCarriedLeftVisible(mWeaponType);
+        return mAnimation && updateCarriedLeftVisible(mWeaponType);
     }
 
     bool CharacterController::isKnockedDown() const
@@ -3082,7 +3064,8 @@ namespace MWMechanics
 
     void CharacterController::setActive(int active) const
     {
-        mAnimation->setActive(active);
+        if (mAnimation)
+            mAnimation->setActive(active);
     }
 
     void CharacterController::setHeadTrackTarget(const MWWorld::ConstPtr& target)
@@ -3113,6 +3096,8 @@ namespace MWMechanics
 
     float CharacterController::getAnimationMovementDirection() const
     {
+        if (!mAnimation)
+            return 0.f;
         switch (mMovementState)
         {
             case CharState_RunLeft:
@@ -3207,6 +3192,8 @@ namespace MWMechanics
 
     MWWorld::MovementDirectionFlags CharacterController::getSupportedMovementDirections() const
     {
+        if (!mAnimation)
+            return 0;
         using namespace std::string_view_literals;
         // There are fallbacks in the CharacterController::refreshMovementAnims for certain animations. Arrays below
         // represent them.

@@ -129,14 +129,14 @@ namespace
             texture = magicEffect->mParticle;
         }
 
-        if (projectileEffects.mList.size()
-            > 1) // insert a VFX_Multiple projectile if there are multiple projectile effects
+        // insert a VFX_Multiple projectile if there are multiple projectile effects
+        if (projectileEffects.mList.size() > 1)
         {
-            const ESM::RefId ID = ESM::RefId::stringRefId("VFX_Multiple" + std::to_string(effects->mList.size()));
-            std::vector<ESM::RefId>::iterator it;
-            it = projectileIDs.begin();
-            it = projectileIDs.insert(it, ID);
+            const ESM::RefId projectileId
+                = ESM::RefId::stringRefId("VFX_Multiple" + std::to_string(effects->mList.size()));
+            projectileIDs.insert(projectileIDs.begin(), projectileId);
         }
+
         return projectileEffects;
     }
 
@@ -359,7 +359,7 @@ namespace MWWorld
         }
         state.mProjectileId = mPhysics->addProjectile(caster, pos, model, true);
         state.mToDelete = false;
-        mMagicBolts.push_back(state);
+        mMagicBolts.push_back(std::move(state));
     }
 
     void ProjectileManager::launchProjectile(const Ptr& actor, const ConstPtr& projectile, const osg::Vec3f& pos,
@@ -385,7 +385,7 @@ namespace MWWorld
 
         state.mProjectileId = mPhysics->addProjectile(actor, pos, model, false);
         state.mToDelete = false;
-        mProjectiles.push_back(state);
+        mProjectiles.push_back(std::move(state));
     }
 
     void ProjectileManager::updateCasters()
@@ -484,6 +484,11 @@ namespace MWWorld
             projectile->setVelocity(direction * speed);
 
             update(magicBoltState, duration);
+
+            for (const auto& sound : magicBoltState.mSounds)
+            {
+                sound->setVelocity(direction * speed);
+            }
 
             // For AI actors, get combat targets to use in the ray cast. Only those targets will return a positive hit
             // result.
@@ -744,7 +749,7 @@ namespace MWWorld
             createModel(state, model, osg::Vec3f(esm.mPosition), osg::Quat(esm.mOrientation), false, false,
                 osg::Vec4(0, 0, 0, 0));
 
-            mProjectiles.push_back(state);
+            mProjectiles.push_back(std::move(state));
             return true;
         }
         if (type == ESM::REC_MPRJ)
@@ -805,7 +810,7 @@ namespace MWWorld
                     state.mSounds.push_back(sound);
             }
 
-            mMagicBolts.push_back(state);
+            mMagicBolts.push_back(std::move(state));
             return true;
         }
 

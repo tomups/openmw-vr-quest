@@ -5,7 +5,7 @@
 
 #include "myguirendermanager.hpp"
 
-namespace osgMyGUI
+namespace MyGUIPlatform
 {
 
     AdditiveLayer::AdditiveLayer()
@@ -19,14 +19,14 @@ namespace osgMyGUI
         // defined in .cpp file since we can't delete incomplete types
     }
 
-    void AdditiveLayer::renderToTarget(MyGUI::IRenderTarget* _target, bool _update)
+    void AdditiveLayer::renderToTarget(MyGUI::IRenderTarget* target, bool update)
     {
 //## VR_PATCH BEGIN
         StateInjectableRenderTarget* injectableTarget = static_cast<StateInjectableRenderTarget*>(_target);
 
         injectableTarget->setInjectState(mStateSet.get());
 
-        MyGUI::OverlappedLayer::renderToTarget(_target, _update);
+        MyGUI::OverlappedLayer::renderToTarget(target, update);
 
         injectableTarget->setInjectState(nullptr);
 //## VR_PATCH END

@@ -5,7 +5,9 @@
 #include <MyGUI_InputManager.h>
 #include <osg/Stats>
 
-#include "sol/state_view.hpp"
+#include <sol/object.hpp>
+#include <sol/table.hpp>
+#include <sol/types.hpp>
 
 #include <components/debug/debuglog.hpp>
 
@@ -17,7 +19,6 @@
 
 #include <components/l10n/manager.hpp>
 
-#include <components/lua_ui/content.hpp>
 #include <components/lua_ui/registerscriptsettings.hpp>
 #include <components/lua_ui/util.hpp>
 
@@ -41,6 +42,20 @@
 
 namespace MWLua
 {
+    namespace
+    {
+        struct BoolScopeGuard
+        {
+            bool& mValue;
+            BoolScopeGuard(bool& value)
+                : mValue(value)
+            {
+                mValue = true;
+            }
+
+            ~BoolScopeGuard() { mValue = false; }
+        };
+    }
 
     static LuaUtil::LuaStateSettings createLuaStateSettings()
     {
@@ -161,6 +176,17 @@ namespace MWLua
         });
     }
 
+    void LuaManager::sendLocalEvent(
+        const MWWorld::Ptr& target, const std::string& name, const std::optional<sol::table>& data)
+    {
+        LuaUtil::BinaryData binary = {};
+        if (data)
+        {
+            binary = LuaUtil::serialize(*data, mLocalSerializer.get());
+        }
+        mLuaEvents.addLocalEvent({ getId(target), name, std::move(binary) });
+    }
+
     void LuaManager::update()
     {
         if (const int steps = Settings::lua().mGcStepsPerFrame; steps > 0)
@@ -212,13 +238,12 @@ namespace MWLua
 
         // Run engine handlers
         mEngineEvents.callEngineHandlers();
-        if (!timeManager.isPaused())
-        {
-            float frameDuration = MWBase::Environment::get().getFrameDuration();
-            for (LocalScripts* scripts : mActiveLocalScripts)
-                scripts->update(frameDuration);
-            mGlobalScripts.update(frameDuration);
-        }
+        bool isPaused = timeManager.isPaused();
+
+        float frameDuration = MWBase::Environment::get().getFrameDuration();
+        for (LocalScripts* scripts : mActiveLocalScripts)
+            scripts->update(isPaused ? 0 : frameDuration);
+        mGlobalScripts.update(isPaused ? 0 : frameDuration);
 
         mLua.protectedCall([&](LuaUtil::LuaView& lua) { mScriptTracker.unloadInactiveScripts(lua); });
     }
@@ -262,31 +287,33 @@ namespace MWLua
             // can teleport the player to the starting location before the first frame is rendered.
             mGlobalScripts.newGameStarted();
         }
+        BoolScopeGuard updateGuard(mRunningSynchronizedUpdates);
 
-        // We apply input events in `synchronizedUpdate` rather than in `update` in order to reduce input latency.
-        mProcessingInputEvents = true;
+        MWBase::WindowManager* windowManager = MWBase::Environment::get().getWindowManager();
         PlayerScripts* playerScripts
             = mPlayer.isEmpty() ? nullptr : dynamic_cast<PlayerScripts*>(mPlayer.getRefData().getLuaScripts());
-        MWBase::WindowManager* windowManager = MWBase::Environment::get().getWindowManager();
-
-        for (const auto& event : mMenuInputEvents)
-            mMenuScripts.processInputEvent(event);
-        mMenuInputEvents.clear();
-        if (playerScripts && !windowManager->containsMode(MWGui::GM_MainMenu))
+        // We apply input events in `synchronizedUpdate` rather than in `update` in order to reduce input latency.
         {
-            for (const auto& event : mInputEvents)
-                playerScripts->processInputEvent(event);
+            BoolScopeGuard processingGuard(mProcessingInputEvents);
+
+            for (const auto& event : mMenuInputEvents)
+                mMenuScripts.processInputEvent(event);
+            mMenuInputEvents.clear();
+            if (playerScripts && !windowManager->containsMode(MWGui::GM_MainMenu))
+            {
+                for (const auto& event : mInputEvents)
+                    playerScripts->processInputEvent(event);
+            }
+            mInputEvents.clear();
+            mLuaEvents.callMenuEventHandlers();
+            double frameDuration = MWBase::Environment::get().getWorld()->getTimeManager()->isPaused()
+                ? 0.0
+                : MWBase::Environment::get().getFrameDuration();
+            mInputActions.update(frameDuration);
+            mMenuScripts.onFrame(frameDuration);
+            if (playerScripts)
+                playerScripts->onFrame(frameDuration);
         }
-        mInputEvents.clear();
-        mLuaEvents.callMenuEventHandlers();
-        double frameDuration = MWBase::Environment::get().getWorld()->getTimeManager()->isPaused()
-            ? 0.0
-            : MWBase::Environment::get().getFrameDuration();
-        mInputActions.update(frameDuration);
-        mMenuScripts.onFrame(frameDuration);
-        if (playerScripts)
-            playerScripts->onFrame(frameDuration);
-        mProcessingInputEvents = false;
 
         for (const auto& [message, mode] : mUIMessages)
             windowManager->messageBox(message, mode);
@@ -314,7 +341,7 @@ namespace MWLua
 
     void LuaManager::applyDelayedActions()
     {
-        mApplyingDelayedActions = true;
+        BoolScopeGuard applyingGuard(mApplyingDelayedActions);
         for (DelayedAction& action : mActionQueue)
             action.apply();
         mActionQueue.clear();
@@ -322,7 +349,6 @@ namespace MWLua
         if (mTeleportPlayerAction)
             mTeleportPlayerAction->apply();
         mTeleportPlayerAction.reset();
-        mApplyingDelayedActions = false;
     }
 
     void LuaManager::clear()
@@ -501,6 +527,54 @@ namespace MWLua
             EngineEvents::OnSkillLevelUp{ getId(actor), skillId.serializeText(), std::string(source) });
     }
 
+    void LuaManager::jailTimeServed(const MWWorld::Ptr& actor, int days)
+    {
+        mEngineEvents.addToQueue(EngineEvents::OnJailTimeServed{ getId(actor), days });
+    }
+
+    void LuaManager::onHit(const MWWorld::Ptr& attacker, const MWWorld::Ptr& victim, const MWWorld::Ptr& weapon,
+        const MWWorld::Ptr& ammo, int attackType, float attackStrength, float damage, bool isHealth,
+        const osg::Vec3f& hitPos, bool successful, MWMechanics::DamageSourceType sourceType)
+    {
+        mLua.protectedCall([&](LuaUtil::LuaView& view) {
+            sol::table damageTable = view.newTable();
+            if (isHealth)
+                damageTable["health"] = damage;
+            else
+                damageTable["fatigue"] = damage;
+
+            sol::table data = view.newTable();
+            if (!attacker.isEmpty())
+                data["attacker"] = LObject(attacker);
+            if (!weapon.isEmpty())
+                data["weapon"] = LObject(weapon);
+            if (!ammo.isEmpty())
+                data["ammo"] = ammo.getCellRef().getRefId().serializeText();
+            data["type"] = attackType;
+            data["strength"] = attackStrength;
+            data["damage"] = damageTable;
+            data["hitPos"] = hitPos;
+            data["successful"] = successful;
+            switch (sourceType)
+            {
+                case MWMechanics::DamageSourceType::Unspecified:
+                    data["sourceType"] = "unspecified";
+                    break;
+                case MWMechanics::DamageSourceType::Melee:
+                    data["sourceType"] = "melee";
+                    break;
+                case MWMechanics::DamageSourceType::Ranged:
+                    data["sourceType"] = "ranged";
+                    break;
+                case MWMechanics::DamageSourceType::Magical:
+                    data["sourceType"] = "magic";
+                    break;
+            }
+
+            sendLocalEvent(victim, "Hit", data);
+        });
+    }
+
     void LuaManager::objectAddedToScene(const MWWorld::Ptr& ptr)
     {
         mObjectLists.objectAddedToScene(ptr); // assigns generated RefNum if it is not set yet.
@@ -559,7 +633,10 @@ namespace MWLua
             localScripts = createLocalScripts(ptr);
             localScripts->addAutoStartedScripts();
             if (ptr.isInCell() && MWBase::Environment::get().getWorldScene()->isCellActive(*ptr.getCell()))
+            {
+                localScripts->setActive(true, false);
                 mActiveLocalScripts.insert(localScripts);
+            }
         }
         localScripts->addCustomScript(scriptId, initData);
     }

@@ -135,7 +135,7 @@ namespace Compiler
 
         bool peek(std::istream& in)
         {
-            std::streampos p_orig = in.tellg();
+            std::streampos pOrig = in.tellg();
 
             char ch = static_cast<char>(in.peek());
 
@@ -158,7 +158,7 @@ namespace Compiler
 
             mLength = length;
 
-            in.seekg(p_orig);
+            in.seekg(pOrig);
             return true;
         }
 
@@ -209,7 +209,7 @@ namespace Compiler
         bool mIgnoreSpecial;
 
     public:
-        enum keyword
+        enum Keyword
         {
             K_begin,
             K_end,
@@ -228,7 +228,7 @@ namespace Compiler
             K_to
         };
 
-        enum special
+        enum Special
         {
             S_newline,
             S_open,

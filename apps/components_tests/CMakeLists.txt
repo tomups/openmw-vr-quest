@@ -84,10 +84,14 @@ file(GLOB UNITTEST_SRC_FILES
     esmterrain/testgridsampling.cpp
 
     resource/testobjectcache.cpp
+    resource/testresourcesystem.cpp
 
     vfs/testpathutil.cpp
 
     sceneutil/osgacontroller.cpp
+
+    bsa/testbsafile.cpp
+    bsa/testcompressedbsafile.cpp
 )
 
 source_group(apps\\components-tests FILES ${UNITTEST_SRC_FILES})

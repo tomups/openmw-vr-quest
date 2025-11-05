@@ -52,7 +52,6 @@ namespace MWGui
 
     WaitDialog::WaitDialog()
         : WindowBase("openmw_wait_dialog.layout")
-        , mTimeAdvancer(0.05f)
         , mSleeping(false)
         , mHours(1)
         , mManualHours(1)
@@ -80,6 +79,9 @@ namespace MWGui
         mTimeAdvancer.eventProgressChanged += MyGUI::newDelegate(this, &WaitDialog::onWaitingProgressChanged);
         mTimeAdvancer.eventInterrupted += MyGUI::newDelegate(this, &WaitDialog::onWaitingInterrupted);
         mTimeAdvancer.eventFinished += MyGUI::newDelegate(this, &WaitDialog::onWaitingFinished);
+
+        mControllerButtons.mB = "#{Interface:Cancel}";
+        mDisableGamepadCursor = Settings::gui().mControllerMenus;
     }
 
     void WaitDialog::setPtr(const MWWorld::Ptr& ptr)
@@ -172,14 +174,14 @@ namespace MWGui
         mDateTimeText->setCaptionWithReplacing(dateTimeText);
     }
 
-    void WaitDialog::onUntilHealedButtonClicked(MyGUI::Widget* sender)
+    void WaitDialog::onUntilHealedButtonClicked(MyGUI::Widget* /*sender*/)
     {
         int autoHours = MWBase::Environment::get().getMechanicsManager()->getHoursToRest();
 
         startWaiting(autoHours);
     }
 
-    void WaitDialog::onWaitButtonClicked(MyGUI::Widget* sender)
+    void WaitDialog::onWaitButtonClicked(MyGUI::Widget* /*sender*/)
     {
         startWaiting(mManualHours);
     }
@@ -229,7 +231,7 @@ namespace MWGui
         mProgressBar.setProgress(0, hoursToWait);
     }
 
-    void WaitDialog::onCancelButtonClicked(MyGUI::Widget* sender)
+    void WaitDialog::onCancelButtonClicked(MyGUI::Widget* /*sender*/)
     {
         MWBase::Environment::get().getWindowManager()->removeGuiMode(GM_Rest);
     }
@@ -241,7 +243,7 @@ namespace MWGui
         MWBase::Environment::get().getWindowManager()->setKeyFocusWidget(mWaitButton);
     }
 
-    void WaitDialog::onKeyButtonPressed(MyGUI::Widget* sender, MyGUI::KeyCode key, MyGUI::Char character)
+    void WaitDialog::onKeyButtonPressed(MyGUI::Widget* /*sender*/, MyGUI::KeyCode key, MyGUI::Char character)
     {
         if (key == MyGUI::KeyCode::ArrowUp)
             mHourSlider->setScrollPosition(
@@ -324,6 +326,54 @@ namespace MWGui
             mProgressBar.setVisible(true);
             mTimeAdvancer.run(mHours, mInterruptAt);
         }
+    }
+
+    ControllerButtons* WaitDialog::getControllerButtons()
+    {
+        mControllerButtons.mX.clear();
+        if (mSleeping)
+        {
+            mControllerButtons.mA = "#{Interface:Rest}";
+            if (mUntilHealedButton->getVisible())
+                mControllerButtons.mX = "#{Interface:UntilHealed}";
+        }
+        else
+        {
+            mControllerButtons.mA = "#{Interface:Wait}";
+        }
+        return &mControllerButtons;
+    }
+
+    bool WaitDialog::onControllerButtonEvent(const SDL_ControllerButtonEvent& arg)
+    {
+        if (arg.button == SDL_CONTROLLER_BUTTON_A)
+        {
+            onWaitButtonClicked(mWaitButton);
+            MWBase::Environment::get().getWindowManager()->playSound(ESM::RefId::stringRefId("Menu Click"));
+        }
+        else if (arg.button == SDL_CONTROLLER_BUTTON_B)
+            onCancelButtonClicked(mCancelButton);
+        else if (arg.button == SDL_CONTROLLER_BUTTON_X && mUntilHealedButton->getVisible())
+        {
+            onUntilHealedButtonClicked(mUntilHealedButton);
+            MWBase::Environment::get().getWindowManager()->playSound(ESM::RefId::stringRefId("Menu Click"));
+        }
+        else if (arg.button == SDL_CONTROLLER_BUTTON_DPAD_LEFT)
+            MWBase::Environment::get().getWindowManager()->injectKeyPress(MyGUI::KeyCode::ArrowDown, 0, false);
+        else if (arg.button == SDL_CONTROLLER_BUTTON_DPAD_RIGHT)
+            MWBase::Environment::get().getWindowManager()->injectKeyPress(MyGUI::KeyCode::ArrowUp, 0, false);
+        else if (arg.button == SDL_CONTROLLER_BUTTON_LEFTSHOULDER)
+        {
+            mHourSlider->setScrollPosition(0);
+            onHourSliderChangedPosition(mHourSlider, mHourSlider->getScrollPosition());
+        }
+        else if (arg.button == SDL_CONTROLLER_BUTTON_RIGHTSHOULDER)
+        {
+            mHourSlider->setScrollPosition(mHourSlider->getScrollRange() - 1);
+            onHourSliderChangedPosition(mHourSlider, mHourSlider->getScrollPosition());
+        }
+
+        return true;
     }
 
     void WaitDialog::stopWaiting()

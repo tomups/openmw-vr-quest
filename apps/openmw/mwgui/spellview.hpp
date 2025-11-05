@@ -13,6 +13,11 @@ namespace MyGUI
     class ScrollView;
 }
 
+namespace Gui
+{
+    class SharedStateButton;
+}
+
 namespace MWGui
 {
 
@@ -49,10 +54,13 @@ namespace MWGui
 
         void initialiseOverride() override;
 
-        void setSize(const MyGUI::IntSize& _value) override;
-        void setCoord(const MyGUI::IntCoord& _value) override;
+        void setSize(const MyGUI::IntSize& value) override;
+        void setCoord(const MyGUI::IntCoord& value) override;
 
         void resetScrollbars();
+
+        void setActiveControllerWindow(bool active);
+        void onControllerButton(const unsigned char button);
 
     private:
         MyGUI::ScrollView* mScrollView;
@@ -89,10 +97,19 @@ namespace MWGui
         void addGroup(const std::string& label1, const std::string& label2);
         void adjustSpellWidget(const Spell& spell, SpellModel::ModelIndex index, MyGUI::Widget* widget);
 
-        void onSpellSelected(MyGUI::Widget* _sender);
-        void onMouseWheelMoved(MyGUI::Widget* _sender, int _rel);
+        /// Keep a list of buttons for controller navigation and their index in the full list.
+        std::vector<std::pair<Gui::SharedStateButton*, int>> mButtons;
+        /// Keep a list of group offsets for controller navigation
+        std::vector<int> mGroupIndices;
 
-        SpellModel::ModelIndex getSpellModelIndex(MyGUI::Widget* _sender);
+        bool mControllerActiveWindow;
+        int mControllerFocus;
+        void updateControllerFocus(int prevFocus, int newFocus);
+
+        void onSpellSelected(MyGUI::Widget* sender);
+        void onMouseWheelMoved(MyGUI::Widget* sender, int rel);
+
+        SpellModel::ModelIndex getSpellModelIndex(MyGUI::Widget* sender);
 
         static const char* sSpellModelIndex;
     };

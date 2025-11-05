@@ -14,6 +14,8 @@
 #include <components/misc/resourcehelpers.hpp>
 #include <components/resource/resourcesystem.hpp>
 
+#include "textcolours.hpp"
+
 #include "../mwbase/environment.hpp"
 #include "../mwbase/windowmanager.hpp"
 
@@ -66,7 +68,13 @@ namespace MWGui::Widgets
         }
     }
 
-    void MWSkill::onClicked(MyGUI::Widget* _sender)
+    void MWSkill::setStateSelected(bool selected)
+    {
+        const TextColours& textColours{ MWBase::Environment::get().getWindowManager()->getTextColours() };
+        mSkillNameWidget->setTextColour(selected ? textColours.link : textColours.normal);
+    }
+
+    void MWSkill::onClicked(MyGUI::Widget* /*sender*/)
     {
         eventClicked(this);
     }
@@ -117,7 +125,7 @@ namespace MWGui::Widgets
         updateWidgets();
     }
 
-    void MWAttribute::onClicked(MyGUI::Widget* _sender)
+    void MWAttribute::onClicked(MyGUI::Widget* /*sender*/)
     {
         eventClicked(this);
     }
@@ -148,6 +156,12 @@ namespace MWGui::Widgets
             else
                 mAttributeValueWidget->_setWidgetState("normal");
         }
+    }
+
+    void MWAttribute::setStateSelected(bool selected)
+    {
+        const TextColours& textColours{ MWBase::Environment::get().getWindowManager()->getTextColours() };
+        mAttributeNameWidget->setTextColour(selected ? textColours.link : textColours.normal);
     }
 
     void MWAttribute::initialiseOverride()
@@ -229,6 +243,12 @@ namespace MWGui::Widgets
             else
                 mSpellNameWidget->setCaption({});
         }
+    }
+
+    void MWSpell::setStateSelected(bool selected)
+    {
+        const TextColours& textColours{ MWBase::Environment::get().getWindowManager()->getTextColours() };
+        mSpellNameWidget->setTextColour(selected ? textColours.link : textColours.normal);
     }
 
     void MWSpell::initialiseOverride()
@@ -460,6 +480,12 @@ namespace MWGui::Widgets
     }
 
     MWSpellEffect::~MWSpellEffect() {}
+
+    void MWSpellEffect::setStateSelected(bool selected)
+    {
+        const TextColours& textColours{ MWBase::Environment::get().getWindowManager()->getTextColours() };
+        mTextWidget->setTextColour(selected ? textColours.link : textColours.normal);
+    }
 
     void MWSpellEffect::initialiseOverride()
     {

@@ -44,8 +44,8 @@ namespace LuaUtil
 
         LuaView(const LuaView&) = delete;
 
-        LuaView(lua_State* L)
-            : mSol(L)
+        LuaView(lua_State* state)
+            : mSol(state)
         {
         }
 
@@ -59,9 +59,9 @@ namespace LuaUtil
     };
 
     template <typename Key, typename Value>
-    sol::table tableFromPairs(lua_State* L, std::initializer_list<std::pair<Key, Value>> list)
+    sol::table tableFromPairs(lua_State* state, std::initializer_list<std::pair<Key, Value>> list)
     {
-        sol::table res(L, sol::create);
+        sol::table res(state, sol::create);
         for (const auto& [k, v] : list)
             res[k] = v;
         return res;
@@ -89,18 +89,18 @@ namespace LuaUtil
 
         // Pushing to the stack from outside a Lua context crashes the engine if no memory can be allocated to grow the
         // stack
-        template <class Lambda>
-        [[nodiscard]] int invokeProtectedCall(Lambda&& f) const
+        template <class Function>
+        [[nodiscard]] int invokeProtectedCall(Function&& function) const
         {
             if (!lua_checkstack(mSol.lua_state(), 2))
                 return LUA_ERRMEM;
-            lua_pushcfunction(mSol.lua_state(), [](lua_State* L) {
-                void* f = lua_touserdata(L, 1);
-                LuaView view(L);
-                (*static_cast<Lambda*>(f))(view);
+            lua_pushcfunction(mSol.lua_state(), [](lua_State* state) {
+                void* f = lua_touserdata(state, 1);
+                LuaView view(state);
+                (*static_cast<Function*>(f))(view);
                 return 0;
             });
-            lua_pushlightuserdata(mSol.lua_state(), &f);
+            lua_pushlightuserdata(mSol.lua_state(), &function);
             return lua_pcall(mSol.lua_state(), 1, 0, 0);
         }
 
@@ -186,7 +186,7 @@ namespace LuaUtil
             ScriptId scriptId, const sol::protected_function& fn, Args&&... args);
 
         sol::function loadScriptAndCache(const VFS::Path::Normalized& path);
-        static void countHook(lua_State* L, lua_Debug* ar);
+        static void countHook(lua_State* state, lua_Debug* ar);
         static void* trackingAllocator(void* ud, void* ptr, size_t osize, size_t nsize);
 
         static LuaStatePtr createLuaRuntime(LuaState* luaState);
@@ -325,7 +325,7 @@ namespace LuaUtil
     // String representation of a Lua object. Should be used for debugging/logging purposes only.
     std::string toString(const sol::object&);
 
-    namespace internal
+    namespace Internal
     {
         std::string formatCastingError(const sol::object& obj, const std::type_info&);
     }
@@ -334,7 +334,7 @@ namespace LuaUtil
     decltype(auto) cast(const sol::object& obj)
     {
         if (!obj.is<T>())
-            throw std::runtime_error(internal::formatCastingError(obj, typeid(T)));
+            throw std::runtime_error(Internal::formatCastingError(obj, typeid(T)));
         return obj.as<T>();
     }
 

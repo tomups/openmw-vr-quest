@@ -330,10 +330,9 @@ namespace MWLua
                 return LuaUtil::Box{ bb.center(), bb._max - bb.center() };
             };
 
-            objectT["type"]
-                = sol::readonly_property([types = getTypeToPackageTable(context.sol())](const ObjectT& o) mutable {
-                      return types[getLiveCellRefType(o.ptr().mRef)];
-                  });
+            objectT["type"] = sol::readonly_property(
+                [types = getTypeToPackageTable(context.sol())](
+                    const ObjectT& o) -> sol::object { return types[getLiveCellRefType(o.ptr().mRef)]; });
 
             objectT["count"] = sol::readonly_property([](const ObjectT& o) { return o.ptr().getCellRef().getCount(); });
             objectT[sol::meta_function::equal_to] = [](const ObjectT& a, const ObjectT& b) { return a.id() == b.id(); };
@@ -445,16 +444,16 @@ namespace MWLua
                     if (!ptr.getContainerStore() && currentCount > countToRemove)
                         return std::nullopt;
                     // Delayed action to trigger side effects
-                    return [signedCountToRemove](MWWorld::Ptr ptr) {
+                    return [signedCountToRemove](MWWorld::Ptr p) {
                         // Restore the original count
-                        ptr.getCellRef().setCount(ptr.getCellRef().getCount(false) + signedCountToRemove);
+                        p.getCellRef().setCount(p.getCellRef().getCount(false) + signedCountToRemove);
                         // And now remove properly
-                        if (ptr.getContainerStore())
-                            ptr.getContainerStore()->remove(ptr, std::abs(signedCountToRemove), false);
+                        if (p.getContainerStore())
+                            p.getContainerStore()->remove(p, std::abs(signedCountToRemove), false);
                         else
                         {
-                            MWBase::Environment::get().getWorld()->disable(ptr);
-                            MWBase::Environment::get().getWorld()->deleteObject(ptr);
+                            MWBase::Environment::get().getWorld()->disable(p);
+                            MWBase::Environment::get().getWorld()->deleteObject(p);
                         }
                     };
                 };
@@ -645,6 +644,9 @@ namespace MWLua
             }
             inventoryT["isResolved"] = [](const InventoryT& inventory) -> bool {
                 const MWWorld::Ptr& ptr = inventory.mObj.ptr();
+                // Avoid initializing custom data
+                if (!ptr.getRefData().getCustomData())
+                    return false;
                 MWWorld::ContainerStore& store = ptr.getClass().getContainerStore(ptr);
                 return store.isResolved();
             };

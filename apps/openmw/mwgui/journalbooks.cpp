@@ -15,17 +15,17 @@ namespace
         MWGui::BookTypesetter::Ptr mTypesetter;
         MWGui::BookTypesetter::Style* mBodyStyle;
 
-        AddContent(MWGui::BookTypesetter::Ptr typesetter, MWGui::BookTypesetter::Style* body_style)
+        explicit AddContent(MWGui::BookTypesetter::Ptr typesetter, MWGui::BookTypesetter::Style* bodyStyle)
             : mTypesetter(std::move(typesetter))
-            , mBodyStyle(body_style)
+            , mBodyStyle(bodyStyle)
         {
         }
     };
 
     struct AddSpan : AddContent
     {
-        AddSpan(MWGui::BookTypesetter::Ptr typesetter, MWGui::BookTypesetter::Style* body_style)
-            : AddContent(std::move(typesetter), body_style)
+        explicit AddSpan(MWGui::BookTypesetter::Ptr typesetter, MWGui::BookTypesetter::Style* bodyStyle)
+            : AddContent(std::move(typesetter), bodyStyle)
         {
         }
 
@@ -47,9 +47,9 @@ namespace
         MWGui::BookTypesetter::Ptr mTypesetter;
         MWGui::BookTypesetter::Style* mBodyStyle;
 
-        AddEntry(MWGui::BookTypesetter::Ptr typesetter, MWGui::BookTypesetter::Style* body_style)
+        AddEntry(MWGui::BookTypesetter::Ptr typesetter, MWGui::BookTypesetter::Style* bodyStyle)
             : mTypesetter(std::move(typesetter))
-            , mBodyStyle(body_style)
+            , mBodyStyle(bodyStyle)
         {
         }
 
@@ -66,11 +66,11 @@ namespace
         bool mAddHeader;
         MWGui::BookTypesetter::Style* mHeaderStyle;
 
-        AddJournalEntry(MWGui::BookTypesetter::Ptr typesetter, MWGui::BookTypesetter::Style* body_style,
-            MWGui::BookTypesetter::Style* header_style, bool add_header)
-            : AddEntry(std::move(typesetter), body_style)
-            , mAddHeader(add_header)
-            , mHeaderStyle(header_style)
+        explicit AddJournalEntry(MWGui::BookTypesetter::Ptr typesetter, MWGui::BookTypesetter::Style* bodyStyle,
+            MWGui::BookTypesetter::Style* headerStyle, bool addHeader)
+            : AddEntry(std::move(typesetter), bodyStyle)
+            , mAddHeader(addHeader)
+            , mHeaderStyle(headerStyle)
         {
         }
 
@@ -93,11 +93,11 @@ namespace
         intptr_t mContentId;
         MWGui::BookTypesetter::Style* mHeaderStyle;
 
-        AddTopicEntry(MWGui::BookTypesetter::Ptr typesetter, MWGui::BookTypesetter::Style* body_style,
-            MWGui::BookTypesetter::Style* header_style, intptr_t contentId)
-            : AddEntry(std::move(typesetter), body_style)
+        explicit AddTopicEntry(MWGui::BookTypesetter::Ptr typesetter, MWGui::BookTypesetter::Style* bodyStyle,
+            MWGui::BookTypesetter::Style* headerStyle, intptr_t contentId)
+            : AddEntry(std::move(typesetter), bodyStyle)
             , mContentId(contentId)
-            , mHeaderStyle(header_style)
+            , mHeaderStyle(headerStyle)
         {
         }
 
@@ -156,6 +156,13 @@ namespace MWGui
         return MWGui::BookTypesetter::Utf8Span(begin, begin + text.length());
     }
 
+    int getCyrillicIndexPageCount()
+    {
+        // For small font size split alphabet to two columns (2x15 characers), for big font size split it to three
+        // colums (3x10 characters).
+        return Settings::gui().mFontSize < 18 ? 2 : 3;
+    }
+
     typedef TypesetBook::Ptr book;
 
     JournalBooks::JournalBooks(JournalViewModel::Ptr model, ToUTF8::FromType encoding)
@@ -169,7 +176,7 @@ namespace MWGui
     {
         BookTypesetter::Ptr typesetter = createTypesetter();
 
-        BookTypesetter::Style* header = typesetter->createStyle({}, MyGUI::Colour(0.60f, 0.00f, 0.00f));
+        BookTypesetter::Style* header = typesetter->createStyle({}, journalHeaderColour);
         BookTypesetter::Style* body = typesetter->createStyle({}, MyGUI::Colour::Black);
 
         typesetter->write(header, to_utf8_span("You have no journal entries!"));
@@ -184,7 +191,7 @@ namespace MWGui
     {
         BookTypesetter::Ptr typesetter = createTypesetter();
 
-        BookTypesetter::Style* header = typesetter->createStyle({}, MyGUI::Colour(0.60f, 0.00f, 0.00f));
+        BookTypesetter::Style* header = typesetter->createStyle({}, journalHeaderColour);
         BookTypesetter::Style* body = typesetter->createStyle({}, MyGUI::Colour::Black);
 
         mModel->visitJournalEntries({}, AddJournalEntry(typesetter, body, header, true));
@@ -196,7 +203,7 @@ namespace MWGui
     {
         BookTypesetter::Ptr typesetter = createTypesetter();
 
-        BookTypesetter::Style* header = typesetter->createStyle({}, MyGUI::Colour(0.60f, 0.00f, 0.00f));
+        BookTypesetter::Style* header = typesetter->createStyle({}, journalHeaderColour);
         BookTypesetter::Style* body = typesetter->createStyle({}, MyGUI::Colour::Black);
 
         mModel->visitTopicName(topicId, AddTopicName(typesetter, header));
@@ -212,7 +219,7 @@ namespace MWGui
     {
         BookTypesetter::Ptr typesetter = createTypesetter();
 
-        BookTypesetter::Style* header = typesetter->createStyle({}, MyGUI::Colour(0.60f, 0.00f, 0.00f));
+        BookTypesetter::Style* header = typesetter->createStyle({}, journalHeaderColour);
         BookTypesetter::Style* body = typesetter->createStyle({}, MyGUI::Colour::Black);
 
         AddQuestName addName(typesetter, header);
@@ -277,13 +284,8 @@ namespace MWGui
 
         // for small font size split alphabet to two columns (2x15 characers), for big font size split it to three
         // colums (3x10 characters).
-        int sectionBreak = 10;
-        mIndexPagesCount = 3;
-        if (Settings::gui().mFontSize < 18)
-        {
-            sectionBreak = 15;
-            mIndexPagesCount = 2;
-        }
+        mIndexPagesCount = getCyrillicIndexPageCount();
+        int sectionBreak = 30 / mIndexPagesCount;
 
         unsigned char ch[3] = { 0xd0, 0x90, 0x00 }; // CYRILLIC CAPITAL A is a 0xd090 in UTF-8
 

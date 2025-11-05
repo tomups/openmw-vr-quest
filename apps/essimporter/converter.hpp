@@ -181,14 +181,14 @@ namespace ESSImport
     public:
         void read(ESM::ESMReader& esm) override
         {
-            ESM::Class class_;
+            ESM::Class classRecord;
             bool isDeleted = false;
 
-            class_.load(esm, isDeleted);
-            if (class_.mId == "NEWCLASSID_CHARGEN")
-                mContext->mCustomPlayerClassName = class_.mName;
+            classRecord.load(esm, isDeleted);
+            if (classRecord.mId == "NEWCLASSID_CHARGEN")
+                mContext->mCustomPlayerClassName = classRecord.mName;
 
-            mRecords[class_.mId] = class_;
+            mRecords[classRecord.mId] = classRecord;
         }
     };
 
@@ -249,7 +249,7 @@ namespace ESSImport
             {
                 ESM::InventoryState& invState = mContext->mPlayer.mObject.mInventory;
 
-                for (size_t i = 0; i < invState.mItems.size(); ++i)
+                for (uint32_t i = 0; i < static_cast<uint32_t>(invState.mItems.size()); ++i)
                 {
                     // FIXME: in case of conflict (multiple items with this refID) use the already equipped one?
                     if (invState.mItems[i].mRef.mRefID == refr.mActorData.mSelectedEnchantItem)
@@ -584,7 +584,7 @@ namespace ESSImport
             script.load(esm);
             ESM::GlobalScript out;
             convertSCPT(script, out);
-            mScripts.push_back(out);
+            mScripts.push_back(std::move(out));
         }
         void write(ESM::ESMWriter& esm) override
         {

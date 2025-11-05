@@ -1,6 +1,6 @@
-#include <components/misc/strings/format.hpp>
-
 #include "utf8.hpp"
+
+#include <format>
 
 namespace
 {
@@ -17,12 +17,12 @@ namespace
     {
         double integer;
         if (!arg.is<double>())
-            throw std::runtime_error(Misc::StringUtils::format("bad argument #%i to '%s' (number expected, got %s)", n,
-                name, sol::type_name(arg.lua_state(), arg.get_type())));
+            throw std::runtime_error(std::format("bad argument #{} to '{}' (number expected, got {})", n, name,
+                sol::type_name(arg.lua_state(), arg.get_type())));
 
         if (std::modf(arg, &integer) != 0)
             throw std::runtime_error(
-                Misc::StringUtils::format("bad argument #%i to '%s' (number has no integer representation)", n, name));
+                std::format("bad argument #{} to '{}' (number has no integer representation)", n, name));
 
         return static_cast<std::int64_t>(integer);
     }
@@ -65,9 +65,9 @@ namespace
     }
 
     // returns: first - character pos in bytes, second - character codepoint
-    std::pair<int64_t, int64_t> decodeNextUTF8Character(std::string_view s, std::vector<int64_t>& pos_byte)
+    std::pair<int64_t, int64_t> decodeNextUTF8Character(std::string_view s, std::vector<int64_t>& posByte)
     {
-        const int64_t pos = pos_byte.back() - 1;
+        const int64_t pos = posByte.back() - 1;
         const unsigned char ch = static_cast<unsigned char>(s[pos]);
         int64_t codepoint = -1;
         size_t byteSize = 0;
@@ -104,9 +104,9 @@ namespace
             codepoint = (codepoint << 6) | (static_cast<unsigned char>(s[pos + i]) & 0b00111111);
         }
 
-        std::pair<size_t, int64_t> res = std::make_pair(pos_byte.back(), codepoint);
+        std::pair<size_t, int64_t> res = std::make_pair(posByte.back(), codepoint);
 
-        pos_byte.push_back(pos_byte.back() + byteSize); /* the next character (if exists) starts at this byte */
+        posByte.push_back(posByte.back() + byteSize); /* the next character (if exists) starts at this byte */
 
         return res;
     }
@@ -127,8 +127,7 @@ namespace LuaUtf8
             {
                 int64_t codepoint = getInteger(args[i], (i + 1), "char");
                 if (codepoint < 0 || codepoint > MAXUNICODE)
-                    throw std::runtime_error(
-                        "bad argument #" + std::to_string(i + 1) + " to 'char' (value out of range)");
+                    throw std::runtime_error(std::format("bad argument #{} to 'char' (value out of range)", i + 1));
 
                 codepointToUTF8(static_cast<char32_t>(codepoint), result);
             }
@@ -137,13 +136,12 @@ namespace LuaUtf8
 
         utf8["codes"] = [](std::string_view s) {
             return sol::as_function(
-                [s, pos_byte = std::vector<int64_t>{ 1 }]() mutable -> sol::optional<std::pair<int64_t, int64_t>> {
-                    if (pos_byte.back() <= static_cast<int64_t>(s.size()))
+                [s, posByte = std::vector<int64_t>{ 1 }]() mutable -> sol::optional<std::pair<int64_t, int64_t>> {
+                    if (posByte.back() <= static_cast<int64_t>(s.size()))
                     {
-                        const auto pair = decodeNextUTF8Character(s, pos_byte);
+                        const auto pair = decodeNextUTF8Character(s, posByte);
                         if (pair.second == -1)
-                            throw std::runtime_error(
-                                "Invalid UTF-8 code at position " + std::to_string(pos_byte.size()));
+                            throw std::runtime_error(std::format("Invalid UTF-8 code at position {}", posByte.size()));
 
                         return pair;
                     }
@@ -168,14 +166,14 @@ namespace LuaUtf8
             if (len == 0)
                 return len;
 
-            std::vector<int64_t> pos_byte = { iv };
+            std::vector<int64_t> posByte = { iv };
 
-            while (pos_byte.back() <= fv)
+            while (posByte.back() <= fv)
             {
-                if (decodeNextUTF8Character(s, pos_byte).second == -1)
-                    return std::pair(sol::lua_nil, pos_byte.back());
+                if (decodeNextUTF8Character(s, posByte).second == -1)
+                    return std::pair(sol::lua_nil, posByte.back());
             }
-            return pos_byte.size() - 1;
+            return posByte.size() - 1;
         };
 
         utf8["codepoint"]
@@ -195,14 +193,14 @@ namespace LuaUtf8
             if (iv > fv)
                 return sol::as_returns(std::vector<int64_t>{}); /* empty interval; return nothing */
 
-            std::vector<int64_t> pos_byte = { iv };
+            std::vector<int64_t> posByte = { iv };
             std::vector<int64_t> codepoints;
 
-            while (pos_byte.back() <= fv)
+            while (posByte.back() <= fv)
             {
-                codepoints.push_back(decodeNextUTF8Character(s, pos_byte).second);
+                codepoints.push_back(decodeNextUTF8Character(s, posByte).second);
                 if (codepoints.back() == -1)
-                    throw std::runtime_error("Invalid UTF-8 code at position " + std::to_string(pos_byte.size()));
+                    throw std::runtime_error(std::format("Invalid UTF-8 code at position {}", posByte.size()));
             }
 
             return sol::as_returns(std::move(codepoints));
@@ -223,23 +221,23 @@ namespace LuaUtf8
             else
                 iv = getInteger(args[0], 3, "offset");
 
-            std::vector<int64_t> pos_byte = { 1 };
+            std::vector<int64_t> posByte = { 1 };
 
             relativePosition(iv, len);
 
             if (iv > static_cast<int64_t>(len) + 1)
                 throw std::runtime_error("bad argument #3 to 'offset' (position out of bounds)");
 
-            while (pos_byte.back() <= static_cast<int64_t>(len))
-                decodeNextUTF8Character(s, pos_byte);
+            while (posByte.back() <= static_cast<int64_t>(len))
+                decodeNextUTF8Character(s, posByte);
 
-            for (auto it = pos_byte.begin(); it != pos_byte.end(); ++it)
+            for (auto it = posByte.begin(); it != posByte.end(); ++it)
             {
                 if (*it == iv)
                 {
-                    if (n <= 0 && it + n >= pos_byte.begin())
+                    if (n <= 0 && it + n >= posByte.begin())
                         return *(it + n);
-                    if (n > 0 && it + n - 1 < pos_byte.end())
+                    if (n > 0 && it + n - 1 < posByte.end())
                         return *(it + n - 1);
                     break;
                 }

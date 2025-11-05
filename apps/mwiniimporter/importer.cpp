@@ -9,8 +9,6 @@
 #include <fstream>
 #include <iostream>
 
-namespace sfs = std::filesystem;
-
 namespace
 {
     // from configfileparser.cpp
@@ -328,10 +326,10 @@ MwIniImporter::multistrmap MwIniImporter::loadIniFile(const std::filesystem::pat
             continue;
         }
 
-        int comment_pos = static_cast<int>(utf8.find(';'));
-        if (comment_pos > 0)
+        const std::string::size_type commentPos = utf8.find(';');
+        if (commentPos != std::string::npos)
         {
-            utf8 = utf8.substr(0, comment_pos);
+            utf8 = utf8.substr(0, commentPos);
         }
 
         int pos = static_cast<int>(utf8.find('='));
@@ -353,7 +351,7 @@ MwIniImporter::multistrmap MwIniImporter::loadIniFile(const std::filesystem::pat
         if (it == map.end())
             it = map.emplace_hint(it, std::move(key), std::vector<std::string>());
 
-        it->second.push_back(std::string(value));
+        it->second.emplace_back(value);
     }
 
     return map;
@@ -395,7 +393,7 @@ MwIniImporter::multistrmap MwIniImporter::loadCfgFile(const std::filesystem::pat
         {
             map.insert(std::make_pair(key, std::vector<std::string>()));
         }
-        map[key].push_back(value);
+        map[key].push_back(std::move(value));
     }
 
     return map;

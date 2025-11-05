@@ -157,7 +157,7 @@ namespace MWMechanics
                 int bonus = 0;
                 int index = ESM::Skill::refIdToIndex(skill.mId);
                 auto bonusIt = std::find_if(race->mData.mBonus.begin(), race->mData.mBonus.end(),
-                    [&](const auto& bonus) { return bonus.mSkill == index; });
+                    [&](const auto& v) { return v.mSkill == index; });
                 if (bonusIt != race->mData.mBonus.end())
                     bonus = bonusIt->mBonus;
 
@@ -186,9 +186,9 @@ namespace MWMechanics
         // class
         if (mClassSelected)
         {
-            const ESM::Class* class_ = esmStore.get<ESM::Class>().find(player->mClass);
+            const ESM::Class* playerClass = esmStore.get<ESM::Class>().find(player->mClass);
 
-            for (int attribute : class_->mData.mAttribute)
+            for (int attribute : playerClass->mData.mAttribute)
             {
                 ESM::RefId id = ESM::Attribute::indexToRefId(attribute);
                 if (!id.empty())
@@ -199,7 +199,7 @@ namespace MWMechanics
             {
                 int bonus = i == 0 ? 10 : 25;
 
-                for (const auto& skills : class_->mData.mSkills)
+                for (const auto& skills : playerClass->mData.mSkills)
                 {
                     ESM::RefId id = ESM::Skill::indexToRefId(skills[i]);
                     if (!id.empty())
@@ -209,7 +209,7 @@ namespace MWMechanics
 
             for (const ESM::Skill& skill : esmStore.get<ESM::Skill>())
             {
-                if (skill.mData.mSpecialization == class_->mData.mSpecialization)
+                if (skill.mData.mSpecialization == playerClass->mData.mSpecialization)
                     npcStats.getSkill(skill.mId).setBase(npcStats.getSkill(skill.mId).getBase() + 5);
             }
         }
@@ -368,17 +368,28 @@ namespace MWMechanics
 
     bool MechanicsManager::isRunning(const MWWorld::Ptr& ptr)
     {
-        return mActors.isRunning(ptr);
+        CreatureStats& stats = ptr.getClass().getCreatureStats(ptr);
+        if (!stats.getStance(MWMechanics::CreatureStats::Stance_Run))
+            return false;
+
+        if (mActors.isRunning(ptr))
+            return true;
+
+        MWBase::World* world = MWBase::Environment::get().getWorld();
+        return !world->isOnGround(ptr) && !world->isSwimming(ptr) && !world->isFlying(ptr);
     }
 
     bool MechanicsManager::isSneaking(const MWWorld::Ptr& ptr)
     {
         CreatureStats& stats = ptr.getClass().getCreatureStats(ptr);
+        if (!stats.getStance(MWMechanics::CreatureStats::Stance_Sneak))
+            return false;
+
+        if (mActors.isSneaking(ptr))
+            return true;
+
         MWBase::World* world = MWBase::Environment::get().getWorld();
-        bool animActive = mActors.isSneaking(ptr);
-        bool stanceOn = stats.getStance(MWMechanics::CreatureStats::Stance_Sneak);
-        bool inair = !world->isOnGround(ptr) && !world->isSwimming(ptr) && !world->isFlying(ptr);
-        return stanceOn && (animActive || inair);
+        return !world->isOnGround(ptr) && !world->isSwimming(ptr) && !world->isFlying(ptr);
     }
 
     void MechanicsManager::rest(double hours, bool sleep)
@@ -455,11 +466,11 @@ namespace MWMechanics
         mUpdatePlayer = true;
     }
 
-    void MechanicsManager::setPlayerClass(const ESM::Class& cls)
+    void MechanicsManager::setPlayerClass(const ESM::Class& value)
     {
         MWBase::World* world = MWBase::Environment::get().getWorld();
 
-        const ESM::Class* ptr = world->getStore().insert(cls);
+        const ESM::Class* ptr = world->getStore().insert(value);
 
         ESM::NPC player = *world->getPlayerPtr().get<ESM::NPC>()->mBase;
         player.mClass = ptr->mId;
@@ -1442,6 +1453,7 @@ namespace MWMechanics
                     }
 
                     startCombat(actor, player, &playerFollowers);
+                    observerStats.setHitAttemptActorId(player.getClass().getCreatureStats(player).getActorId());
 
                     // Apply aggression value to the base Fight rating, so that the actor can continue fighting
                     // after a Calm spell wears off
@@ -1597,7 +1609,7 @@ namespace MWMechanics
         commitCrime(player, victim, MWBase::MechanicsManager::OT_Murder);
     }
 
-    bool MechanicsManager::awarenessCheck(const MWWorld::Ptr& ptr, const MWWorld::Ptr& observer)
+    bool MechanicsManager::awarenessCheck(const MWWorld::Ptr& ptr, const MWWorld::Ptr& observer, bool useCache)
     {
         if (observer.getClass().getCreatureStats(observer).isDead() || !observer.getRefData().isEnabled())
             return false;
@@ -1664,8 +1676,10 @@ namespace MWMechanics
         }
 
         float target = x - y;
+        if (useCache)
+            return observerStats.getAwarenessRoll() >= target;
         auto& prng = MWBase::Environment::get().getWorld()->getPrng();
-        return (Misc::Rng::roll0to99(prng) >= target);
+        return Misc::Rng::roll0to99(prng) >= target;
     }
 
     void MechanicsManager::startCombat(
@@ -1725,6 +1739,8 @@ namespace MWMechanics
                         .getActorId()); // Stops guard from ending combat if player is unreachable
                 for (const Actor& actor : mActors)
                 {
+                    if (actor.isInvalid())
+                        continue;
                     if (actor.getPtr().getClass().isClass(actor.getPtr(), "Guard"))
                     {
                         MWMechanics::AiSequence& aiSeq

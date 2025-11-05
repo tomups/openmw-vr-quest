@@ -8,6 +8,8 @@
 #include "../mwworld/containerstore.hpp"
 #include "../mwworld/ptr.hpp"
 
+#include <components/misc/notnullptr.hpp>
+
 namespace osg
 {
     class Group;
@@ -30,13 +32,17 @@ namespace MWGui
     class TradeItemModel;
     class DragAndDrop;
     class ItemModel;
+    class ItemTransfer;
 
     class InventoryWindow : public WindowPinnableBase, public MWWorld::ContainerStoreListener
     {
     public:
-        InventoryWindow(DragAndDrop* dragAndDrop, osg::Group* parent, Resource::ResourceSystem* resourceSystem);
+        explicit InventoryWindow(DragAndDrop& dragAndDrop, ItemTransfer& itemTransfer, osg::Group* parent,
+            Resource::ResourceSystem* resourceSystem);
 
         void onOpen() override;
+
+        void onClose() override;
 
         /// start trading, disables item drag&drop
         void setTrading(bool trading);
@@ -71,14 +77,18 @@ namespace MWGui
 
         std::string_view getWindowIdForLua() const override { return "Inventory"; }
 
+        ControllerButtons* getControllerButtons() override;
+
     protected:
         void onTitleDoubleClicked() override;
+        bool onControllerButtonEvent(const SDL_ControllerButtonEvent& arg) override;
+        void setActiveControllerWindow(bool active) override;
 
     private:
-        DragAndDrop* mDragAndDrop;
+        Misc::NotNullPtr<DragAndDrop> mDragAndDrop;
+        Misc::NotNullPtr<ItemTransfer> mItemTransfer;
 
         int mSelectedItem;
-        std::optional<int> mEquippedStackableCount;
 
         MWWorld::Ptr mPtr;
 
@@ -120,13 +130,26 @@ namespace MWGui
 
         void onBackgroundSelected();
 
-        void sellItem(MyGUI::Widget* sender, int count);
-        void dragItem(MyGUI::Widget* sender, int count);
+        enum class ControllerAction
+        {
+            None,
+            Use,
+            Transfer,
+            Sell,
+            Drop,
+        };
+        ControllerAction mPendingControllerAction;
 
         void onWindowResize(MyGUI::Window* _sender) override;
-        void onFilterChanged(MyGUI::Widget* _sender);
-        void onNameFilterChanged(MyGUI::EditBox* _sender);
-        void onAvatarClicked(MyGUI::Widget* _sender);
+        void sellItem(MyGUI::Widget* sender, std::size_t count);
+        void dragItem(MyGUI::Widget* sender, std::size_t count);
+        void transferItem(MyGUI::Widget* sender, std::size_t count);
+        void dropItem(MyGUI::Widget* sender, std::size_t count);
+
+        void onWindowResize(MyGUI::Window* sender);
+        void onFilterChanged(MyGUI::Widget* sender);
+        void onNameFilterChanged(MyGUI::EditBox* sender);
+        void onAvatarClicked(MyGUI::Widget* sender);
         void onPinToggled() override;
 
         void updateEncumbranceBar();

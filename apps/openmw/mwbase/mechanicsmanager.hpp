@@ -8,9 +8,6 @@
 #include <string_view>
 #include <vector>
 
-#include "../mwmechanics/greetingstate.hpp"
-#include "../mwrender/animationpriority.hpp"
-
 #include "../mwworld/ptr.hpp"
 
 namespace osg
@@ -25,6 +22,11 @@ namespace ESM
     class RefId;
     class ESMReader;
     class ESMWriter;
+}
+
+namespace MWMechanics
+{
+    enum class GreetingState;
 }
 
 namespace MWWorld
@@ -79,7 +81,7 @@ namespace MWBase
         virtual void setPlayerClass(const ESM::RefId& id) = 0;
         ///< Set player class to stock class.
 
-        virtual void setPlayerClass(const ESM::Class& class_) = 0;
+        virtual void setPlayerClass(const ESM::Class& value) = 0;
         ///< Set player class to custom class.
 
         virtual void restoreDynamicStats(const MWWorld::Ptr& actor, double hours, bool sleep) = 0;
@@ -102,7 +104,7 @@ namespace MWBase
         ///< Return the number of deaths for actors with the given ID.
 
         /// Check if \a observer is potentially aware of \a ptr. Does not do a line of sight check!
-        virtual bool awarenessCheck(const MWWorld::Ptr& ptr, const MWWorld::Ptr& observer) = 0;
+        virtual bool awarenessCheck(const MWWorld::Ptr& ptr, const MWWorld::Ptr& observer, bool useCache = true) = 0;
 
         /// Makes \a ptr fight \a target. Also shouts a combat taunt.
         virtual void startCombat(
