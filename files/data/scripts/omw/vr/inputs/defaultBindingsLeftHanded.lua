@@ -187,7 +187,7 @@ return {
                 ['Sneak_VR'] = '/user/hand/right/input/squeeze/value',
                 ['AlwaysRun_VR'] = '/user/hand/right/input/thumbstick/click',
                 ['Jump_VR'] = '/user/hand/right/input/trigger/value',
-                ['ToggleSpell_VR'] = '/user/hand/right/input/y/click',
+                ['ToggleSpell_VR'] = '/user/hand/right/input/a/click',
                 ['MenuUp_VR'] = '/user/hand/right/input/thumbstick/up',
                 ['MenuDown_VR'] = '/user/hand/right/input/thumbstick/down',
                 ['MenuRight_VR'] = '/user/hand/right/input/thumbstick/left',
