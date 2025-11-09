@@ -117,7 +117,7 @@ namespace MWGui
 
 //## VR_PATCH BEGIN
         // MERGETODO: Why was it marked override?
-        void onWindowResize(MyGUI::Window* sender);
+        void onWindowResize(MyGUI::Window* sender) override;
 //## VR_PATCH END
 
         void onScriptFilterChange(MyGUI::EditBox*);
