@@ -101,7 +101,8 @@ namespace MWLua
             luaManager->addAction(
                 [element] {
                     element->create();
-                    MWVR::VRGUIManager::instance().registerLuaElement(element.get());
+                    if (VR::getVR())
+                        MWVR::VRGUIManager::instance().registerLuaElement(element.get());
                 },
                 "Create UI");
             return element;
@@ -115,9 +116,11 @@ namespace MWLua
             luaManager->addAction(
                 [menu]() {
                     LuaUi::Element::forEach(menu, [](LuaUi::Element* e) {
-                        MWVR::VRGUIManager::instance().deregisterLuaElement(e);
+                        if (VR::getVR())
+                            MWVR::VRGUIManager::instance().deregisterLuaElement(e);
                         e->update();
-                        MWVR::VRGUIManager::instance().registerLuaElement(e);
+                        if (VR::getVR())
+                            MWVR::VRGUIManager::instance().registerLuaElement(e);
                     });
                 },
                 "Update all menu UI elements");
@@ -321,9 +324,11 @@ namespace MWLua
                 element->mState = LuaUi::Element::Update;
                 luaManager->addAction(
                     [element] {
-                        MWVR::VRGUIManager::instance().deregisterLuaElement(element.get());
+                        if (VR::getVR())
+                            MWVR::VRGUIManager::instance().deregisterLuaElement(element.get());
                         element->update();
-                        MWVR::VRGUIManager::instance().registerLuaElement(element.get());
+                        if (VR::getVR())
+                            MWVR::VRGUIManager::instance().registerLuaElement(element.get());
                     },
                     "Update UI");
             };
@@ -333,7 +338,8 @@ namespace MWLua
                 element->mState = LuaUi::Element::Destroy;
                 luaManager->addAction(
                     [element] {
-                        MWVR::VRGUIManager::instance().deregisterLuaElement(element.get());
+                        if (VR::getVR())
+                            MWVR::VRGUIManager::instance().deregisterLuaElement(element.get());
                         LuaUi::Element::erase(element.get());
                     },
                     "Destroy UI");
