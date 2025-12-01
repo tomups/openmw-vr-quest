@@ -654,11 +654,7 @@ namespace MWVR
         mHeadPoseInLocalSpace = pose;
         float characterYaw = mPtr.getRefData().getPosition().rot[2];
         float characterYawDiff = characterYaw - mCharacterYaw;
-        // Log(Debug::Verbose) << "Why: " << characterYaw << " - " << mCharacterYaw << " = " << characterYawDiff;
-        // Log(Debug::Verbose) << "Why1: " << mPtr.getRefData().getPosition().rot[0] << ", " <<
-        // mPtr.getRefData().getPosition().rot[1] << ", " << mPtr.getRefData().getPosition().rot[2];
 
-        // Slightly awkward because pitch needs to be absolute, while yaw needs to be relative.
         mCharacterYaw = newYaw - oldYaw + characterYaw;
         auto world = MWBase::Environment::get().getWorld();
         world->rotateObject(mPtr, osg::Vec3f(pitch, 0.f, mCharacterYaw), MWBase::RotationFlag_none);
@@ -666,23 +662,6 @@ namespace MWVR
         if (mRecenter)
         {
             Log(Debug::Verbose) << "VRAnimation: Recenter( vertical=" << VR::getShouldRecenterZ() << ", horizontal=" << VR::getShouldRecenterXY() << ")";
-            // Recompute mCharLocalSpacePose so that view->locateInWorld() = mObjectRoot's pose + mCharHeight
-            // pose.orientation = osg::Quat(mCharacterYaw, osg::Vec3d(0, 0, -1));
-//#define PRINTVEC3(a)                                                                                                   \
-//    Log(Debug::Verbose) << #a << ": " << a.mX.asMeters() << ", " << a.mY.asMeters() << ", " << a.mZ.asMeters()
-//            PRINTVEC3(mCharLocalSpacePose.position);
-//            PRINTVEC3(pose.position);
-            if (VR::getShouldRecenterXY())
-            {
-                //mCharLocalSpacePose.position.mY = -pose.position.mX;
-                //mCharLocalSpacePose.position.mX = pose.position.mY;
-            }
-            if (VR::getShouldRecenterZ())
-            {
-                //mCharLocalSpacePose.position.mZ = -pose.position.mZ;
-            }
-
-
             MWBase::Environment::get().getLuaManager()->vrRecentered(
                 VR::getShouldRecenterZ(), VR::getShouldRecenterXY());
             VR::setShouldRecenterXY(false);
