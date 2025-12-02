@@ -264,8 +264,6 @@ namespace MWInput
         if (!mMouseLookEnabled)
             return;
 
-        Log(Debug::Verbose) << "Yo1: " << mGuiCursorX << ", " << mGuiCursorY;
-
         float xAxis = mBindingsManager->getActionValue(A_LookLeftRight) * 2.0f - 1.0f;
         // ## VR_PATCH BEGIN
         //          TODO: Handle in lua

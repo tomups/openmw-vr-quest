@@ -114,6 +114,8 @@ namespace MWInput
         void applyHapticsLeftHand(float intensity) override{}
         void applyHapticsRightHand(float intensity) override{}
 
+        void injectEscapeKey() override;
+
     protected:
 //## VR_PATCH END
         bool mControlsDisabled;

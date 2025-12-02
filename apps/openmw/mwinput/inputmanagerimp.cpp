@@ -264,6 +264,17 @@ namespace MWInput
         mActionManager->executeAction(action);
     }
 
+    void InputManager::injectEscapeKey() 
+    {
+        SDL_KeyboardEvent arg = {};
+        arg.type = SDL_KEYDOWN;
+        arg.keysym.sym = SDLK_ESCAPE;
+        arg.keysym.scancode = SDL_SCANCODE_ESCAPE;
+        arg.repeat = false;
+        mKeyboardManager->keyPressed(arg);
+        mKeyboardManager->keyReleased(arg);
+    }
+
     void InputManager::saveBindings()
     {
         mBindingsManager->saveBindings();

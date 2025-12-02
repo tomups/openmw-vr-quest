@@ -16,6 +16,7 @@
 #include "luamanagerimp.hpp"
 
 #include "../mwbase/environment.hpp"
+#include "../mwbase/inputmanager.hpp"
 #include "../mwbase/windowmanager.hpp"
 #include "../mwvr/vrgui.hpp"
 #include <MyGUI_InputManager.h>
@@ -275,25 +276,10 @@ namespace MWLua
             = [windowManager](std::string_view window) { return windowManager->isWindowVisible(window); };
         api["_menuBack"] = [windowManager, luaManager = context.mLuaManager]() {
             luaManager->addAction([windowManager]() {
-                if (MyGUI::InputManager::getInstance().isModalAny())
+                // Essentially all we need to do here is inject ESC
+                if (MWBase::Environment::get().getWindowManager()->isGuiMode())
                 {
-                    if (windowManager->isInteractiveMessageBoxActive())
-                        // For some reason, exitCurrentModal() will not close a message box, even though those are
-                        // modals.
-                        windowManager->closeInteractiveMessageBoxWithDefaultButton();
-                    else
-                        windowManager->exitCurrentModal();
-                }
-                else
-                {
-                    // Console/postprocessorhud do not respect the GUI stack
-                    // so i have to manually check for and close them.
-                    if (windowManager->isConsoleMode())
-                        windowManager->toggleConsole();
-                    else if (windowManager->isPostProcessorHudVisible())
-                        windowManager->togglePostProcessorHud();
-                    else
-                        windowManager->exitCurrentGuiMode();
+                    MWBase::Environment::get().getInputManager()->injectEscapeKey();
                 }
             });
         };

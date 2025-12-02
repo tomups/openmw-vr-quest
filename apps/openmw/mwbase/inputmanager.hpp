@@ -102,7 +102,9 @@ namespace MWBase
 //## VR_PATCH BEGIN
         virtual void applyHapticsLeftHand(float intensity) = 0;
         virtual void applyHapticsRightHand(float intensity) = 0;
-//## VR_PATCH END
+
+        virtual void injectEscapeKey() = 0;
+        //## VR_PATCH END
     };
 }
 
