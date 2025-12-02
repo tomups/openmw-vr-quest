@@ -68,6 +68,9 @@ namespace MWVR
 
         MWWorld::Ptr getPointerTarget() const;
 
+        void setScrollSpeed(float speed);
+        void setGuiCursor(int x, int y);
+
     protected:
         void updateVRPointer(bool disableControls);
         void updateRealisticCombat(float dt);
@@ -87,7 +90,8 @@ namespace MWVR
         bool mDelayedPointerActivate = false;
         bool mDelayedPointerActivateInjectMouseClickIfApplicable = false;
         float mDt = 0.f;
-
+        float mScrollSpeed = 0.f;
+        float mScrollPoints = 0.f;
         osg::ref_ptr<osg::Node> mVRAimNode;
     };
 }

@@ -30,7 +30,7 @@ namespace MWInput
 
         bool injectMouseButtonPress(Uint8 button);
         bool injectMouseButtonRelease(Uint8 button);
-        void injectMouseMove(float xMove, float yMove, float mouseWheelMove);
+        void injectMouseMove(float xMove, float yMove, int mouseWheelMove, bool allowedForVR = false);
         void warpMouse();
         void warpMouseToWidget(MyGUI::Widget* widget);
 
@@ -39,6 +39,7 @@ namespace MWInput
 
         int getMouseMoveX() const { return mMouseMoveX; }
         int getMouseMoveY() const { return mMouseMoveY; }
+        int getMouseWheel() const { return mMouseWheel; }
 
     private:
         BindingsManager* mBindingsManager;

@@ -2,7 +2,10 @@
 
 #include <MyGUI_Button.h>
 #include <MyGUI_InputManager.h>
+#include <MyGUI_LayerManager.h>
+#include <MyGUI_PointerManager.h>
 #include <MyGUI_RenderManager.h>
+#include <MyGUI_WidgetManager.h>
 
 #include <components/sdlutil/sdlinputwrapper.hpp>
 #include <components/sdlutil/sdlmappings.hpp>
@@ -21,11 +24,11 @@
 #include "actions.hpp"
 #include "bindingsmanager.hpp"
 
-//## VR_PATCH BEGIN
-#include <components/vr/vr.hpp>
-#include "../mwvr/vrinputmanager.hpp"
+// ## VR_PATCH BEGIN
 #include "../mwvr/vrgui.hpp"
-//## VR_PATCH END
+#include "../mwvr/vrinputmanager.hpp"
+#include <components/vr/vr.hpp>
+// ## VR_PATCH END
 
 namespace MWInput
 {
@@ -42,9 +45,9 @@ namespace MWInput
         , mLastWarpY(-1)
         , mMouseMoveX(0)
         , mMouseMoveY(0)
-//## VR_PATCH BEGIN
+        // ## VR_PATCH BEGIN
         , mPreviousXAxis(0.f)
-//## VR_PATCH END
+    // ## VR_PATCH END
     {
         int w, h;
         SDL_GetWindowSize(window, &w, &h);
@@ -54,36 +57,36 @@ namespace MWInput
         mGuiCursorY = h / (2.f * uiScale);
     }
 
-//## VR_PATCH BEGIN
-//     TODO:
-    //void MouseManager::mouseMovedVR(const SDLUtil::MouseMotionEvent& arg)
+    // ## VR_PATCH BEGIN
+    //      TODO:
+    // void MouseManager::mouseMovedVR(const SDLUtil::MouseMotionEvent& arg)
     //{
-    //    if (VR::getKBMouseModeActive())
-    //    {
-    //        float x = arg.xrel * Settings::input().mCameraSensitivity * (Settings::input().mInvertXAxis ? -1 : 1) / 256.f;
-    //        MWVR::VRInputManager::instance().mouseMove(x);
-    //    }
-    //}
-//## VR_PATCH END
+    //     if (VR::getKBMouseModeActive())
+    //     {
+    //         float x = arg.xrel * Settings::input().mCameraSensitivity * (Settings::input().mInvertXAxis ? -1 : 1) /
+    //         256.f; MWVR::VRInputManager::instance().mouseMove(x);
+    //     }
+    // }
+    // ## VR_PATCH END
 
     void MouseManager::mouseMoved(const SDLUtil::MouseMotionEvent& arg)
     {
-//## VR_PATCH BEGIN
-//         TODO: Process in lua?
-        //if (VR::getVR())
+        // ## VR_PATCH BEGIN
+        //          TODO: Process in lua?
+        // if (VR::getVR())
         //{
-        //    mouseMovedVR(arg);
-        //    return;
-        //}
+        //     mouseMovedVR(arg);
+        //     return;
+        // }
 
-//## VR_PATCH END
+        // ## VR_PATCH END
         mBindingsManager->mouseMoved(arg);
 
         MWBase::InputManager* input = MWBase::Environment::get().getInputManager();
         input->setJoystickLastUsed(false);
         input->resetIdleTime();
 
-        if (mGuiCursorEnabled)
+        if (mGuiCursorEnabled && !VR::getVR())
         {
             input->setGamepadGuiCursorEnabled(true);
 
@@ -94,15 +97,7 @@ namespace MWInput
             mGuiCursorX = static_cast<float>(arg.x) / uiScale;
             mGuiCursorY = static_cast<float>(arg.y) / uiScale;
 
-            mMouseWheel = static_cast<int>(arg.z);
-
-            MyGUI::InputManager::getInstance().injectMouseMove(
-                static_cast<int>(mGuiCursorX), static_cast<int>(mGuiCursorY), mMouseWheel);
-            // FIXME: inject twice to force updating focused widget states (tooltips) resulting from changing the
-            // viewport by scroll wheel
-            MyGUI::InputManager::getInstance().injectMouseMove(
-                static_cast<int>(mGuiCursorX), static_cast<int>(mGuiCursorY), mMouseWheel);
-
+            mMouseWheel += static_cast<int>(arg.zrel);
             winMgr->setCursorActive(true);
 
             // Check if this movement is from our recent mouse warp
@@ -120,6 +115,11 @@ namespace MWInput
             // Clear warp tracking after processing
             mLastWarpX = -1;
             mLastWarpY = -1;
+        }
+        else if (VR::getVR() && arg.zrel != 0)
+        {
+            // KB+Mouse mode still needs to scroll
+            injectMouseMove(0, 0, arg.zrel, true);
         }
 
         if (mMouseLookEnabled && !input->controlsDisabled())
@@ -232,21 +232,22 @@ namespace MWInput
             && !MWBase::Environment::get().getWindowManager()->isConsoleMode();
 
         bool wasRelative = mInputWrapper->getMouseRelative();
-//## VR_PATCH BEGIN
-// VR in KBMosueMode needs to use the mouse to pan the camera also when the game is paused
+        // ## VR_PATCH BEGIN
+        //  VR in KBMosueMode needs to use the mouse to pan the camera also when the game is paused
         bool isRelative = (VR::getVR() && VR::getKBMouseModeActive())
             || !MWBase::Environment::get().getWindowManager()->isGuiMode();
-//## VR_PATCH END
+        // ## VR_PATCH END
 
         // don't keep the pointer away from the window edge in gui mode
         // stop using raw mouse motions and switch to system cursor movements
         mInputWrapper->setMouseRelative(isRelative);
 
         // we let the mouse escape in the main menu
-//## VR_PATCH BEGIN
-// In VR the user can't see the mouse escaping.
-        mInputWrapper->setGrabPointer((grab && (Settings::input().mGrabCursor || isRelative)) || VR::getKBMouseModeActive());
-//## VR_PATCH END
+        // ## VR_PATCH BEGIN
+        //  In VR the user can't see the mouse escaping.
+        mInputWrapper->setGrabPointer(
+            (grab && (Settings::input().mGrabCursor || isRelative)) || VR::getKBMouseModeActive());
+        // ## VR_PATCH END
 
         // we switched to non-relative mode, move our cursor to where the in-game
         // cursor is
@@ -263,15 +264,17 @@ namespace MWInput
         if (!mMouseLookEnabled)
             return;
 
+        Log(Debug::Verbose) << "Yo1: " << mGuiCursorX << ", " << mGuiCursorY;
+
         float xAxis = mBindingsManager->getActionValue(A_LookLeftRight) * 2.0f - 1.0f;
-//## VR_PATCH BEGIN
-//         TODO: Handle in lua
-        //if (VR::getVR())
+        // ## VR_PATCH BEGIN
+        //          TODO: Handle in lua
+        // if (VR::getVR())
         //{
-        //    MWVR::VRInputManager::instance().turnLeftRight(xAxis, mPreviousXAxis, dt);
-        //    mPreviousXAxis = xAxis;
-        //}
-//## VR_PATCH END
+        //     MWVR::VRInputManager::instance().turnLeftRight(xAxis, mPreviousXAxis, dt);
+        //     mPreviousXAxis = xAxis;
+        // }
+        // ## VR_PATCH END
         float yAxis = mBindingsManager->getActionValue(A_LookUpDown) * 2.0f - 1.0f;
         if (xAxis == 0 && yAxis == 0)
             return;
@@ -310,12 +313,12 @@ namespace MWInput
             static_cast<int>(mGuiCursorX), static_cast<int>(mGuiCursorY), SDLUtil::sdlMouseButtonToMyGui(button));
     }
 
-    void MouseManager::injectMouseMove(float xMove, float yMove, float mouseWheelMove)
+    void MouseManager::injectMouseMove(float xMove, float yMove, int mouseWheelMove, bool allowedForVR)
     {
-//## VR_PATCH BEGIN
-        if (VR::getVR())
+        // ## VR_PATCH BEGIN
+        if (VR::getVR() && !allowedForVR)
             return;
-//## VR_PATCH END
+        // ## VR_PATCH END
         mGuiCursorX += xMove;
         mGuiCursorY += yMove;
         mMouseWheel += mouseWheelMove;
@@ -324,8 +327,14 @@ namespace MWInput
         mGuiCursorX = std::clamp<float>(mGuiCursorX, 0.f, viewSize.width - 1);
         mGuiCursorY = std::clamp<float>(mGuiCursorY, 0.f, viewSize.height - 1);
 
-        MyGUI::InputManager::getInstance().injectMouseMove(
-            static_cast<int>(mGuiCursorX), static_cast<int>(mGuiCursorY), static_cast<int>(mMouseWheel));
+        // MyGUI::InputManager::getInstance().injectMouseMove(
+        //     static_cast<int>(mGuiCursorX), static_cast<int>(mGuiCursorY), mMouseWheel);
+
+        ////MyGUI::InputManager::getInstance().injectMouseMove(
+        ////    static_cast<int>(mGuiCursorX), static_cast<int>(mGuiCursorY), mMouseWheel);
+        // MWBase::WindowManager* winMgr = MWBase::Environment::get().getWindowManager();
+        // winMgr->setCursorActive(true);
+        // warpMouse();
     }
 
     void MouseManager::warpMouse()
@@ -334,16 +343,24 @@ namespace MWInput
         mInputWrapper->warpMouse(
             static_cast<int>(mGuiCursorX * guiUiScale), static_cast<int>(mGuiCursorY * guiUiScale));
     }
-    
-//## VR_PATCH BEGIN
-// VR sets mouse position based on pointing at 3d gui elements.
+
+    // ## VR_PATCH BEGIN
+    //  VR sets mouse position based on pointing at 3d gui elements.
     void MouseManager::setMousePosition(int x, int y)
     {
         float uiScale = MWBase::Environment::get().getWindowManager()->getScalingFactor();
         mGuiCursorX = x / uiScale;
         mGuiCursorY = y / uiScale;
+
+        MyGUI::InputManager::getInstance().injectMouseMove(
+            static_cast<int>(mGuiCursorX), static_cast<int>(mGuiCursorY), mMouseWheel);
+        // FIXME: inject twice to force updating focused widget states (tooltips) resulting from changing the
+        // viewport by scroll wheel
+        //MyGUI::InputManager::getInstance().injectMouseMove(
+        //    static_cast<int>(mGuiCursorX), static_cast<int>(mGuiCursorY), mMouseWheel);
+        warpMouse();
     }
-//## VR_PATCH END
+    // ## VR_PATCH END
 
     void MouseManager::warpMouseToWidget(MyGUI::Widget* widget)
     {

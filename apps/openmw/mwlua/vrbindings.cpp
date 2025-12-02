@@ -222,12 +222,15 @@ namespace MWLua
             // which in turn could try to queue a delayed action, which is illegal while applyin delayed actions. So i have to queue it differently,
             // so it's not part of lua delayed actions.
             //luaManager->addAction([&inputManager, injectMouseClickIfApplicable]() {
-                inputManager.pointerActivateDelayed(injectMouseClickIfApplicable);
+            inputManager.pointerActivateDelayed(injectMouseClickIfApplicable);
             //});
         };
 
         api["_recenterXY"] = []() { VR::recenterXY(); };
         api["_recenterZ"] = []() { VR::recenterZ(); };
+
+        api["_setCurrentScroll"] = [&inputManager = MWVR::VRInputManager::instance()](
+                                       float scrollSpeed) { inputManager.setScrollSpeed(scrollSpeed); };
 
         // api[]
 

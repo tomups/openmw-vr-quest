@@ -259,6 +259,9 @@ local function onFrame(dt)
     end
     
     processAttacking()
+    
+    local scrollSpeed = input.getRangeActionValue('MenuScrollUp') - input.getRangeActionValue('MenuScrollDown')
+    vr._setCurrentScroll(scrollSpeed)
 end
 
 local function resetPhysicalSneakReferencePose()

@@ -603,6 +603,8 @@ local function registerActions()
     regBool('PointerRight', ActionSetTemplates.Always)
     regRange('LookLeft', ActionSetTemplates.Always)
     regRange('LookRight', ActionSetTemplates.Always)
+    regRange('MenuScrollDown', ActionSetTemplates.MenuOnly)
+    regRange('MenuScrollUp', ActionSetTemplates.MenuOnly)
     
     -- Existing actions.
     -- The intent was to only add the bindings for these existing actions.
@@ -640,13 +642,9 @@ local function registerActions()
     end), { 'LookRight' })
 end
 
--- The current .49 RC has a bug where actions defined during main menu won't transfer to in-game
--- So we re-register actions when loading the player script but only if they don't already exist.
---if not input.actions['PointerLeft'] then
-    registerActions()
-    registerTriggers()
---end
-
+registerActions()
+registerTriggers()
+    
 local function registerSettingsPage()
     I.Settings.registerPage({
         key = settingsPageKey,

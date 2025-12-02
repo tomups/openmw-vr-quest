@@ -43,6 +43,7 @@
 
 #include <extern/oics/ICSInputControlSystem.h>
 
+#include <SDL_timer.h>
 #include <iostream>
 
 namespace MWVR
@@ -123,6 +124,11 @@ namespace MWVR
         return MWWorld::Ptr();
     }
 
+    void VRInputManager::setScrollSpeed(float speed)
+    {
+        mScrollSpeed = speed;
+    }
+
     void VRInputManager::injectChannelValue(MWInput::Actions action, float value)
     {
         auto channel = mBindingsManager->ics().getChannel(MWInput::A_MoveLeftRight); // ->setValue(value);
@@ -142,15 +148,15 @@ namespace MWVR
         return wm->readPressedButton();
     }
 
-    //void VRInputManager::updatePhysicalSneak(Stereo::Unit headsetHeight)
+    // void VRInputManager::updatePhysicalSneak(Stereo::Unit headsetHeight)
     //{
-    //    // Do physical sneak toggle if necessary
-    //    const auto playerHeight = VR::Session::instance().playerHeight();
-    //    if (mPhysicalSneakEnabled && VR::getStandingPlay() && playerHeight.asMeters() > 0.0f)
-    //    {
-    //        mIsPhysicalSneak = headsetHeight < playerHeight - mPhysicalSneakHeightOffset;
-    //    }
-    //}
+    //     // Do physical sneak toggle if necessary
+    //     const auto playerHeight = VR::Session::instance().playerHeight();
+    //     if (mPhysicalSneakEnabled && VR::getStandingPlay() && playerHeight.asMeters() > 0.0f)
+    //     {
+    //         mIsPhysicalSneak = headsetHeight < playerHeight - mPhysicalSneakHeightOffset;
+    //     }
+    // }
 
     void VRInputManager::setPointerLeft(bool enabled)
     {
@@ -189,7 +195,8 @@ namespace MWVR
             mVRPointer->activate();
     }
 
-    void VRInputManager::pointerActivateDelayed(bool injectMouseClickIfApplicable) {
+    void VRInputManager::pointerActivateDelayed(bool injectMouseClickIfApplicable)
+    {
         mDelayedPointerActivate = true;
         mDelayedPointerActivateInjectMouseClickIfApplicable = injectMouseClickIfApplicable;
     }
@@ -197,12 +204,11 @@ namespace MWVR
     static VRInputManager* sInputManager;
 
     VRInputManager::VRInputManager(SDL_Window* window, osg::ref_ptr<osgViewer::Viewer> viewer,
-        osg::ref_ptr<osgViewer::ScreenCaptureHandler> screenCaptureHandler,
-        const std::filesystem::path& userFile, bool userFileExists,
-        const std::filesystem::path& userControllerBindingsFile, const std::filesystem::path& controllerBindingsFile,
-        bool grab)
+        osg::ref_ptr<osgViewer::ScreenCaptureHandler> screenCaptureHandler, const std::filesystem::path& userFile,
+        bool userFileExists, const std::filesystem::path& userControllerBindingsFile,
+        const std::filesystem::path& controllerBindingsFile, bool grab)
         : MWInput::InputManager(window, viewer, screenCaptureHandler, userFile, userFileExists,
-            userControllerBindingsFile, controllerBindingsFile, grab)
+              userControllerBindingsFile, controllerBindingsFile, grab)
         , mOSGViewer(viewer)
         , mVRPointer(nullptr)
         , mXRInput(new OpenXRInput())
@@ -242,6 +248,24 @@ namespace MWVR
         {
             auto guiCursor = MWVR::VRGUIManager::instance().guiCursor();
             mMouseManager->setMousePosition(guiCursor.x(), guiCursor.y());
+            if (std::abs(mScrollSpeed) > 0.01f)
+            {
+                mScrollPoints += mScrollSpeed * 750.f * dt;
+
+                if (std::abs(mScrollPoints) >= 1.f)
+                {
+
+                    SDL_MouseWheelEvent arg;
+                    arg.type = SDL_MOUSEWHEEL;
+                    arg.x = 0;
+                    arg.y = mScrollSpeed > 0 ? 1 : -1;
+                    arg.direction = SDL_MOUSEWHEEL_NORMAL;
+
+                    mMouseManager->injectMouseMove(0.f, 0.f, std::floor(mScrollPoints), true);
+                    mMouseManager->mouseWheelMoved(arg);
+                    mScrollPoints -= std::floor(mScrollPoints);
+                }
+            }
         }
 
         auto wm = MWBase::Environment::get().getWindowManager();
@@ -266,7 +290,7 @@ namespace MWVR
         mBindingsManager->setPlayerControlsEnabled(!guiMode);
     }
 
-    void VRInputManager::onSpaceUpdate() 
+    void VRInputManager::onSpaceUpdate()
     {
         if (!VR::getKBMouseModeActive()
             && MWBase::Environment::get().getStateManager()->getState() == MWBase::StateManager::State_Running)

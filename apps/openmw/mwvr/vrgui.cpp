@@ -1,4 +1,5 @@
 #include "vrgui.hpp"
+#include "vrinputmanager.hpp"
 
 #include <cmath>
 #include <algorithm>
@@ -43,6 +44,7 @@
 #include "../mwbase/world.hpp"
 
 #include "../mwgui/windowbase.hpp"
+#include "../mwinput/mousemanager.hpp"
 
 #include <MyGUI_FactoryManager.h>
 #include <MyGUI_ILayer.h>
@@ -1226,6 +1228,7 @@ namespace MWVR
             mFocusWidget->_riseMouseLostFocus(widget);
         if (widget)
             widget->_riseMouseSetFocus(mFocusWidget);
+        
         mFocusWidget = widget;
     }
 
@@ -1423,7 +1426,6 @@ namespace MWVR
 
         mGuiCursor.x() = (int)x;
         mGuiCursor.y() = (int)y;
-        MyGUI::InputManager::getInstance().injectMouseMove((int)x, (int)y, 0);
         MWBase::Environment::get().getWindowManager()->setCursorActive(true);
 
         // The virtual keyboard must be interactive regardless of modals

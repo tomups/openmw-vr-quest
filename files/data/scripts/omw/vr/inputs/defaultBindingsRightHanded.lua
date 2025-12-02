@@ -12,6 +12,8 @@ return {
                 ['RadialMenu_VR'] = '/user/hand/right/input/b/click',
                 ['ToggleWeapon_VR'] = '/user/hand/right/input/a/click',
                 ['ToggleSneak_VR'] = '/user/hand/right/input/thumbstick/down',
+                ['MenuScrollUp_VR'] = '/user/hand/right/input/thumbstick/up',
+                ['MenuScrollDown_VR'] = '/user/hand/right/input/thumbstick/down',
             },
             ['/user/hand/left'] = {
                 ['Recenter_VR'] = '/user/hand/left/input/y/click',
