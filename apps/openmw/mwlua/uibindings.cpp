@@ -274,8 +274,8 @@ namespace MWLua
               };
         api["_isWindowVisible"]
             = [windowManager](std::string_view window) { return windowManager->isWindowVisible(window); };
-        api["_menuBack"] = [windowManager, luaManager = context.mLuaManager]() {
-            luaManager->addAction([windowManager]() {
+        api["_menuBack"] = [luaManager = context.mLuaManager]() {
+            luaManager->addAction([]() {
                 // Essentially all we need to do here is inject ESC
                 if (MWBase::Environment::get().getWindowManager()->isGuiMode())
                 {
