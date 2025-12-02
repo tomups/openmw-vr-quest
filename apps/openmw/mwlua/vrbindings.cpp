@@ -222,7 +222,7 @@ namespace MWLua
             // which in turn could try to queue a delayed action, which is illegal while applyin delayed actions. So i have to queue it differently,
             // so it's not part of lua delayed actions.
             //luaManager->addAction([&inputManager, injectMouseClickIfApplicable]() {
-                inputManager.pointerActivate(injectMouseClickIfApplicable);
+                inputManager.pointerActivateDelayed(injectMouseClickIfApplicable);
             //});
         };
 
