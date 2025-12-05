@@ -46,6 +46,8 @@ return {
                 ['PointerRight_VR'] = '/user/hand/right/input/squeeze/click',
                 ['ToggleSneak_VR'] = '/user/hand/right/input/trackpad/down',
                 ['Inventory_VR'] = '/user/hand/right/input/trackpad/up',
+                ['MenuScrollUp_VR'] = '/user/hand/right/input/trackpad/up',
+                ['MenuScrollDown_VR'] = '/user/hand/right/input/trackpad/down',
             },
             ['/user/hand/left'] = {
                 ['Recenter_VR'] = '/user/hand/left/input/menu/click',
@@ -77,6 +79,8 @@ return {
                 ['RadialMenu_VR'] = '/user/hand/right/input/b/click',
                 ['ToggleWeapon_VR'] = '/user/hand/right/input/a/click',
                 ['ToggleSneak_VR'] = '/user/hand/right/input/thumbstick/down',
+                ['MenuScrollUp_VR'] = '/user/hand/right/input/thumbstick/up',
+                ['MenuScrollDown_VR'] = '/user/hand/right/input/thumbstick/down', 
             },
             ['/user/hand/left'] = {
                 ['Recenter_VR'] = '/user/hand/left/input/y/click',
@@ -109,6 +113,8 @@ return {
                 ['PointerRight_VR'] = '/user/hand/right/input/trackpad/click',
                 ['ToggleSneak_VR'] = '/user/hand/right/input/trackpad/down',
                 ['Inventory_VR'] = '/user/hand/right/input/trackpad/up',
+                ['MenuScrollUp_VR'] = '/user/hand/right/input/trackpad/up',
+                ['MenuScrollDown_VR'] = '/user/hand/right/input/trackpad/down', 
             },
             ['/user/hand/left'] = {
                 ['Recenter_VR'] = '/user/hand/left/input/menu/click',
@@ -155,6 +161,8 @@ return {
                 ['Recenter_VR'] = '/user/hand/left/input/menu/click',
                 ['MetaMenu_VR'] = '/user/hand/left/input/menu/click',
                 ['MenuBack_VR'] = '/user/hand/left/input/menu/click',
+                ['MenuScrollUp_VR'] = '/user/hand/right/input/thumbstick/up',
+                ['MenuScrollDown_VR'] = '/user/hand/right/input/thumbstick/down', 
             },
             ['/user/hand/left'] = {
                 ['ToggleSpell_VR'] = '/user/hand/left/input/trackpad/click',
@@ -186,6 +194,8 @@ return {
                 ['RadialMenu_VR'] = '/user/hand/right/input/b/click',
                 ['ToggleWeapon_VR'] = '/user/hand/right/input/a/click',
                 ['ToggleSneak_VR'] = '/user/hand/right/input/thumbstick/down',
+                ['MenuScrollUp_VR'] = '/user/hand/right/input/thumbstick/up',
+                ['MenuScrollDown_VR'] = '/user/hand/right/input/thumbstick/down', 
             },
             ['/user/hand/left'] = {
                 -- Oculus users frequently use steamvr which messes with the availability of the /menu binding
@@ -219,6 +229,8 @@ return {
                 ['RadialMenu_VR'] = '/user/hand/right/input/b/click',
                 ['ToggleWeapon_VR'] = '/user/hand/right/input/a/click',
                 ['ToggleSneak_VR'] = '/user/hand/right/input/thumbstick/down',
+                ['MenuScrollUp_VR'] = '/user/hand/right/input/thumbstick/up',
+                ['MenuScrollDown_VR'] = '/user/hand/right/input/thumbstick/down', 
             },
             ['/user/hand/left'] = {
                 -- Since index always uses steamvr, it has no /menu binding.

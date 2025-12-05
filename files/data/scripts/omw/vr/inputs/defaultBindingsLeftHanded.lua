@@ -29,6 +29,8 @@ return {
                 ['RadialMenu_VR'] = '/user/hand/left/input/y/click',
                 ['ToggleWeapon_VR'] = '/user/hand/left/input/x/click',
                 ['ToggleSneak_VR'] = '/user/hand/left/input/thumbstick/down',
+                ['MenuScrollUp_VR'] = '/user/hand/left/input/thumbstick/up',
+                ['MenuScrollDown_VR'] = '/user/hand/left/input/thumbstick/down',
             },
         },
         ['/interaction_profiles/htc/vive_controller'] = {
@@ -61,6 +63,8 @@ return {
                 ['PointerLeft_VR'] = '/user/hand/left/input/squeeze/click',
                 ['ToggleSneak_VR'] = '/user/hand/left/input/trackpad/down',
                 ['Inventory_VR'] = '/user/hand/left/input/trackpad/up',
+                ['MenuScrollUp_VR'] = '/user/hand/left/input/trackpad/up',
+                ['MenuScrollDown_VR'] = '/user/hand/left/input/trackpad/down',
             },
         },
         ['/interaction_profiles/htc/vive_cosmos_controller'] = {
@@ -92,6 +96,8 @@ return {
                 ['RadialMenu_VR'] = '/user/hand/left/input/y/click',
                 ['ToggleWeapon_VR'] = '/user/hand/left/input/x/click',
                 ['ToggleSneak_VR'] = '/user/hand/left/input/thumbstick/down',
+                ['MenuScrollUp_VR'] = '/user/hand/right/input/thumbstick/up',
+                ['MenuScrollDown_VR'] = '/user/hand/right/input/thumbstick/down',
             },
         },
         ['/interaction_profiles/huawei/controller'] = {
@@ -124,6 +130,8 @@ return {
                 ['PointerRight_VR'] = '/user/hand/left/input/trackpad/click',
                 ['ToggleSneak_VR'] = '/user/hand/left/input/trackpad/down',
                 ['Inventory_VR'] = '/user/hand/left/input/trackpad/up',
+                ['MenuScrollUp_VR'] = '/user/hand/left/input/trackpad/up',
+                ['MenuScrollDown_VR'] = '/user/hand/left/input/trackpad/down', 
             },
         },
         ['/interaction_profiles/khr/simple_controller'] = {
@@ -171,6 +179,8 @@ return {
                 ['Recenter_VR'] = '/user/hand/left/input/menu/click',
                 ['MetaMenu_VR'] = '/user/hand/left/input/menu/click',
                 ['MenuBack_VR'] = '/user/hand/left/input/menu/click',
+                ['MenuScrollUp_VR'] = '/user/hand/left/input/thumbstick/up',
+                ['MenuScrollDown_VR'] = '/user/hand/left/input/thumbstick/down', 
             },
         },
         ['/interaction_profiles/oculus/touch_controller'] = {
@@ -204,6 +214,8 @@ return {
                 ['RadialMenu_VR'] = '/user/hand/left/input/y/click',
                 ['ToggleWeapon_VR'] = '/user/hand/left/input/x/click',
                 ['ToggleSneak_VR'] = '/user/hand/left/input/thumbstick/down',
+                ['MenuScrollUp_VR'] = '/user/hand/left/input/thumbstick/up',
+                ['MenuScrollDown_VR'] = '/user/hand/left/input/thumbstick/down', 
             },
         },
         ['/interaction_profiles/valve/index_controller'] = {
@@ -236,6 +248,8 @@ return {
                 ['RadialMenu_VR'] = '/user/hand/left/input/b/click',
                 ['ToggleWeapon_VR'] = '/user/hand/left/input/a/click',
                 ['ToggleSneak_VR'] = '/user/hand/left/input/thumbstick/down',
+                ['MenuScrollUp_VR'] = '/user/hand/left/input/thumbstick/up',
+                ['MenuScrollDown_VR'] = '/user/hand/left/input/thumbstick/down', 
             },
         },
     },
