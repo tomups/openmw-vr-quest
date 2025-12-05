@@ -501,6 +501,7 @@ namespace MWRender
 
 //## VR_PATCH BEGIN
         virtual void updateCrosshairs(){}
+        bool useSmoothAnimationTransitions() const;
 
 //## VR_PATCH END
     private:

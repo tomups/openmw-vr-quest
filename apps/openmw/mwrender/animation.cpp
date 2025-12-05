@@ -747,7 +747,7 @@ namespace MWRender
         }
 
         // Get the blending rules
-        if (Settings::game().mSmoothAnimTransitions)
+        if (useSmoothAnimationTransitions())
         {
             // Note, even if the actual config is .json - we should send a .yaml path to AnimBlendRulesManager, the
             // manager will check for .json if it will not find a specified .yaml file.
@@ -1194,7 +1194,7 @@ namespace MWRender
                     osg::ref_ptr<osg::Node> node = getNodeMap().at(
                         it->first); // this should not throw, we already checked for the node existing in addAnimSource
 
-                    const bool useSmoothAnims = Settings::game().mSmoothAnimTransitions;
+                    const bool useSmoothAnims = useSmoothAnimationTransitions();
 
                     osg::Callback* callback = it->second->getAsCallback();
                     if (useSmoothAnims)
@@ -2029,6 +2029,11 @@ namespace MWRender
     void Animation::removeFromScene()
     {
         removeFromSceneImpl();
+    }
+
+    bool Animation::useSmoothAnimationTransitions() const
+    {
+        return Settings::game().mSmoothAnimTransitions && !(VR::getVR() && mPtr == MWMechanics::getPlayer());
     }
 
     void Animation::removeFromSceneImpl()
