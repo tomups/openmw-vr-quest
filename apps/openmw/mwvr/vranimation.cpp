@@ -662,10 +662,6 @@ namespace MWVR
         if (mRecenter)
         {
             Log(Debug::Verbose) << "VRAnimation: Recenter( vertical=" << VR::getShouldRecenterZ() << ", horizontal=" << VR::getShouldRecenterXY() << ")";
-            MWBase::Environment::get().getLuaManager()->vrRecentered(
-                VR::getShouldRecenterZ(), VR::getShouldRecenterXY());
-            VR::setShouldRecenterXY(false);
-            VR::setShouldRecenterZ(false);
 
             mRecenter = false;
         }
