@@ -311,6 +311,38 @@ end
 local activeProfiles = {
 }
 
+local function getActiveTriggerBindings(key)
+    local activeBindings = {}
+    for name, controller in pairs(controllers) do
+        local profile = I.vrinputs.getInteractionProfileOfController(controller)
+        if profile then
+            for actionSet, bindings in pairs(getBindingsForController(triggerBindings, controller) or {}) do
+                for id, path in pairs(bindings[key] or {}) do
+                    activeBindings[id] = path
+                end
+            end
+        end
+    end
+
+    return activeBindings
+end
+
+local function getActiveActionBindings(key)
+    local activeBindings = {}
+    for name, controller in pairs(controllers) do
+        local profile = I.vrinputs.getInteractionProfileOfController(controller)
+        if profile then
+            for actionSet, bindings in pairs(getBindingsForController(actionBindings, controller) or {}) do
+                for id, path in pairs(bindings[key] or {}) do
+                    activeBindings[id] = path
+                end
+            end
+        end
+    end
+
+    return activeBindings
+end
+
 local function updateActiveBindings()
     activeActionBindings = {}
     activeTriggerBindings = {}
@@ -839,4 +871,6 @@ return {
     userBindingsSection = userBindingsSection,
     controlsGroupKey = controlsGroupKey,
     controlsSection = controlsSection,
+    getActiveActionBindings = getActiveActionBindings,
+    getActiveTriggerBindings = getActiveTriggerBindings,
 }

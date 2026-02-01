@@ -160,12 +160,6 @@ input.registerActionHandler('Use', async:callback(function(v)
     end
 end))
 
-local initialized = false
-
-local function init()
-    initialized = true
-end
-
 local yawChanged = false
 input.registerActionHandler('LookLeft', async:callback(function(v)
     yawChanged = true
@@ -340,5 +334,23 @@ return {
         -- @function [parent=#vrinputs] isKBMouseMode
         -- @return #boolean True if the game is currently in keyboard+mouse mode, false if the game is currently in motion controllers mode.
         isKBMouseMode = common.isKBMouseMode,
+
+        --- Get the list of currently active bindings for the given action. Note that this returns full interaction paths.
+        -- @function [parent=#vrinputs] getActiveActionBindings
+        -- @param #string Key The action key
+        -- @return list<#string> List of all active bindings. Will be an empty list if there are no bindings.
+        getActiveActionBindings = common.getActiveActionBindings,
+
+        --- Get the list of currently active bindings for the given trigger. Note that this returns full interaction paths.
+        -- @function [parent=#vrinputs] getActiveTriggerBindings
+        -- @param #string Key The trigger key
+        -- @return list<#string> List of all active bindings. Will be an empty list if there are no bindings.
+        getActiveTriggerBindings = common.getActiveTriggerBindings,
+
+        --- Translate an interaction path into a human readable name. Only english is currently supported.
+        -- @function [parent=#vrinputs] getInteractionName
+        -- @param #string Path The interaction path
+        -- @return #string The interaction name
+        getInteractionName = common.getInteractionName,
     }
 }

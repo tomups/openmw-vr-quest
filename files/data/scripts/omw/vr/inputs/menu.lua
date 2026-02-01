@@ -353,5 +353,8 @@ return {
         getInputValue = vr._getInputValue,
         setOutputValue = vr._setOutputValue,
         isKBMouseMode = common.isKBMouseMode,
+        getActiveActionBindings = common.getActiveActionBindings,
+        getActiveTriggerBindings = common.getActiveTriggerBindings,
+        getInteractionName = common.getInteractionName,
     }
 }
