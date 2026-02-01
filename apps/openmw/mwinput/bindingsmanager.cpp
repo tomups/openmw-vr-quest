@@ -10,10 +10,12 @@
 #include <components/debug/debuglog.hpp>
 #include <components/files/conversion.hpp>
 #include <components/sdlutil/sdlmappings.hpp>
+#include <components/vr/vr.hpp>
 
 #include "../mwbase/environment.hpp"
 #include "../mwbase/inputmanager.hpp"
 #include "../mwbase/windowmanager.hpp"
+#include "../mwvr/vrinputmanager.hpp"
 
 #include "actions.hpp"
 
@@ -703,9 +705,14 @@ namespace MWInput
             else if (action == A_Jump && actionIsActive(A_ToggleSpell))
                 action = A_CycleSpellLeft;
         }
+        auto onPress = previousValue <= 0.6 && currentValue > 0.6;
 
-        if (previousValue <= 0.6 && currentValue > 0.6)
+        if (action == A_GameMenu && VR::getVR())
+            MWVR::VRInputManager::instance().gameMenuAction(onPress);
+        else if (onPress)
+        {
             manager->executeAction(action);
+        }
     }
 
     void BindingsManager::saveBindings()

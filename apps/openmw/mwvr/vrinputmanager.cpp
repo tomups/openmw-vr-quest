@@ -129,6 +129,16 @@ namespace MWVR
         mScrollSpeed = speed;
     }
 
+    void VRInputManager::gameMenuAction(bool onPress) {
+        if (onPress)
+            mGameMenuLongPressTimer = std::chrono::steady_clock::now();
+        else if (mGameMenuLongPressTimer)
+        {
+            mGameMenuLongPressTimer = std::nullopt;
+            executeAction(MWInput::A_GameMenu);
+        }
+    }
+
     void VRInputManager::injectChannelValue(MWInput::Actions action, float value)
     {
         auto channel = mBindingsManager->ics().getChannel(MWInput::A_MoveLeftRight); // ->setValue(value);
@@ -275,6 +285,17 @@ namespace MWVR
             auto& actionSet = mXRInput->getActionSet(MWActionSet::Actions);
             if (actionSet.update())
                 wm->skipVideo();
+        }
+
+        if (mGameMenuLongPressTimer)
+        {
+            auto elapsed = std::chrono::steady_clock::now() - mGameMenuLongPressTimer.value();
+            auto longPressTime = std::chrono::duration<double>(2.0 / 3.0);
+            if (elapsed > longPressTime)
+            {
+                VR::recenterXY();
+                mGameMenuLongPressTimer = std::nullopt;
+            }
         }
 
         MWInput::InputManager::update(dt, disableControls, disableEvents);

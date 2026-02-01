@@ -70,6 +70,7 @@ namespace MWVR
 
         void setScrollSpeed(float speed);
         void setGuiCursor(int x, int y);
+        void gameMenuAction(bool onPress);
 
     protected:
         void updateVRPointer(bool disableControls);
@@ -93,6 +94,8 @@ namespace MWVR
         float mScrollSpeed = 0.f;
         float mScrollPoints = 0.f;
         osg::ref_ptr<osg::Node> mVRAimNode;
+
+        std::optional<std::chrono::steady_clock::time_point> mGameMenuLongPressTimer;
     };
 }
 
