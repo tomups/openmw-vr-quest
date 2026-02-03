@@ -90,9 +90,17 @@ local function update()
     common.updateWindowArrangement(I.UI.modes)
 end
 
+local wasKBMouseMode = false
 local wasPaused = false
 local updateOnce = true
 local function onVRFrame()
+
+    local KBMouseMode = I.vrinputs.isKBMouseMode()
+    if KBMouseMode ~= wasKBMouseMode then
+        updateOnce = true
+        wasKBMouseMode = KBMouseMode
+    end
+
     if updateOnce then 
         update()
         updateOnce = false

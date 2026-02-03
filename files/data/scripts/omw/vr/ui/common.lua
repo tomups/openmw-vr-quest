@@ -211,6 +211,18 @@ local HUDpaces = {
     'HUDBottomRight',
 }
 
+-- Wrist spaces do not work in KBM mouse
+local WristSpaceAliases = {
+    LeftWristInner = 'HUDTopLeft',
+    LeftWristTop = 'HUDTopLeft',
+    RightWristInner = 'HUDTopRight',
+    RightWristTop = 'HUDTopRight',
+    HUDTopLeft = 'HUDTopLeft',
+    HUDTopRight = 'HUDTopRight',
+    HUDBottomLeft = 'HUDBottomLeft',
+    HUDBottomRight = 'HUDBottomRight',
+}
+
 local function createDefaultConfig(intersectable, backgroundOpacity, autosize)
     return {
         backgroundOpacity = backgroundOpacity,
@@ -341,9 +353,15 @@ configTooltip.space = 'RightWristTop'
 
 local function updateSpacesSettings()
     configHUD.space = spacesSection:get('HUDSpace')
-    I.vrui.setHUDConfig(configHUD)
-
     configTooltip.space = spacesSection:get('TooltipSpace')
+    
+    -- Wrist spaces do not work in KBM mouse
+    if I.vrinputs and I.vrinputs.isKBMouseMode() then
+        configHUD.space = WristSpaceAliases[configHUD.space]
+        configTooltip.space = WristSpaceAliases[configTooltip.space]
+    end
+    
+    I.vrui.setHUDConfig(configHUD)
     I.vrui.setTooltipConfig(configTooltip)
 end
 spacesSection:subscribe(async:callback(updateSpacesSettings))
