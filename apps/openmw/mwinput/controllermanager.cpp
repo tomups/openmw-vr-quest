@@ -22,11 +22,12 @@
 #include "bindingsmanager.hpp"
 #include "mousemanager.hpp"
 
-//## VR_PATCH BEGIN
-#include <components/vr/vr.hpp>
+// ## VR_PATCH BEGIN
+#include "../mwvr/vrgui.hpp"
 #include "../mwvr/vrinputmanager.hpp"
+#include <components/vr/vr.hpp>
 
-//## VR_PATCH END
+// ## VR_PATCH END
 
 namespace MWInput
 {
@@ -39,9 +40,9 @@ namespace MWInput
         , mGuiCursorEnabled(true)
         , mJoystickLastUsed(false)
         , mGamepadMousePressed(false)
-//## VR_PATCH BEGIN
+// ## VR_PATCH BEGIN
         , mThumbstickAutoRun(Settings::Manager::getBool("thumbstick auto run", "Input"))
-//## VR_PATCH END
+// ## VR_PATCH END
     {
         if (!controllerBindingsFile.empty())
         {
@@ -150,7 +151,9 @@ namespace MWInput
             if (mGamepadGuiCursorEnabled)
             {
                 // Temporary mouse binding until keyboard controls are available:
-                if (arg.button == SDL_CONTROLLER_BUTTON_A) // We'll pretend that A is left click.
+                if (arg.button == SDL_CONTROLLER_BUTTON_A
+                    && !(VR::getVR()
+                        && MWVR::VRGUIManager::instance().injectMouseClick())) // We'll pretend that A is left click.
                 {
                     bool mousePressSuccess = mMouseManager->injectMouseButtonPress(SDL_BUTTON_LEFT);
                     mGamepadMousePressed = true;
@@ -593,13 +596,13 @@ namespace MWInput
         }
     }
 
-//## VR_PATCH BEGIN
+    // ## VR_PATCH BEGIN
     void ControllerManager::setThumbstickAutoRun(bool enabled)
     {
         mThumbstickAutoRun = enabled;
         Settings::Manager::setBool("thumbstick auto run", "Input", enabled);
     }
-//## VR_PATCH END
+    // ## VR_PATCH END
 
     void ControllerManager::touchpadMoved(int deviceId, const SDLUtil::TouchEvent& arg)
     {
