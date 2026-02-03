@@ -1544,6 +1544,11 @@ namespace MWGui
         updateVisible();
     }
 
+    bool WindowManager::isInVoid()
+    {
+        return mTheVoid;
+    }
+
     void WindowManager::exitVoid()
     {
         mTheVoid = false;

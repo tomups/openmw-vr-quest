@@ -255,6 +255,8 @@ local modeConfig = {}
 
 local settingsPageKey = 'OMWVRUI'
 local l10nKey = settingsPageKey
+local uiGroupKey = 'UiGroup'
+local uiSection = storage.playerSection(uiGroupKey)
 local spacesGroupKey = 'SpacesGroup'
 local spacesSection = storage.playerSection(spacesGroupKey)
 
@@ -314,6 +316,16 @@ local function registerSettingsGroup()
         settings = {
             selectSetting('HUDSpace', HUDpaces),
             selectSetting('TooltipSpace', HUDpaces),
+        },
+    })
+    I.Settings.registerGroup({
+        key = uiGroupKey,
+        page = settingsPageKey,
+        l10n = l10nKey,
+        name = uiGroupKey,
+        permanentStorage = true,
+        settings = {
+            boolSetting('ShowTutorials', true),
         },
     })
 end
@@ -548,6 +560,8 @@ local interface =
     setVirtualKeyboardPose = function(pose) vr._setLayerPose('VirtualKeyboard', pose) end,
 
     overrideModeConfig = overrideModeConfig,
+    
+    showMessageInTheVoid = function(message) vr._showMessageInTheVoid(message) end,
 }
 
 return {
@@ -562,4 +576,6 @@ return {
     registerSettingsPage = registerSettingsPage,
     registerSettingsGroup = registerSettingsGroup,
     interface = interface,
+    uiSection = uiSection,
+    spacesSection = spacesSection,
 }

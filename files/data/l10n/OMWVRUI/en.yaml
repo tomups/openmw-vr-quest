@@ -3,6 +3,7 @@ UiPageDescription: "Settings related to UI in VR"
 
 SpacesGroup: "VR Spaces"
 OtherGroup: "Other Spaces"
+UiGroup: "Other UI"
 
 HUDSpace: "HUD Space"
 HUDSpaceDescription: |
@@ -11,3 +12,7 @@ HUDSpaceDescription: |
 TooltipSpace: "Tooltip Space"
 TooltipSpaceDescription: |
     Where in space tooltips should appear. Note that all Wrist options require motion controllers, and do not work in KB+Mouse or gamepad mode.
+
+ShowTutorials: "Show Tutorials"
+ShowTutorialsDescription: |
+    Show a few tutorial messages when a character is loaded into VR for the first time (including new game).

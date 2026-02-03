@@ -110,6 +110,24 @@ namespace MWVR
         mVRAimNode = vrAnim->getWeaponTransform();
     }
 
+    void VRInputManager::updateVoidMessages()
+    {
+        auto wm = MWBase::Environment::get().getWindowManager();
+        if (wm->isInteractiveMessageBoxActive())
+            return;
+        if (wm->isInVoid())
+        {
+            mVoidMessages.pop();
+        }
+        if (mVoidMessages.size() > 0)
+        {
+            wm->interactiveMessageBox(mVoidMessages.front(), { "#{Interface:OK}" });
+            wm->enterVoid();
+        }
+        else
+            wm->exitVoid();
+    }
+
     MWWorld::Ptr VRInputManager::getPointerTarget() const
     {
         // TODO: In the future, dehardcode drag and drop as well
@@ -137,6 +155,10 @@ namespace MWVR
             mGameMenuLongPressTimer = std::nullopt;
             executeAction(MWInput::A_GameMenu);
         }
+    }
+
+    void VRInputManager::showMessageInTheVoid(std::string_view message) {
+        mVoidMessages.push(std::string(message));
     }
 
     void VRInputManager::injectChannelValue(MWInput::Actions action, float value)
@@ -299,6 +321,8 @@ namespace MWVR
         }
 
         MWInput::InputManager::update(dt, disableControls, disableEvents);
+
+        updateVoidMessages();
 
         // The rest of this code assumes the game is running
         if (MWBase::Environment::get().getStateManager()->getState() == MWBase::StateManager::State_NoGame)

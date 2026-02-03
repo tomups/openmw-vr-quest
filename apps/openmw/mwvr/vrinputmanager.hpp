@@ -4,6 +4,8 @@
 #include "../mwinput/inputmanagerimp.hpp"
 
 #include <vector>
+#include <queue>
+#include <mutex>
 
 #include <components/vr/trackinglistener.hpp>
 #include <components/vr/session.hpp>
@@ -72,9 +74,12 @@ namespace MWVR
         void setGuiCursor(int x, int y);
         void gameMenuAction(bool onPress);
 
+        void showMessageInTheVoid(std::string_view message);
+
     protected:
         void updateVRPointer(bool disableControls);
         void updateRealisticCombat(float dt);
+        void updateVoidMessages();
 
         void injectChannelValue(MWInput::Actions action, float value);
 
@@ -96,6 +101,7 @@ namespace MWVR
         osg::ref_ptr<osg::Node> mVRAimNode;
 
         std::optional<std::chrono::steady_clock::time_point> mGameMenuLongPressTimer;
+        std::queue<std::string> mVoidMessages;
     };
 }
 

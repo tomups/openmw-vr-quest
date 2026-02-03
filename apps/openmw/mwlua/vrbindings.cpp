@@ -170,7 +170,7 @@ namespace MWLua
         // All known /output/ path values are of type FLOAT.
         // If there is ever a reason to support more, we can expand this with overloads (or use sol::object).
         api["_setOutputValue"] = [&actionSet = MWVR::OpenXRInput::instance().getActionSet(MWVR::MWActionSet::Haptics)](
-                                    const std::string& path, float value) { actionSet.applyHaptics(path, value); };
+                                     const std::string& path, float value) { actionSet.applyHaptics(path, value); };
 
         api["_locateSpaceInWorld"] = [&xrinput, lua](const std::string& spaceId) -> sol::object {
             if (!VR::getLocatingSpacesAllowed())
@@ -216,21 +216,24 @@ namespace MWLua
         api["_setPointerRight"] = [&inputManager = MWVR::VRInputManager::instance()](
                                       bool enabled) { inputManager.setPointerRight(enabled); };
 
-        api["_pointerActivate"] = [&inputManager = MWVR::VRInputManager::instance()](
-                                      bool injectMouseClickIfApplicable) {
-            // This action SHOULD be delayed, but this can result in a click on lua UI elements while applying delayed actions
-            // which in turn could try to queue a delayed action, which is illegal while applyin delayed actions. So i have to queue it differently,
-            // so it's not part of lua delayed actions.
-            //luaManager->addAction([&inputManager, injectMouseClickIfApplicable]() {
-            inputManager.pointerActivateDelayed(injectMouseClickIfApplicable);
-            //});
-        };
+        api["_pointerActivate"]
+            = [&inputManager = MWVR::VRInputManager::instance()](bool injectMouseClickIfApplicable) {
+                  // This action SHOULD be delayed, but this can result in a click on lua UI elements while applying
+                  // delayed actions which in turn could try to queue a delayed action, which is illegal while applyin
+                  // delayed actions. So i have to queue it differently, so it's not part of lua delayed actions.
+                  // luaManager->addAction([&inputManager, injectMouseClickIfApplicable]() {
+                  inputManager.pointerActivateDelayed(injectMouseClickIfApplicable);
+                  //});
+              };
 
         api["_recenterXY"] = []() { VR::recenterXY(); };
         api["_recenterZ"] = []() { VR::recenterZ(); };
 
         api["_setCurrentScroll"] = [&inputManager = MWVR::VRInputManager::instance()](
                                        float scrollSpeed) { inputManager.setScrollSpeed(scrollSpeed); };
+
+        api["_showMessageInTheVoid"] = [&inputManager = MWVR::VRInputManager::instance()](
+                                           std::string_view message) { inputManager.showMessageInTheVoid(message); };
 
         // api[]
 

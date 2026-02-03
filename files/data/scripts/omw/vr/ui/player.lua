@@ -12,33 +12,73 @@ local saveData = {
 
 }
 
-local function getRecenterBindingDescription()
+local l10nKey = 'OMWVRTutorial'
+local l10nContext = core.l10n(l10nKey)
 
-    if I.vrinputs.isKBMouseMode() then
-        return "Menu binding (default Esc)"
-    end
-    local bindings = I.vrinputs.getActiveTriggerBindings('Recenter')
+local function getBindingDescription(binding)
+    local bindings = I.vrinputs.getActiveTriggerBindings(binding)
     for id, path in pairs(bindings or {}) do
         return I.vrinputs.getInteractionName(path)
     end
-    return "(Recenter not bound on any active controller)"
+    return '('..l10nContext('NotBound')..')'
 end
 
-local function tutorialMessage()
-    local bindingDescription = getRecenterBindingDescription()
-    local message = 'In VR, the UI is 3D and may clip into objects and NPCs. When this happens, look away from the object/NPC and perform a recenter by long pressing '..bindingDescription..' to move the interface'
-    I.UI.showInteractiveMessage(message, {})
-    saveData.hasSeenTutorial = true
+local function getRecenterBindingDescription()
+    if I.vrinputs.isKBMouseMode() then
+        return l10nContext('MenuBindingDefaultEsc')
+    end
+    
+    return getBindingDescription('Recenter')
+end
+
+local function MCTutorialMessages()
+    local handKey = 'RightHand'
+    local pointerKey = 'PointerRight'
+    local handTutorialKey = 'Tutorial_RightHandedMode'
+    
+    if vr.isLeftHandedMode() then
+        handKey = 'LeftHand'
+        pointerKey = 'PointerLeft'
+        handTutorialKey = 'Tutorial_LeftHandedMode'
+    end
+    local hand = l10nContext(handKey)
+    local pointer = l10nContext(pointerKey)
+    
+    I.vrui.showMessageInTheVoid(string.format(l10nContext('Tutorial_MC'), hand, pointer))
+    I.vrui.showMessageInTheVoid(string.format(l10nContext('Tutorial_RecenterUiStuckInObject'), getRecenterBindingDescription()))
+    I.vrui.showMessageInTheVoid(l10nContext('Tutorial_Bindings'))
+    I.vrui.showMessageInTheVoid(string.format(l10nContext('Tutorial_PointClickMC'), pointer, getBindingDescription('PointerActivate')))
+    I.vrui.showMessageInTheVoid(l10nContext(handTutorialKey))
+    
+    saveData.hasSeenMCTutorial = true
+end
+
+local function KBMTutorialMessages()
+    
+    I.vrui.showMessageInTheVoid(l10nContext('Tutorial_KBM'))
+    I.vrui.showMessageInTheVoid(string.format(l10nContext('Tutorial_RecenterUiStuckInObject'), getRecenterBindingDescription()))
+    I.vrui.showMessageInTheVoid(l10nContext('Tutorial_PointClickKBM'))
+    
+    saveData.hasSeenKBMTutorial = true
 end
 
 local initialized = false
 
+local function tutorials()
+    if common.uiSection:get('ShowTutorials') then
+        if not I.vrinputs.isKBMouseMode() and not saveData.hasSeenMCTutorial then
+            MCTutorialMessages()
+        end
+        if I.vrinputs.isKBMouseMode() and not saveData.hasSeenKBMTutorial then
+            KBMTutorialMessages()
+        end
+    end
+end
+
 local function init()
     I.vrspaces.recenterXY() 
     I.vrspaces.recenterZ() 
-    if not saveData.hasSeenTutorial then
-        tutorialMessage()
-    end
+    tutorials()
 
     initialized = true
 end
@@ -74,8 +114,8 @@ local function onFrame()
     end
 end
 
-local function onLoad(saveData, initData)
-    saveData = saveData or {}
+local function onLoad(data, initData)
+    saveData = data or {}
 end
 
 local function onSave()

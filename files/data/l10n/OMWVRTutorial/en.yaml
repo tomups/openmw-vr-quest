@@ -1,0 +1,34 @@
+NotBound: "Not Bound"
+NoBinding: "No Binding"
+MenuBindingDefaultEsc: "Menu binding (default Esc)"
+LeftHand: "Left Hand"
+RightHand: "Right Hand"
+
+Tutorial_KBM: |
+    OpenMW-VR: You will be presented with a few one-time tutorial pop-ups. This can be disabled from the OMWVRUI section of the Scripts
+    tab in the settings menu. Turns your face to the button and left click (mouse) or press A (gamepad) to continue
+
+Tutorial_MC: |
+    OpenMW-VR: You will be presented with a few one-time tutorial pop-ups. This can be disabled from the OMWVRUI section of the Scripts
+    tab in the settings menu. Point at the button with your %s and press %s to continue
+
+Tutorial_RecenterUiStuckInObject: |
+    In VR, the UI is 3D and may clip into objects and NPCs. When this happens, look away from the object/NPC and perform a recenter
+    by long pressing %s to move the interface.
+    
+Tutorial_Bindings: |
+    VR controls are re-bindable within the Scripts tab of the settings menu. Note for motion controllers: the right hand thumbstick 
+    or forcepad up/down can be used as bindings, with down being default bound to toggle sneak for most controllers.
+    
+Tutorial_PointClickMC: |
+    When using motion controllers: To interact with the world around you, hold down %s to enable the pointer and then press %s to activate 
+    objects or NPCs. Do this with a lockpick equipped to pick locks.
+    
+Tutorial_PointClickKBM: |
+    When using keyboard+mouse or a gamepad: To interact with the world around you, turn your head towards objects/NPCs and press A to activate them.
+    
+Tutorial_RightHandedMode: |
+    You are in right handed mode. If you're looking for left handed mode, you can enable left handed mode in the launcher.
+    
+Tutorial_LeftHandedMode: |
+    You are in left handed mode. If you're looking for right handed mode, you can disable left handed mode in the launcher.

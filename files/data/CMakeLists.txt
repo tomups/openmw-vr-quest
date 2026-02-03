@@ -91,7 +91,7 @@ set(BUILTIN_DATA_FILES
     l10n/OMWControls/pl.yaml
     
     l10n/OMWVRInput/en.yaml
-    
+    l10n/OMWVRTutorial/en.yaml
     l10n/OMWVRUI/en.yaml
 
     # L10n for OpenMW menus and non-game-specific messages

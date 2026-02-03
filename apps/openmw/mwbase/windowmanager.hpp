@@ -248,6 +248,7 @@ namespace MWBase
         virtual void viewerTraversals() = 0;
         // Disables the scene until exitVoid() is called
         virtual void enterVoid() = 0;
+        virtual bool isInVoid() = 0;
         virtual void exitVoid() = 0;
 //## VR_PATCH END
 

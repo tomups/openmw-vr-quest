@@ -641,6 +641,7 @@ namespace MWGui
         DragAndDrop& getDragAndDrop(void) override;
         void viewerTraversals() override;
         void enterVoid() override;
+        bool isInVoid() override;
         void exitVoid() override;
     private:
         osg::Vec4 mOldClearColor;
