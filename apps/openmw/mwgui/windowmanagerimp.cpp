@@ -675,7 +675,7 @@ namespace MWGui
         if (VR::getVR())
         {
             disableCullMask = MWRender::Mask_Pointer | MWRender::Mask_3DGUI | MWRender::Mask_PreCompile
-                | MWRender::Mask_RenderToTexture;
+                | MWRender::Mask_RenderToTexture | MWRender::Mask_3DGUI_NonIntersectable;
             // GUI must still be updated.
             disableUpdateMask = disableCullMask | MWRender::Mask_GUI;
         }
@@ -1540,8 +1540,11 @@ namespace MWGui
 //## VR_PATCH BEGIN
     void WindowManager::enterVoid()
     {
-        mTheVoid = true;
-        updateVisible();
+        if (!mTheVoid)
+        {
+            mTheVoid = true;
+            updateVisible();
+        }
     }
 
     bool WindowManager::isInVoid()
@@ -1551,8 +1554,11 @@ namespace MWGui
 
     void WindowManager::exitVoid()
     {
-        mTheVoid = false;
-        updateVisible();
+        if (mTheVoid)
+        {
+            mTheVoid = false;
+            updateVisible();
+        }
     }
 
 //## VR_PATCH END
