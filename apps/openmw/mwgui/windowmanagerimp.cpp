@@ -2198,7 +2198,7 @@ namespace MWGui
 
 //## VR_PATCH BEGIN
         if(VR::getVR())
-            MWVR::VRGUIManager::instance().showLayer(mVideoBackground->getLayer()->getName());
+            MWVR::VRGUIManager::instance().setForceLayerVisible(mVideoBackground->getLayer()->getName(), true);
 //## VR_PATCH END
 
         bool cursorWasVisible = mCursorVisible;
@@ -2255,7 +2255,7 @@ namespace MWGui
 
 //## VR_PATCH BEGIN
         if(VR::getVR())
-            MWVR::VRGUIManager::instance().hideLayer(mVideoBackground->getLayer()->getName());
+            MWVR::VRGUIManager::instance().setForceLayerVisible(mVideoBackground->getLayer()->getName(), false);
         mVideoBackground->setVisible(false);
         mVideoEnabled = false;
 //## VR_PATCH END

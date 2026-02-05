@@ -82,7 +82,6 @@ namespace MWVR
         int widgetCount() { return mWidgets.size() + mLuaElements.size(); }
         //bool operator<(const VRGUILayer& rhs) const { return mConfig->priority < rhs.mConfig->priority; }
         void cull(osgUtil::CullVisitor* cv);
-        void setVisible(bool visible);
         void removeFromSceneGraph();
         void addToSceneGraph();
 
@@ -93,6 +92,7 @@ namespace MWVR
         std::shared_ptr<VR::QuadLayer> vrLayer() { return mVrLayer; } 
 
         bool updateLayer();
+        void updateVisibility();
         void blitLayer(osg::RenderInfo& info);
 
         bool visible() const { return mVisible; }
@@ -104,8 +104,13 @@ namespace MWVR
 
         void addLuaElement(const LuaUi::Element* element);
         void removeLuaElement(const LuaUi::Element* element);
+        void clearLua();
+
+        void setForceVisible(bool visible) { mForceVisible = visible; }
+        void setPickable(bool pickable);
 
     public:
+        //void setVisible(bool visible);
         //Stereo::Pose mTrackingPose = Stereo::Pose();
         //Stereo::Pose mTrackedPose{};
         //osg::Quat mRotation{ 0, 0, 0, 1 };
@@ -129,7 +134,8 @@ namespace MWVR
         bool mVisible = false;
         bool mDirty = false;
         bool mSpaceIsLost = false;
-        bool mVisibleChanged = false;
+        bool mForceVisible = false;
+        bool mPickable = false;
         std::shared_ptr<VR::QuadLayer> mVrLayer;
         std::shared_ptr<VR::Space> mSpace;
         Stereo::Pose mPose;
@@ -157,15 +163,10 @@ namespace MWVR
         void readConfig();
 
         void clear();
+        void clearLua();
 
         /// Set visibility of the layer this layout is on
         void setVisible(MWGui::Layout*, bool visible);
-
-        /// Show the given layer
-        void showLayer(const std::string& name);
-
-        /// Hide the given layer
-        void hideLayer(const std::string& name);
 
         /// Check current pointer target and update focus layer
         void updateFocus(osg::Node* focusNode, osg::Vec3f hitPoint);
@@ -181,6 +182,8 @@ namespace MWVR
         void onSpaceUpdate() override;
         void onFrameEnd(osg::RenderInfo& info, VR::Frame& frame) override;
 
+        void setForceLayerVisible(std::string_view layerName, bool visible);
+
         /// Gui cursor coordinates to use to simulate a mouse press/move if the player is currently pointing at a vr gui
         /// layer
         osg::Vec2i guiCursor() { return mGuiCursor; }
@@ -193,7 +196,7 @@ namespace MWVR
 
         static void registerMyGUIFactories();
 
-        static void setPick(MWGui::Layout* widget, bool pick);
+        void setPick(const std::string& name, bool pick);
 
         void setLayerConfig(const std::string& layer, const LayerConfig& config);
         void setLayerPose(const std::string& layer, const Stereo::Pose& pose);
@@ -211,7 +214,7 @@ namespace MWVR
         void removeWidget(MWGui::Layout* widget);
         void setFocusLayer(osg::ref_ptr<VRGUILayer> layer);
         void setFocusWidget(MyGUI::Widget* widget);
-        VRGUILayer& getLayer(const std::string& layer);
+        VRGUILayer* getLayer(const std::string& layer);
 
         osg::ref_ptr<osgViewer::Viewer> mOsgViewer;
 

@@ -3929,12 +3929,12 @@ namespace MWWorld
 
 //## VR_PATCH BEGIN
     float World::getTargetObject(MWRender::RayResult& result, const osg::Vec3f& origin, const osg::Quat& orientation,
-        float maxDistance, bool ignorePlayer, bool ignore3DUI)
+        float maxDistance, bool ignorePlayer, uint32_t ignoreMask)
     {
         osg::Vec3f direction = orientation * osg::Vec3f(0, 1, 0);
         direction.normalize();
         osg::Vec3f end = origin + direction * maxDistance;
-        result = mRendering->castRay(origin, end, ignorePlayer, false, ignore3DUI);
+        result = mRendering->castRay(origin, end, ignorePlayer, false, ignoreMask);
         if (!result.mHit)
             return 0.f;
 

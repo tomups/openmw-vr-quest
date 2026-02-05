@@ -78,6 +78,8 @@ namespace LuaUi
 
         virtual bool isTextInput() { return false; }
 
+        virtual bool isVisible() const { return mVisible; }
+
     protected:
         virtual void initialize();
         void registerEvents(MyGUI::Widget* w);

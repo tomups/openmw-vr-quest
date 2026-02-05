@@ -1,8 +1,8 @@
 #include "vrgui.hpp"
 #include "vrinputmanager.hpp"
 
-#include <cmath>
 #include <algorithm>
+#include <cmath>
 
 #include "openxrinput.hpp"
 #include "vrpointer.hpp"
@@ -48,6 +48,7 @@
 
 #include <MyGUI_FactoryManager.h>
 #include <MyGUI_ILayer.h>
+#include <MyGUI_LayerManager.h>
 #include <MyGUI_InputManager.h>
 #include <MyGUI_OverlappedLayer.h>
 #include <MyGUI_SharedLayer.h>
@@ -61,42 +62,24 @@ namespace MWVR
     {
         // Translate a mode to the list of mygui layers that can be visible in that mode
         // (Often differs from the list of windows)
-        const static std::map<std::string, std::vector<std::string>> modeToLayers = {
-            { "Interface", { "StatsWindow", "InventoryWindow", "MapWindow", "SpellWindow" } },
-            { "Container", { "InventoryWindow", "InventoryCompanionWindow" } },
-            { "Companion", { "InventoryWindow", "InventoryCompanionWindow" } },
-            { "MainMenu", { "Settings", "MainMenu", "MainMenuBackground" } },
-            { "Journal", { "JournalBooks" } },
-            { "Scroll", { "JournalBooks" } },
-            { "Book", { "JournalBooks" } },
-            { "Alchemy", { "Windows" } },
-            { "Repair", { "Windows" } },
-            { "Dialogue", { "DialogueWindow" } },
-            { "Barter", { "InventoryWindow", "InventoryCompanionWindow" } },
-            { "Rest", { "Windows" } },
-            { "SpellBuying", { "Windows" } },
-            { "Travel", { "Windows" } },
-            { "SpellCreation", { "Windows" } },
-            { "Enchanting", { "Windows" } },
-            { "Recharge", { "Windows" } },
-            { "Training", { "Windows" } },
-            { "MerchantRepair", { "Windows" } },
-            { "LevelUp", { "Windows" } },
-            { "ChargenName", { "Windows" } },
-            { "ChargenRace", { "Windows" } },
-            { "ChargenBirth", { "Windows" } },
-            { "ChargenClass", { "Windows" } },
-            { "ChargenClassGenerate", { "Windows" } },
-            { "ChargenClassPick", { "Windows" } },
-            { "ChargenClassCreate", { "Windows" } },
-            { "ChargenClassReview", { "Windows" } },
-            { "Loading", { "LoadingScreen" } },
-            { "LoadingWallpaper", { "LoadingScreen", "LoadingScreenBackground" } },
-            { "Jail", { "Windows" } },
-            { "QuickKeysMenu", { "Windows" } },
-            { "VrRadialMenu", { "RadialMenu" } },
-            { "VrMetaMenu", { "MainMenu", "MainMenuBackground" } }
-        };
+        const static std::map<std::string, std::vector<std::string>> modeToLayers
+            = { { "Interface", { "StatsWindow", "InventoryWindow", "MapWindow", "SpellWindow" } },
+                  { "Container", { "InventoryWindow", "InventoryCompanionWindow" } },
+                  { "Companion", { "InventoryWindow", "InventoryCompanionWindow" } },
+                  { "MainMenu", { "Settings", "MainMenu", "MainMenuBackground" } }, { "Journal", { "JournalBooks" } },
+                  { "Scroll", { "JournalBooks" } }, { "Book", { "JournalBooks" } }, { "Alchemy", { "Windows" } },
+                  { "Repair", { "Windows" } }, { "Dialogue", { "DialogueWindow" } },
+                  { "Barter", { "InventoryWindow", "InventoryCompanionWindow" } }, { "Rest", { "Windows" } },
+                  { "SpellBuying", { "Windows" } }, { "Travel", { "Windows" } }, { "SpellCreation", { "Windows" } },
+                  { "Enchanting", { "Windows" } }, { "Recharge", { "Windows" } }, { "Training", { "Windows" } },
+                  { "MerchantRepair", { "Windows" } }, { "LevelUp", { "Windows" } }, { "ChargenName", { "Windows" } },
+                  { "ChargenRace", { "Windows" } }, { "ChargenBirth", { "Windows" } },
+                  { "ChargenClass", { "Windows" } }, { "ChargenClassGenerate", { "Windows" } },
+                  { "ChargenClassPick", { "Windows" } }, { "ChargenClassCreate", { "Windows" } },
+                  { "ChargenClassReview", { "Windows" } }, { "Loading", { "LoadingScreen" } },
+                  { "LoadingWallpaper", { "LoadingScreen", "LoadingScreenBackground" } }, { "Jail", { "Windows" } },
+                  { "QuickKeysMenu", { "Windows" } }, { "VrRadialMenu", { "RadialMenu" } },
+                  { "VrMetaMenu", { "MainMenu", "MainMenuBackground" } } };
 
         // Translate a window to its corresponding layer
         const static std::map<std::string, std::string> windowToLayers = {
@@ -129,8 +112,13 @@ namespace MWVR
         const static std::set<std ::string> resizableWindowLayers = { "InventoryCompanionWindow", "DialogueWindow",
             "InventoryWindow", "StatsWindow", "MapWindow", "SpellWindow" };
 
-        // Since the MODE stack cannot always inform us what should be in front, and MyGUI doesn't expose this information, i
-        // have to manually re-compute what the actual priorities are
+        static std::set<std::string> defaultPickableLayers = { "HUD", "HUD_3D", "InventoryCompanionWindow", "InventoryWindow",
+            "SpellWindow", "MapWindow", "StatsWindow", "DialogueWindow", "ServiceWindow", "JournalBooks", "Debug",
+            "MainMenuBackground", "MainMenu", "Settings", "Console", "RadialMenu", "LoadingScreenBackground", "LoadingScreen", "Modal",
+                  "ListBox", "Popup", "Video", "InputBlocker", "VideoPlayer", "VirtualKeyboard", "Windows" };
+
+        // Since the MODE stack cannot always inform us what should be in front, and MyGUI doesn't expose this
+        // information, i have to manually re-compute what the actual priorities are
         std::map<std::string, int> autoLayerPriorities(const std::vector<std::string>& layers)
         {
             std::map<std::string, int> res;
@@ -318,11 +306,9 @@ namespace MWVR
         , mGeometryRoot(geometryRoot)
         , mCameraRoot(cameraRoot)
         , mVrLayer()
+        , mPickable()
     {
-
-        // Edit offset to account for priority
-
-        // Define state set that allows rendering with transparency
+        setPickable(defaultPickableLayers.contains(layerName) > 0);
     }
 
     void VRGUILayer::setConfig(const std::string& mode, const LayerConfig& config)
@@ -332,7 +318,8 @@ namespace MWVR
             mDirty = true;
     }
 
-    void VRGUILayer::setMode(const std::string& mode) {
+    void VRGUILayer::setMode(const std::string& mode)
+    {
         if (mode != mActiveMode)
             mDirty = true;
         mActiveMode = mode;
@@ -343,14 +330,28 @@ namespace MWVR
         removeFromSceneGraph();
     }
 
-    void VRGUILayer::addLuaElement(const LuaUi::Element* element) 
+    void VRGUILayer::addLuaElement(const LuaUi::Element* element)
     {
         mLuaElements.push_back(element);
     }
 
-    void VRGUILayer::removeLuaElement(const LuaUi::Element* element) 
+    void VRGUILayer::removeLuaElement(const LuaUi::Element* element)
     {
         std::erase_if(mLuaElements, [element](const auto& lhs) { return lhs == element; });
+    }
+
+    void VRGUILayer::clearLua()
+    {
+        mLuaElements.clear();
+    }
+
+    void VRGUILayer::setPickable(bool pickable)
+    {
+        mPickable = pickable;
+        if (pickable)
+            mTransform->setNodeMask(MWRender::Mask_3DGUI);
+        else
+            mTransform->setNodeMask(MWRender::Mask_3DGUI_NonIntersectable);
     }
 
     const LayerConfig* VRGUILayer::activeConfig()
@@ -383,6 +384,25 @@ namespace MWVR
     {
         // TODO: Do i actually need to do anything here?
         return mVisible && mVrLayer;
+    }
+
+    void VRGUILayer::updateVisibility()
+    {
+        bool visible = mForceVisible || mWidgets.size() > 0;
+        for (const auto* luaWidget : mLuaElements)
+        {
+            if (luaWidget->mRoot)
+                visible = visible || luaWidget->mRoot->isVisible();
+        }
+
+        if (visible == mVisible)
+            return;
+
+        mVisible = visible;
+        if (mVisible)
+            addToSceneGraph();
+        else
+            removeFromSceneGraph();
     }
 
     void VRGUILayer::blitLayer(osg::RenderInfo& info)
@@ -531,6 +551,8 @@ namespace MWVR
             return;
         }
 
+        updateVisibility();
+
         if (mDirty)
         {
             clear();
@@ -597,9 +619,6 @@ namespace MWVR
                 mTransform->setScale(osg::Vec3(extent_units.x(), 1.f, extent_units.y()));
                 mTransform->setCullCallback(new CullVRGUILayerCallback(this));
                 mTransform->setCullingActive(false);
-                //if (!config->intersectable)
-                //    mTransform->setNodeMask(MWRender::Mask_Effect);
-                // configureGeometry();
             }
             mDirty = false;
             if (mVisible)
@@ -632,8 +651,8 @@ namespace MWVR
             {
                 // auto w = mConfig.myGUIViewSize.x();
                 // auto h = mConfig.myGUIViewSize.y();
-                //windowBase->setCoordf(0.f, 0.f, 0.7f, 0.7f);
-                //windowBase->onWindowResize(myGUIWindow);
+                // windowBase->setCoordf(0.f, 0.f, 0.7f, 0.7f);
+                // windowBase->onWindowResize(myGUIWindow);
             }
             // }
         }
@@ -716,18 +735,6 @@ namespace MWVR
         }
     }
 
-    void VRGUILayer::setVisible(bool visible)
-    {
-        if (visible == mVisible)
-            return;
-        mVisible = visible;
-        mVisibleChanged = true;
-        if (mVisible)
-            addToSceneGraph();
-        else
-            removeFromSceneGraph();
-    }
-
     void VRGUILayer::removeFromSceneGraph()
     {
         mCameraRoot->removeChild(mGUIRTT);
@@ -746,10 +753,11 @@ namespace MWVR
             mGeometryRoot->addChild(mTransform);
     }
 
-    static const LayerConfig createDefaultConfig(bool intersectable = true, bool background = true, bool autoSize = true)
+    static const LayerConfig createDefaultConfig(
+        bool intersectable = true, bool background = true, bool autoSize = true)
     {
         return LayerConfig{ background ? 0.75f : 0.f, // background
-            // Stereo::Position::fromMeters(0.f, 0.66f, -.25f), // offset
+                                                      // Stereo::Position::fromMeters(0.f, 0.66f, -.25f), // offset
             osg::Vec2(0.f, 0.f), // center (model space)
             osg::Vec2(1.f, 1.f), // extent (meters)
             1024, // Spatial resolution (pixels per meter)
@@ -799,25 +807,6 @@ namespace MWVR
         mGUICameras->setName("VR GUI Cameras Root");
         mGUICameras->setNodeMask(MWRender::VisMask::Mask_3DGUI);
         mRootNode->addChild(mGUICameras);
-        //                mHUDKeyboardPose = tp;
-        //                mHUDKeyboardPose.pose.position
-        //                    += mHUDKeyboardPose.pose.orientation * Stereo::Position::fromMWUnits(osg::Vec3(0, 35,
-        //                    -40));
-        //                // Tilt the keyboard slightly for easier typing.
-        //                mHUDKeyboardPose.pose.orientation
-        //                    = osg::Quat(osg::PI_4 / 2.f, osg::Vec3(-1, 0, 0)) * mHUDKeyboardPose.pose.orientation;
-        //            }
-        //            else if (mShouldUpdateStationaryPoseHeight)
-        //            {
-        //                mStationaryPose.pose.position.mZ = tp.pose.position.mZ;
-        //                mHUDKeyboardPose.pose.position.mZ = tp.pose.position.mZ
-        //                    + (mHUDKeyboardPose.pose.orientation * Stereo::Position::fromMWUnits(osg::Vec3(0, 35,
-        //                    -40))).mZ;
-        // Stereo::Pose defaultVKeyboardPose = {};
-        // defaultVKeyboardPose.position = Stereo::Position::fromMWUnits(osg::Vec3(0, 35, -40));
-        // defaultVKeyboardPose.orientation = osg::Quat(osg::PI_4 / 2.f, osg::Vec3(-1, 0, 0));
-
-        // defaultVKeyboardPose.position
 
         readConfig();
     }
@@ -856,137 +845,27 @@ namespace MWVR
         LayerConfig loadingScreenConfig = createDefaultConfig(true, true, false);
         LayerConfig mainMenuConfig = createDefaultConfig(true, true, true);
         LayerConfig settingsConfig = createDefaultConfig(true, true, true);
-        // LayerConfig journalBooksConfig = createDefaultConfig(2, true, false, false);
         LayerConfig defaultWindowsConfig = createDefaultConfig(true, true);
         LayerConfig videoPlayerConfig = createDefaultConfig(true, true, false);
         LayerConfig messageBoxConfig = createDefaultConfig(true, false, true);
-        // LayerConfig notificationConfig = createDefaultConfig(7, false, false, false);
         LayerConfig listBoxConfig = createDefaultConfig(true, true);
         LayerConfig consoleConfig = createDefaultConfig(true, true);
-        // LayerConfig radialMenuConfig = createDefaultConfig(11, true, false);
-        //  TODO: Track around wrist instead of being a regular menu quad?
-        //  radialMenuConfig.offset = osg::Vec3(0.f, 0.66f, 0.f);
-        //  radialMenuConfig.trackingPath = Paths::sWristTopRightStr;
-
-        // LayerConfig statsWindowConfig = createSideBySideConfig(0);
-        // LayerConfig inventoryWindowConfig = createSideBySideConfig(1);
-        // LayerConfig spellWindowConfig = createSideBySideConfig(2);
-        // LayerConfig mapWindowConfig = createSideBySideConfig(3);
-        // LayerConfig inventoryCompanionWindowConfig = createSideBySideConfig(4);
-        // LayerConfig dialogueWindowConfig = createSideBySideConfig(5);
-
-        // auto positionSettingToPath = [](const std::string& setting) -> std::string {
-        //     if (Misc::StringUtils::ciEqual(setting, "left wrist inner"))
-        //     {
-        //         return Paths::sWristInnerLeftStr;
-        //     }
-        //     if (Misc::StringUtils::ciEqual(setting, "right wrist inner"))
-        //     {
-        //         return Paths::sWristInnerRightStr;
-        //     }
-        //     if (Misc::StringUtils::ciEqual(setting, "left wrist top"))
-        //     {
-        //         return Paths::sWristTopLeftStr;
-        //     }
-        //     if (Misc::StringUtils::ciEqual(setting, "right wrist top"))
-        //     {
-        //         return Paths::sWristTopRightStr;
-        //     }
-        //     if (Misc::StringUtils::ciEqual(setting, "top left"))
-        //     {
-        //         return Paths::sHUDTopLeftStr;
-        //     }
-        //     if (Misc::StringUtils::ciEqual(setting, "top right"))
-        //     {
-        //         return Paths::sHUDTopRightStr;
-        //     }
-        //     if (Misc::StringUtils::ciEqual(setting, "bottom left"))
-        //     {
-        //         return Paths::sHUDBottomLeftStr;
-        //     }
-        //     if (Misc::StringUtils::ciEqual(setting, "bottom right"))
-        //     {
-        //         return Paths::sHUDBottomRightStr;
-        //     }
-
-        //    return Paths::sHUDTopLeftStr;
-        //};
-
-        // auto hudOffset = Stereo::Position::fromMeters(
-        //     osg::Vec3(Settings::Manager::getFloat("hud offset x", "VR"),
-        //         Settings::Manager::getFloat("hud offset y", "VR"), Settings::Manager::getFloat("hud offset z", "VR"))
-        //     - osg::Vec3(0.5, 0.5, 0.5));
-
-        // auto tooltipOffset
-        //     = Stereo::Position::fromMeters(osg::Vec3(Settings::Manager::getFloat("tooltip offset x", "VR"),
-        //                                        Settings::Manager::getFloat("tooltip offset y", "VR"),
-        //                                        Settings::Manager::getFloat("tooltip offset z", "VR"))
-        //         - osg::Vec3(0.5, 0.5, 0.5));
-
-        // std::string hudPath = positionSettingToPath(Settings::Manager::getString("hud position", "VR"));
-        // std::string tooltipPath = positionSettingToPath(Settings::Manager::getString("tooltip position", "VR"));
-
-        // LayerConfig virtualKeyboardConfig = LayerConfig{ 10, .75f,
-        //     //{}, // offset (meters)
-        //     osg::Vec2(0.f, 1.f), // center (model space)
-        //     osg::Vec2(.25f, .25f), // extent (meters)
-        //     2048, // Spatial resolution (pixels per meter)
-        //     osg::Vec2i(1024, 1024), // Texture resolution
-        //     osg::Vec2(1, 1), true, DefaultVKeyboardSpace,
-        //     // Paths::sHUDKeyboardStr,
-        //     true };
-
-        // LayerConfig HUDConfig = LayerConfig{ 0,
-        //     false, // side-by-side
-        //     0.f, // background
-        //     hudOffset,
-        //     // osg::Vec3(0,0,0), // offset (meters)
-        //     osg::Vec2(0.f, 0.5f), // center (model space)
-        //     osg::Vec2(.033f, .033f), // extent (meters)
-        //     1024, // resolution (pixels per meter)
-        //     osg::Vec2i(1024, 1024), defaultConfig.myGUIViewSize, true, hudPath, "", true };
-
-        // LayerConfig tooltipConfig = LayerConfig{ 0,
-        //     false, // side-by-side
-        //     0.f, // background
-        //     tooltipOffset, osg::Vec2(0.f, 0.5f), // center (model space)
-        //     osg::Vec2(.33f, .33f), // extent (meters)
-        //     1024, // resolution (pixels per meter)
-        //     osg::Vec2i(1024, 1024), defaultConfig.myGUIViewSize, true, tooltipPath, "", false };
-
         mDefaultLayerConfigs = {
             { "DefaultConfig", defaultConfig },
-            //{ "HUD", HUDConfig },
-            //{ "Tooltip", tooltipConfig },
-            //{ "JournalBooks", journalBooksConfig },
-            //{ "InventoryCompanionWindow", inventoryCompanionWindowConfig },
-            //{ "InventoryWindow", inventoryWindowConfig },
-            //{ "SpellWindow", spellWindowConfig },
-            //{ "MapWindow", mapWindowConfig },
-            //{ "StatsWindow", statsWindowConfig },
-            //{ "DialogueWindow", dialogueWindowConfig },
             { "Modal", messageBoxConfig },
-            //            { "RadialMenu", radialMenuConfig },
-            { "Windows", defaultWindowsConfig },
-            { "ListBox", listBoxConfig },
-            { "MainMenu", mainMenuConfig },
+            { "Windows", defaultWindowsConfig }, { "ListBox", listBoxConfig }, { "MainMenu", mainMenuConfig },
             { "Settings", settingsConfig },
-            //          { "Notification", notificationConfig },
-            { "InputBlocker", videoPlayerConfig },
-            { "Video", videoPlayerConfig },
-            { "Console", consoleConfig },
+            { "InputBlocker", videoPlayerConfig }, { "Video", videoPlayerConfig }, { "Console", consoleConfig },
             { "LoadingScreen", loadingScreenConfig },
-            //{ "VirtualKeyboard", virtualKeyboardConfig },
         };
 
-        
         Stereo::Pose defaultUiPose = {};
         defaultUiPose.position = Stereo::Position::fromMeters(0.f, 0.66f, -.25f);
-        // OpenXRInput::instance().createDerivedSpace(DefaultUiSpace, VR::ReferenceSpace::View, defaultUiPose);
+       
         for (auto& config : mDefaultLayerConfigs)
         {
-            getLayer(config.first).setConfig("", config.second);
-            getLayer(config.first).mPose = defaultUiPose;
+            getLayer(config.first)->setConfig("", config.second);
+            getLayer(config.first)->mPose = defaultUiPose;
         }
     }
 
@@ -999,6 +878,11 @@ namespace MWVR
         mSideBySideLayers.clear();
     }
 
+    void VRGUIManager::clearLua() {
+        for (auto layer : mLayers)
+            layer.second->clearLua();
+    }
+
     static std::set<std::string> layerBlacklist = {
         "Overlay",
         "AdditiveOverlay",
@@ -1006,102 +890,19 @@ namespace MWVR
         "HitOverlay",
     };
 
-    // void VRGUIManager::updateSideBySideLayers()
-    //{
-    //     // Nothing to update
-    //     if (mSideBySideLayers.size() == 0)
-    //         return;
-
-    //    std::sort(mSideBySideLayers.begin(), mSideBySideLayers.end(),
-    //        [](const auto& lhs, const auto& rhs) { return *lhs < *rhs; });
-
-    //    int n = mSideBySideLayers.size();
-
-    //    float span
-    //        = sSideBySideAzimuthInterval * static_cast<float>(n - 1); // zero index, places lone layers straight ahead
-    //    float low = -span / 2;
-
-    //    for (unsigned i = 0; i < mSideBySideLayers.size(); i++)
-    //    {
-    //        mSideBySideLayers[i]->setAngle(low + static_cast<float>(i) * sSideBySideAzimuthInterval);
-    //    }
-    //}
-
-    void VRGUIManager::showLayer(const std::string& name)
-    {
-        auto& layer = getLayer(name);
-        layer.setVisible(true);
-
-        // if (it->second->mConfig->sideBySide)
-        //{
-        //     bool found = false;
-        //     for (auto layer : mSideBySideLayers)
-        //         if (layer == it->second)
-        //             found = true;
-        //     if (!found)
-        //     {
-        //         mSideBySideLayers.push_back(it->second);
-        //         updateSideBySideLayers();
-        //     }
-        // }
-    }
-
     void VRGUIManager::insertWidget(MWGui::Layout* widget)
     {
         auto* layer = widget->mMainWidget->getLayer();
-        auto name = layer->getName();
-        showLayer(name);
-
-        auto it = mLayers.find(name);
-        it->second->insertWidget(widget);
-
-        if (it->second != mFocusLayer)
-            setPick(widget, false);
-
-        it->second->setVisible(true);
-    }
-
-    void VRGUIManager::hideLayer(const std::string& name)
-    {
-        auto it = mLayers.find(name);
-        if (it == mLayers.end())
-            return;
-
-        // for (auto it2 = mSideBySideLayers.begin(); it2 != mSideBySideLayers.end();)
-        //{
-        //     if (*it2 == it->second)
-        //     {
-        //         it2 = mSideBySideLayers.erase(it2);
-        //         updateSideBySideLayers();
-        //     }
-        //     else
-        //     {
-        //         ++it2;
-        //     }
-        // }
-
-        if (it->second == mFocusLayer)
-            setFocusLayer(nullptr);
-
-        it->second->setVisible(false);
+        getLayer(layer->getName())->insertWidget(widget);
     }
 
     void VRGUIManager::removeWidget(MWGui::Layout* widget)
     {
         auto* layer = widget->mMainWidget->getLayer();
-        auto name = layer->getName();
-
-        auto it = mLayers.find(name);
-        if (it == mLayers.end())
-        {
-            return;
-        }
-
-        it->second->removeWidget(widget);
-        if (it->second->widgetCount() == 0)
-        {
-            hideLayer(name);
-        }
+        auto* vrLayer = getLayer(layer->getName());
+        vrLayer->removeWidget(widget);
+        if (vrLayer == mFocusLayer)
+            setFocusLayer(nullptr);
     }
 
     void VRGUIManager::setVisible(MWGui::Layout* widget, bool visible)
@@ -1109,12 +910,10 @@ namespace MWVR
         auto* layer = widget->mMainWidget->getLayer();
         auto name = layer->getName();
 
-        Log(Debug::Debug) << "SetVisible: " << name << ": " << visible;
-
         if (layerBlacklist.find(name) != layerBlacklist.end())
         {
             // Never pick an invisible layer
-            setPick(widget, false);
+            setPick(name, false);
             return;
         }
 
@@ -1133,6 +932,10 @@ namespace MWVR
                 continue;
             it.second->blitLayer(info);
         }
+    }
+
+    void VRGUIManager::setForceLayerVisible(std::string_view layerName, bool visible) {
+        getLayer(std::string(layerName))->setForceVisible(visible);
     }
 
     void VRGUIManager::onFrameUpdate(VR::Frame& frame)
@@ -1164,7 +967,7 @@ namespace MWVR
             for (auto window : windows)
             {
                 auto layer = windowToLayers.at(std::string(window));
-                getLayer(layer).setMode(std::string(mode));
+                getLayer(layer)->setMode(std::string(mode));
             }
         }
 
@@ -1204,19 +1007,10 @@ namespace MWVR
             return;
 
         if (mFocusLayer)
-        {
-            if (!mFocusLayer->mWidgets.empty())
-                setPick(mFocusLayer->mWidgets.front(), false);
-        }
+            setPick(mFocusLayer->mLayerName, false);
         mFocusLayer = layer;
         if (mFocusLayer)
-        {
-            Log(Debug::Debug) << "setFocusLayer: " << mFocusLayer->mLayerName;
-            if (!mFocusLayer->mWidgets.empty())
-            {
-                setPick(mFocusLayer->mWidgets.front(), true);
-            }
-        }
+            setPick(mFocusLayer->mLayerName, true);
     }
 
     void VRGUIManager::setFocusWidget(MyGUI::Widget* widget)
@@ -1228,23 +1022,24 @@ namespace MWVR
             mFocusWidget->_riseMouseLostFocus(widget);
         if (widget)
             widget->_riseMouseSetFocus(mFocusWidget);
-        
+
         mFocusWidget = widget;
     }
 
-    VRGUILayer& VRGUIManager::getLayer(const std::string& name)
+    VRGUILayer* VRGUIManager::getLayer(const std::string& name)
     {
         // TODO: insert return statement here
         auto it = mLayers.find(name);
         if (it != mLayers.end())
-            return *it->second;
+            return it->second;
 
+        setPick(name, false);
         auto layer = osg::ref_ptr<VRGUILayer>(new VRGUILayer(mGeometries, mGUICameras, name, this));
         mLayers[name] = layer;
         auto defaultConfig = mDefaultLayerConfigs.find(name);
         if (defaultConfig != mDefaultLayerConfigs.end())
             layer->setConfig("", defaultConfig->second);
-        return *layer;
+        return layer;
     }
 
     bool VRGUIManager::injectMouseClick()
@@ -1330,27 +1125,45 @@ namespace MWVR
         MyFactory<MyGUIPlatform::AdditiveLayer>::registerFactory();
     }
 
-    void VRGUIManager::setPick(MWGui::Layout* widget, bool pick)
+
+    void VRGUIManager::setPick(const std::string& name, bool pick)
     {
-        auto* layer = widget->mMainWidget->getLayer();
+        for (auto& mwLayer : mLayers)
+        {
+            if (mwLayer.second->mLayerName == name && mwLayer.second->mWidgets.size() > 0)
+            {
+                auto* layer = mwLayer.second->mWidgets.front()->mMainWidget->getLayer();
+                auto* pickable = dynamic_cast<Pickable*>(layer);
+                if (pickable)
+                    pickable->setPick(pick);
+            }
+        }
+
+        auto& layerManager = MyGUI::LayerManager::getInstance();
+        auto* layer = layerManager.getByName(name, false);
+        if (!layer)
+            return;
         auto* pickable = dynamic_cast<Pickable*>(layer);
         if (pickable)
             pickable->setPick(pick);
+        else
+            Log(Debug::Verbose) << "Tried to modify pick on unknown layer type " << layer->getTypeName() << " ("
+                                << layer->getClassTypeName() << ")";
     }
 
     void VRGUIManager::setLayerPose(const std::string& name, const Stereo::Pose& pose)
     {
         std::scoped_lock lock(mMutex);
-        getLayer(name).mPose = pose;
+        getLayer(name)->mPose = pose;
     }
 
     void VRGUIManager::setLayerConfig(const std::string& name, const LayerConfig& config)
     {
         std::scoped_lock lock(mMutex);
-        getLayer(name).setConfig("", config);
+        getLayer(name)->setConfig("", config);
     }
 
-    void VRGUIManager::setModeConfig(const std::string& mode, const LayerConfig& config) 
+    void VRGUIManager::setModeConfig(const std::string& mode, const LayerConfig& config)
     {
         auto it = modeToLayers.find(mode);
         if (it == modeToLayers.end())
@@ -1361,22 +1174,22 @@ namespace MWVR
         mModeConfigs[mode] = config;
         for (auto& layer : it->second)
         {
-            getLayer(layer).setConfig(mode, config);
+            getLayer(layer)->setConfig(mode, config);
         }
     }
 
-    void VRGUIManager::setModePose(const std::string& mode, const Stereo::Pose& pose, const std::string window) 
+    void VRGUIManager::setModePose(const std::string& mode, const Stereo::Pose& pose, const std::string window)
     {
         if (window.empty())
         {
             for (auto& layer : modeToLayers.at(mode))
-                getLayer(layer).mPose = pose;
+                getLayer(layer)->mPose = pose;
         }
         else
-            getLayer(windowToLayers.at(window)).mPose = pose;
+            getLayer(windowToLayers.at(window))->mPose = pose;
     }
 
-    void VRGUIManager::registerLuaElement(const LuaUi::Element* element) 
+    void VRGUIManager::registerLuaElement(const LuaUi::Element* element)
     {
         const auto& layer = element->mLayer;
         if (layer.empty())
@@ -1385,12 +1198,11 @@ namespace MWVR
             return;
         }
 
-        auto& vrLayer = getLayer(layer);
-        vrLayer.addLuaElement(element);
-        vrLayer.setVisible(true);
+        auto* vrLayer = getLayer(layer);
+        vrLayer->addLuaElement(element);
     }
 
-    void VRGUIManager::deregisterLuaElement(const LuaUi::Element* element) 
+    void VRGUIManager::deregisterLuaElement(const LuaUi::Element* element)
     {
         const auto& layer = element->mLayer;
         if (layer.empty())
@@ -1399,10 +1211,8 @@ namespace MWVR
             return;
         }
 
-        auto& vrLayer = getLayer(layer);
-        vrLayer.removeLuaElement(element);
-        if (vrLayer.widgetCount() == 0)
-            vrLayer.setVisible(false);
+        auto* vrLayer = getLayer(layer);
+        vrLayer->removeLuaElement(element);
     }
 
     void VRGUIManager::computeGuiCursor(osg::Vec3 hitPoint)

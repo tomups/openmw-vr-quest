@@ -206,7 +206,7 @@ namespace MWVR
     void UserPointer::update()
     {
         auto pose = Util::getNodePose(mSpaceTransform);
-        mDistanceToPointerTarget = Util::getPoseTarget(mPointerRay, pose, true, false);
+        mDistanceToPointerTarget = Util::getPoseTarget(mPointerRay, pose, true, MWRender::Mask_3DGUI_NonIntersectable);
         // Make a ref-counted copy of the target node to ensure the object's lifetime this frame.
         mPointerTarget = mPointerRay.mHitNode;
 

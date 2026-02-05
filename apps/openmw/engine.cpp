@@ -425,7 +425,7 @@ OMW::Engine::Engine(Files::ConfigurationManager& configurationManager)
     , mWarningsMode(1)
     , mScriptConsoleMode(false)
     , mActivationDistanceOverride(-1)
-    , mGrab(true)
+    , mGrab(false)
     , mExportFonts(false)
     , mRandomSeed(0)
     , mNewGame(false)
@@ -1295,7 +1295,7 @@ void OMW::Engine::configureVRPreScene(const std::filesystem::path& userFile, boo
     auto cullMask = ~(MWRender::VisMask::Mask_UpdateVisitor | MWRender::VisMask::Mask_SimpleWater);
     cullMask &= ~MWRender::VisMask::Mask_GUI;
     cullMask |= MWRender::VisMask::Mask_3DGUI;
-    cullMask |= MWRender::VisMask::Mask_3DGUINonIntersectable;
+    cullMask |= MWRender::VisMask::Mask_3DGUI_NonIntersectable;
     mViewer->getCamera()->setCullMask(cullMask);
     mViewer->getCamera()->setCullMaskLeft(cullMask);
     mViewer->getCamera()->setCullMaskRight(cullMask);

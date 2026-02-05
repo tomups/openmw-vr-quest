@@ -47,6 +47,8 @@
 
 #include "../mwscript/globalscripts.hpp"
 
+#include "../mwvr/vrgui.hpp"
+
 #include "quicksavemanager.hpp"
 
 void MWState::StateManager::cleanup(bool force)
@@ -61,6 +63,7 @@ void MWState::StateManager::cleanup(bool force)
         MWBase::Environment::get().getWorld()->clear();
         MWBase::Environment::get().getInputManager()->clear();
         MWBase::Environment::get().getMechanicsManager()->clear();
+        MWVR::VRGUIManager::instance().clearLua();
 
         mCharacterManager.setCurrentCharacter(nullptr);
         mTimePlayed = 0;

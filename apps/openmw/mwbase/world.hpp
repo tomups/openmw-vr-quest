@@ -626,7 +626,7 @@ namespace MWBase
         /// @result pointer to the object and/or node the given node is currently pointing at
         /// @Return distance to the target object, or -1 if no object was targeted / in range
         virtual float getTargetObject(MWRender::RayResult& result, const osg::Vec3f& origin,
-            const osg::Quat& orientation, float maxDistance, bool ignorePlayer, bool ignore3DUI = true)
+            const osg::Quat& orientation, float maxDistance, bool ignorePlayer, uint32_t ignoreMask = 0)
             = 0;
 
         /// @Return ESM::Weapon::Type enum describing the type of weapon currently drawn by the player.

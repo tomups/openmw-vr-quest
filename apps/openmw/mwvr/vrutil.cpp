@@ -11,6 +11,7 @@
 #include "../mwmechanics/actorutil.hpp"
 
 #include "../mwrender/renderingmanager.hpp"
+#include "../mwrender/vismask.hpp"
 #include "../mwworld/class.hpp"
 
 #include <components/vr/vr.hpp>
@@ -42,7 +43,7 @@ namespace MWVR
             MWRender::RayResult result;
 
             auto pose = space->locateInWorld();
-            auto distance = getPoseTarget(result, pose.pose, true);
+            auto distance = getPoseTarget(result, pose.pose, true, MWRender::Mask_3DGUI);
             return std::pair<MWWorld::Ptr, float>(result.mHitObject, distance);
         }
 
@@ -52,19 +53,19 @@ namespace MWVR
             auto* anim = MWBase::Environment::get().getWorld()->getAnimation(ptr);
 
             MWRender::RayResult result;
-            auto distance = getPoseTarget(result, getNodePose(anim->getNode("weapon bone")), false, true);
+            auto distance = getPoseTarget(result, getNodePose(anim->getNode("weapon bone")), false, MWRender::Mask_3DGUI);
             return std::pair<MWWorld::Ptr, float>(result.mHitObject, distance);
         }
 
         float getPoseTarget(
-            MWRender::RayResult& result, const Stereo::Pose& pose, bool allowTelekinesis, bool ignore3DUI)
+            MWRender::RayResult& result, const Stereo::Pose& pose, bool allowTelekinesis, uint32_t ignoreMask)
         {
             auto wm = MWBase::Environment::get().getWindowManager();
             auto world = MWBase::Environment::get().getWorld();
 
             if (wm->isGuiMode() && wm->isConsoleMode())
                 return world->getTargetObject(result, pose.position.asMWUnits(), pose.orientation,
-                    world->getMaxActivationDistance() * 50, true, ignore3DUI);
+                    world->getMaxActivationDistance() * 50, true, ignoreMask);
             else
             {
                 float activationDistance = 0.f;
@@ -74,7 +75,7 @@ namespace MWVR
                     activationDistance = world->getMaxActivationDistance();
 
                 auto distance = world->getTargetObject(
-                    result, pose.position.asMWUnits(), pose.orientation, activationDistance, true, ignore3DUI);
+                    result, pose.position.asMWUnits(), pose.orientation, activationDistance, true, ignoreMask);
 
                 if (!result.mHitObject.isEmpty() && !result.mHitObject.getClass().allowTelekinesis(result.mHitObject)
                     && distance > activationDistance && !MWBase::Environment::get().getWindowManager()->isGuiMode())

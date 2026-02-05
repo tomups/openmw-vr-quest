@@ -1209,7 +1209,7 @@ namespace MWRender
 
     osg::ref_ptr<osgUtil::IntersectionVisitor> RenderingManager::getIntersectionVisitor(
 //## VR_PATCH BEGIN
-        osgUtil::Intersector* intersector, bool ignorePlayer, bool ignoreActors, bool ignore3DUI,
+        osgUtil::Intersector* intersector, bool ignorePlayer, bool ignoreActors, uint32_t ignoreMask,
 //## VR_PATCH END
         std::span<const MWWorld::Ptr> ignoreList)
     {
@@ -1236,34 +1236,33 @@ namespace MWRender
 
         unsigned int mask = ~0u;
         mask &= ~(Mask_RenderToTexture | Mask_Sky | Mask_Debug | Mask_Effect | Mask_Water | Mask_SimpleWater
-            | Mask_Groundcover);
+            | Mask_Groundcover | Mask_Pointer);
         if (ignorePlayer)
 //## VR_PATCH BEGIN
 // Ignore the 3d pointer, but include the 3d gui
-            mask &= ~(Mask_Player | Mask_Pointer);
+            mask &= ~(Mask_Player);
         if (ignoreActors)
-            mask &= ~(Mask_Actor | Mask_Player | Mask_Pointer);
-        if (ignore3DUI)
-            mask &= ~(Mask_3DGUI);
+            mask &= ~(Mask_Actor | Mask_Player);
+        mask &= ~ignoreMask;
 
         mIntersectionVisitor->setTraversalMask(mask);
         return mIntersectionVisitor;
     }
 
     RayResult RenderingManager::castRay(const osg::Vec3f& origin, const osg::Vec3f& dest,
-        bool ignorePlayer, bool ignoreActors, bool ignore3DUI, std::span<const MWWorld::Ptr> ignoreList)
+        bool ignorePlayer, bool ignoreActors, uint32_t ignoreMask, std::span<const MWWorld::Ptr> ignoreList)
     {
         osg::ref_ptr<osgUtil::LineSegmentIntersector> intersector(
             new osgUtil::LineSegmentIntersector(osgUtil::LineSegmentIntersector::MODEL, origin, dest));
         intersector->setIntersectionLimit(osgUtil::LineSegmentIntersector::LIMIT_NEAREST);
 
-        mRootNode->accept(*getIntersectionVisitor(intersector, ignorePlayer, ignoreActors, ignore3DUI, ignoreList));
+        mRootNode->accept(*getIntersectionVisitor(intersector, ignorePlayer, ignoreActors, ignoreMask, ignoreList));
 
         return getIntersectionResult(intersector, mIntersectionVisitor, ignoreList);
     }
 
     RayResult RenderingManager::castRay(
-        const osg::Transform* source, float maxDistance, bool ignorePlayer, bool ignoreActors, bool ignore3DUI)
+        const osg::Transform* source, float maxDistance, bool ignorePlayer, bool ignoreActors, uint32_t ignoreMask)
     {
 
         if (source)
@@ -1276,7 +1275,7 @@ namespace MWRender
             osg::Vec3f raySource = worldMatrix.getTrans();
             osg::Vec3f rayTarget = worldMatrix.getTrans() + direction * maxDistance;
 
-            return castRay(raySource, rayTarget, ignorePlayer, ignoreActors, ignore3DUI);
+            return castRay(raySource, rayTarget, ignorePlayer, ignoreActors, ignoreMask);
         }
         return RayResult();
     }
@@ -1284,7 +1283,7 @@ namespace MWRender
 
 //## VR_PATCH BEGIN
     RayResult RenderingManager::castCameraToViewportRay(
-        const float nX, const float nY, float maxDistance, bool ignorePlayer, bool ignoreActors, bool ignore3DUI)
+        const float nX, const float nY, float maxDistance, bool ignorePlayer, bool ignoreActors, uint32_t ignoreMask)
 //## VR_PATCH END
     {
         osg::ref_ptr<osgUtil::LineSegmentIntersector> intersector(new osgUtil::LineSegmentIntersector(
@@ -1300,7 +1299,7 @@ namespace MWRender
         intersector->setIntersectionLimit(osgUtil::LineSegmentIntersector::LIMIT_NEAREST);
 
 //## VR_PATCH BEGIN
-        mViewer->getCamera()->accept(*getIntersectionVisitor(intersector, ignorePlayer, ignoreActors, ignore3DUI));
+        mViewer->getCamera()->accept(*getIntersectionVisitor(intersector, ignorePlayer, ignoreActors, ignoreMask));
 //## VR_PATCH END
 
         return getIntersectionResult(intersector, mIntersectionVisitor);

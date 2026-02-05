@@ -4,6 +4,7 @@
 #include "objects.hpp"
 #include "renderinginterface.hpp"
 #include "rendermode.hpp"
+#include "vismask.hpp"
 
 #include <components/settings/settings.hpp>
 #include <components/vfs/pathutil.hpp>
@@ -191,13 +192,13 @@ namespace MWRender
 
 //## VR_PATCH BEGIN
         RayResult castRay(const osg::Vec3f& origin, const osg::Vec3f& dest, bool ignorePlayer,
-            bool ignoreActors = false, bool ignore3DUI = true, std::span<const MWWorld::Ptr> ignoreList = {});
+            bool ignoreActors = false, uint32_t ignoreMask = MWRender::Mask_3DGUI, std::span<const MWWorld::Ptr> ignoreList = {});
 
         /// Return the object under the mouse cursor / crosshair position, given by nX and nY normalized screen
         /// coordinates, where (0,0) is the top left corner.
         RayResult castCameraToViewportRay(const float nX, const float nY, float maxDistance, bool ignorePlayer,
-            bool ignoreActors = false, bool ignore3DUI = true);
-//## VR_PATCH END
+            bool ignoreActors = false, uint32_t ignoreMask = MWRender::Mask_3DGUI);
+        //## VR_PATCH END
 
         /// Get normalized screen coordinates of the bounding box's summit, where (0,0) is the top left corner
         osg::Vec2f getScreenCoords(const osg::BoundingBox& bb);
@@ -291,7 +292,7 @@ namespace MWRender
 //## VR_PATCH BEGIN
         /// Cast a ray from a node in the scene graph
         RayResult castRay(const osg::Transform* source, float maxDistance, bool ignorePlayer, bool ignoreActors = false,
-            bool ignore3DUI = true);
+            uint32_t ignoreMask = MWRender::Mask_3DGUI);
         void enableVRPointer(bool left, bool right);
         osg::Uniform* mUniformStereoViewOffsets;
         osg::Uniform* mUniformStereoProjections;
@@ -322,8 +323,9 @@ namespace MWRender
 
         osg::ref_ptr<osgUtil::IntersectionVisitor> getIntersectionVisitor(osgUtil::Intersector* intersector,
 //## VR_PATCH BEGIN
-            bool ignorePlayer, bool ignoreActors, bool ignore3DUI, std::span<const MWWorld::Ptr> ignoreList = {});
-//## VR_PATCH END
+            bool ignorePlayer, bool ignoreActors, uint32_t ignoreMask,
+            std::span<const MWWorld::Ptr> ignoreList = {});
+        //## VR_PATCH END
 
         osg::ref_ptr<IntersectionVisitorWithIgnoreList> mIntersectionVisitor;
 

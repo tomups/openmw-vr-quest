@@ -4,6 +4,7 @@
     <Layer name="FadeToBlack" overlapped="false" pick="false"/>
     <Layer name="HitOverlay" type="AdditiveLayer" pick="false"/>
     <Layer name="HUD" overlapped="false" pick="true"/>
+    <Layer name="HUD_3D" overlapped="false" pick="true"/>
     <Layer name="InventoryCompanionWindow" overlapped="true" pick="true"/>
     <Layer name="InventoryWindow" overlapped="true" pick="true"/>
     <Layer name="SpellWindow" overlapped="true" pick="true"/>

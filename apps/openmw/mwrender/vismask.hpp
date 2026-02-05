@@ -60,7 +60,7 @@ namespace MWRender
 
         // Vr masks
         Mask_3DGUI = (1 << 21),
-        Mask_3DGUINonIntersectable = (1 << 22),
+        Mask_3DGUI_NonIntersectable = (1 << 22),
         Mask_Pointer = (1 << 23)
 //## VR_PATCH END
     };
