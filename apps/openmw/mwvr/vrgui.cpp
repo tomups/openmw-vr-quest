@@ -305,8 +305,8 @@ namespace MWVR
         : mLayerName(layerName)
         , mGeometryRoot(geometryRoot)
         , mCameraRoot(cameraRoot)
-        , mVrLayer()
         , mPickable()
+        , mVrLayer()
     {
         setPickable(defaultPickableLayers.contains(layerName) > 0);
     }
@@ -908,6 +908,8 @@ namespace MWVR
     void VRGUIManager::setVisible(MWGui::Layout* widget, bool visible)
     {
         auto* layer = widget->mMainWidget->getLayer();
+        if (!layer)
+            return;
         auto name = layer->getName();
 
         if (layerBlacklist.find(name) != layerBlacklist.end())
