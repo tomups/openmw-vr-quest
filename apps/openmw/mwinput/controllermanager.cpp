@@ -201,7 +201,7 @@ namespace MWInput
             if (mGamepadGuiCursorEnabled && (!Settings::gui().mControllerMenus || mGamepadMousePressed))
             {
                 // Temporary mouse binding until keyboard controls are available:
-                if (arg.button == SDL_CONTROLLER_BUTTON_A) // We'll pretend that A is left click.
+                if (arg.button == SDL_CONTROLLER_BUTTON_A && !VR::getVR()) // We'll pretend that A is left click.
                 {
                     bool mousePressSuccess = mMouseManager->injectMouseButtonRelease(SDL_BUTTON_LEFT);
                     mGamepadMousePressed = false;
@@ -211,6 +211,11 @@ namespace MWInput
 
                     mBindingsManager->setPlayerControlsEnabled(!mousePressSuccess);
                 }
+            }
+            if (arg.button == SDL_CONTROLLER_BUTTON_A) // We'll pretend that A is left click.
+            {
+                MWVR::VRInputManager::instance().pointerActivate(true);
+                return;
             }
         }
         else
