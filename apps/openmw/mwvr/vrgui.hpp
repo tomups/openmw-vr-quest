@@ -55,8 +55,6 @@ namespace MWVR
         osg::Vec2 myGUIViewSize; //!< Resizable elements are resized to this (fraction of full view)
         bool autoSize; //!< How to size the layer
         std::string space;
-        //std::string extraLayers; //!< Additional layers to draw (list separated by any non-alphabetic)
-        bool intersectable;
     };
 
     /// \brief A single VR GUI Quad.

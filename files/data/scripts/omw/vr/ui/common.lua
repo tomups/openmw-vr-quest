@@ -10,7 +10,6 @@
 -- @field openmw.util#Vector2 extent Defines the spatial size of a layer in meters. Is ignored for auto-sized layers.
 -- @field #number pixelsPerMeter Defines the spatial size of auto-sized layers. Is ignored for non-auto-sized layers.
 -- @field #boolean autosize Defines whether this layer should be auto-sized or not
--- @field #boolean intersectable Defines whether or not this layer should be intersectable for VR pointers. If this is false, the pointer will fall through this layer.
 -- @field #string space (Optional) name of a space to actively track. If set, the UI element will actively track this space, updating its pose every frame.
 --
 
@@ -53,11 +52,19 @@
 -- @function [parent=#vrui] setNotificationPose
 -- @param #Pose pose
 
---- Set Config for the HUD
+--- Set Config for the 3D HUD
 -- @function [parent=#vrui] setHUDConfig
 -- @param #GuiConfig config
 
---- Set pose for the HUD
+--- Set pose for the 3D HUD
+-- @function [parent=#vrui] setHUDPose
+-- @param #Pose pose
+
+--- Set Config for the HUD layer
+-- @function [parent=#vrui] setHUDConfig
+-- @param #GuiConfig config
+
+--- Set pose for the HUD layer
 -- @function [parent=#vrui] setHUDPose
 -- @param #Pose pose
 
@@ -223,7 +230,7 @@ local WristSpaceAliases = {
     HUDBottomRight = 'HUDBottomRight',
 }
 
-local function createDefaultConfig(intersectable, backgroundOpacity, autosize)
+local function createDefaultConfig(backgroundOpacity, autosize)
     return {
         backgroundOpacity = backgroundOpacity,
         center = util.vector2(0,0),
@@ -231,7 +238,6 @@ local function createDefaultConfig(intersectable, backgroundOpacity, autosize)
         pixelsPerMeter = 1024,
         pixelResolution = util.vector2(1024, 1024),
         autosize = autosize,
-        intersectable = intersectable,
     }
 end
 
@@ -342,26 +348,26 @@ local function registerSettingsGroup()
     })
 end
 
-local configHUD = createDefaultConfig(true, 0, true)
-configHUD.extent = util.vector2(0.033, 0.033)
-configHUD.center = util.vector2(0, 0.5)
-configHUD.space = 'LeftWristTop'
+local configHUD3D = createDefaultConfig(0, true)
+configHUD3D.extent = util.vector2(0.033, 0.033)
+configHUD3D.center = util.vector2(0, 0.5)
+configHUD3D.space = 'LeftWristTop'
 
-local configTooltip = createDefaultConfig(true, 0, true)
+local configTooltip = createDefaultConfig(0, true)
 configTooltip.extent = util.vector2(0.033, 0.033)
 configTooltip.space = 'RightWristTop'
 
 local function updateSpacesSettings()
-    configHUD.space = spacesSection:get('HUDSpace')
+    configHUD3D.space = spacesSection:get('HUDSpace')
     configTooltip.space = spacesSection:get('TooltipSpace')
     
     -- Wrist spaces do not work in KBM mouse
     if I.vrinputs and I.vrinputs.isKBMouseMode() then
-        configHUD.space = WristSpaceAliases[configHUD.space]
+        configHUD3D.space = WristSpaceAliases[configHUD3D.space]
         configTooltip.space = WristSpaceAliases[configTooltip.space]
     end
     
-    I.vrui.setHUDConfig(configHUD)
+    I.vrui.setHUD3DConfig(configHUD3D)
     I.vrui.setTooltipConfig(configTooltip)
 end
 spacesSection:subscribe(async:callback(updateSpacesSettings))
@@ -370,7 +376,7 @@ spacesSection:subscribe(async:callback(updateSpacesSettings))
 local function setupDefaults(modes)
     updateSpacesSettings()
     for _, mode in pairs(modes or {}) do
-        modeConfig[mode] = createDefaultConfig(true, 0.7, true)
+        modeConfig[mode] = createDefaultConfig(0.7, true)
     end
 
     if modeConfig.Book then
@@ -389,16 +395,19 @@ local function setupDefaults(modes)
         end
     end
 
-    local configVirtualKeyboard = createDefaultConfig(true, 0.7, true)
+    local configVirtualKeyboard = createDefaultConfig(0.7, true)
     configVirtualKeyboard.extent = util.vector2(0.25, 0.25)
     I.vrui.setVirtualKeyboardConfig(configVirtualKeyboard)
 
-    local configNotification = createDefaultConfig(false, 0, false)
+    local configNotification = createDefaultConfig(0, false)
     configNotification.space = 'DefaultNotification'
     I.vrui.setNotificationConfig(configNotification)
 
-    local configDefault = createDefaultConfig(true, 0.7, true)
+    local configDefault = createDefaultConfig(0.7, true)
     I.vrui.setDefaultWindowConfig(configDefault)
+
+    local hudConfig = createDefaultConfig(0, true)
+    I.vrui.setHUDConfig(hudConfig)
 end
 
 local function makeUpright(orientation)
@@ -568,6 +577,10 @@ local interface =
     setHUDConfig = function(config) vr._setLayerConfig('HUD', config) end,
 
     setHUDPose = function(pose) vr._setLayerPose('HUD', pose) end,
+
+    setHUD3DConfig = function(config) vr._setLayerConfig('HUD_3D', config) end,
+
+    setHUD3DPose = function(pose) vr._setLayerPose('HUD_3D', pose) end,
 
     setTooltipConfig = function(config) vr._setLayerConfig('Tooltip', config) end,
 

@@ -82,7 +82,7 @@ namespace MWVR
                   { "VrMetaMenu", { "MainMenu", "MainMenuBackground" } } };
 
         // Translate a window to its corresponding layer
-        const static std::map<std::string, std::string> windowToLayers = {
+        static std::map<std::string, std::string> windowToLayers = {
             { "Alchemy", "Windows" },
             { "Book", "JournalBooks" },
             { "Companion", "InventoryCompanionWindow" },
@@ -112,7 +112,7 @@ namespace MWVR
         const static std::set<std ::string> resizableWindowLayers = { "InventoryCompanionWindow", "DialogueWindow",
             "InventoryWindow", "StatsWindow", "MapWindow", "SpellWindow" };
 
-        static std::set<std::string> defaultPickableLayers = { "HUD", "HUD_3D", "InventoryCompanionWindow", "InventoryWindow",
+        static std::set<std::string> defaultPickableLayers = { "HUD_3D", "InventoryCompanionWindow", "InventoryWindow",
             "SpellWindow", "MapWindow", "StatsWindow", "DialogueWindow", "ServiceWindow", "JournalBooks", "Debug",
             "MainMenuBackground", "MainMenu", "Settings", "Console", "RadialMenu", "LoadingScreenBackground", "LoadingScreen", "Modal",
                   "ListBox", "Popup", "Video", "InputBlocker", "VideoPlayer", "VirtualKeyboard", "Windows" };
@@ -753,8 +753,7 @@ namespace MWVR
             mGeometryRoot->addChild(mTransform);
     }
 
-    static const LayerConfig createDefaultConfig(
-        bool intersectable = true, bool background = true, bool autoSize = true)
+    static const LayerConfig createDefaultConfig(bool background = true, bool autoSize = true)
     {
         return LayerConfig{ background ? 0.75f : 0.f, // background
                                                       // Stereo::Position::fromMeters(0.f, 0.66f, -.25f), // offset
@@ -762,7 +761,7 @@ namespace MWVR
             osg::Vec2(1.f, 1.f), // extent (meters)
             1024, // Spatial resolution (pixels per meter)
             osg::Vec2i(1024, 1024), // Texture resolution
-            osg::Vec2(1, 1), autoSize, "", intersectable };
+            osg::Vec2(1, 1), autoSize, "" };
     }
 
     VRGUIManager* sManager = nullptr;
@@ -842,14 +841,14 @@ namespace MWVR
         clear();
 
         LayerConfig defaultConfig = createDefaultConfig();
-        LayerConfig loadingScreenConfig = createDefaultConfig(true, true, false);
-        LayerConfig mainMenuConfig = createDefaultConfig(true, true, true);
-        LayerConfig settingsConfig = createDefaultConfig(true, true, true);
-        LayerConfig defaultWindowsConfig = createDefaultConfig(true, true);
-        LayerConfig videoPlayerConfig = createDefaultConfig(true, true, false);
-        LayerConfig messageBoxConfig = createDefaultConfig(true, false, true);
-        LayerConfig listBoxConfig = createDefaultConfig(true, true);
-        LayerConfig consoleConfig = createDefaultConfig(true, true);
+        LayerConfig loadingScreenConfig = createDefaultConfig(true, false);
+        LayerConfig mainMenuConfig = createDefaultConfig(true, true);
+        LayerConfig settingsConfig = createDefaultConfig(true, true);
+        LayerConfig defaultWindowsConfig = createDefaultConfig(true);
+        LayerConfig videoPlayerConfig = createDefaultConfig(true, false);
+        LayerConfig messageBoxConfig = createDefaultConfig(false, true);
+        LayerConfig listBoxConfig = createDefaultConfig(true);
+        LayerConfig consoleConfig = createDefaultConfig(true);
         mDefaultLayerConfigs = {
             { "DefaultConfig", defaultConfig },
             { "Modal", messageBoxConfig },

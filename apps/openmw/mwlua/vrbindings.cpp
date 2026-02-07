@@ -118,7 +118,6 @@ namespace MWLua
             layerConfig.myGUIViewSize = osg::Vec2(1, 1);
             layerConfig.autoSize = options.get_or("autosize", true);
             layerConfig.space = options.get_or<std::string>("space", "");
-            layerConfig.intersectable = options.get_or("intersectable", false);
             return layerConfig;
         }
     }

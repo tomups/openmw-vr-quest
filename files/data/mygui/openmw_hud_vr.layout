@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <MyGUI type="Layout">
-  <Widget type="Widget" layer="HUD" position="0 0 255 91" name="_Main" align="Default">
+  <Widget type="Widget" layer="HUD_3D" position="0 0 255 91" name="_Main" align="Default">
     <!-- Energy bars -->
     <Widget type="ProgressBar" skin="MW_EnergyBar_Yellow" position="0 34 65 12" align="Left Bottom" name="EnemyHealth">
       <Property key="Visible" value="false"/>
