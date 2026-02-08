@@ -12,6 +12,10 @@ HUDSpaceDescription: |
 TooltipSpace: "Tooltip Space"
 TooltipSpaceDescription: |
     Where in space tooltips should appear. Note that all Wrist options require motion controllers, and do not work in KB+Mouse or gamepad mode.
+    
+DialogueSpace: "Lower dialogue window"
+DialogueSpaceDescription: |
+    Lower the dialogue window somewhat to avoid blocking the view of the NPC's head. Can improve immersion, especially with some mods that make the scene less static during dialogue.
 
 ShowTutorials: "Show Tutorials"
 ShowTutorialsDescription: |

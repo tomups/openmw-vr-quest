@@ -321,6 +321,7 @@ local function registerSettingsGroup()
         settings = {
             selectSetting('HUDSpace', HUDpaces),
             selectSetting('TooltipSpace', HUDpaces),
+            boolSetting('DialogueSpace', true),
         },
     })
     I.Settings.registerGroup({
@@ -361,6 +362,12 @@ layerConfig.Tooltip = configTooltip
 local function updateSpacesSettings()
     configHUD3D.space = spacesSection:get('HUDSpace')
     configTooltip.space = spacesSection:get('TooltipSpace')
+    local dialogueSpace = spacesSection:get('DialogueSpace')
+    if dialogueSpace then
+        spaceForMode.Dialogue = 'DialogueWindow'
+    else
+        spaceForMode.Dialogue = nil
+    end
     
     -- Wrist spaces do not work in KBM mouse
     if I.vrinputs and I.vrinputs.isKBMouseMode() then
