@@ -95,8 +95,7 @@ namespace MWVR
 
         bool visible() const { return mVisible; }
 
-        void setConfig(const std::string& mode, const LayerConfig& config);
-        void setMode(const std::string& mode);
+        void setConfig(const LayerConfig& config);
 
         void clear();
 
@@ -108,15 +107,7 @@ namespace MWVR
         void setPickable(bool pickable);
 
     public:
-        //void setVisible(bool visible);
-        //Stereo::Pose mTrackingPose = Stereo::Pose();
-        //Stereo::Pose mTrackedPose{};
-        //osg::Quat mRotation{ 0, 0, 0, 1 };
-
-        const LayerConfig* activeConfig();
-
-        std::map<std::string, LayerConfig> mPerModeConfigs;
-        std::string mActiveMode;
+        std::optional<LayerConfig> mConfig;
 
         std::string mLayerName;
         std::vector<MWGui::Layout*> mWidgets;
@@ -198,11 +189,11 @@ namespace MWVR
 
         void setLayerConfig(const std::string& layer, const LayerConfig& config);
         void setLayerPose(const std::string& layer, const Stereo::Pose& pose);
-        void setModeConfig(const std::string& mode, const LayerConfig& config);
-        void setModePose(const std::string& mode, const Stereo::Pose& pose, const std::string window = "");
 
         void registerLuaElement(const LuaUi::Element* element);
         void deregisterLuaElement(const LuaUi::Element* element);
+
+        bool isLayerRendering(const std::string& layer);
 
     private:
         // Not used: void removeLayer(const std::string& name);
@@ -220,9 +211,7 @@ namespace MWVR
         osg::ref_ptr<osg::Group> mGeometries = new osg::Group;
         osg::ref_ptr<osg::Group> mGUICameras = new osg::Group;
 
-        std::map<std::string, LayerConfig> mModeConfigs;
         std::map<std::string, osg::ref_ptr<VRGUILayer>> mLayers;
-        std::vector<osg::ref_ptr<VRGUILayer>> mSideBySideLayers;
 
         osg::Vec2i mGuiCursor;
         osg::ref_ptr<VRGUILayer> mFocusLayer = nullptr;

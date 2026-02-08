@@ -191,16 +191,6 @@ namespace MWLua
         api["_setGuiPose"] = [&guiManager = MWVR::VRGUIManager::instance()](const std::string& id,
                                  const sol::table& pose) { guiManager.setLayerPose(id, poseFromTable(pose)); };
 
-        api["_setModeConfig"]
-            = [&guiManager = MWVR::VRGUIManager::instance()](const std::string& mode, const sol::table& options) {
-                  guiManager.setModeConfig(mode, layerConfigFromTable(options));
-              };
-
-        api["_setModePose"] = [&guiManager = MWVR::VRGUIManager::instance()](
-                                  const std::string& mode, const sol::table& pose, sol::optional<std::string> window) {
-            guiManager.setModePose(mode, poseFromTable(pose), window.value_or(""));
-        };
-
         api["_setLayerConfig"]
             = [&guiManager = MWVR::VRGUIManager::instance()](const std::string& layer, const sol::table& options) {
                   guiManager.setLayerConfig(layer, layerConfigFromTable(options));
@@ -233,6 +223,10 @@ namespace MWLua
 
         api["_showMessageInTheVoid"] = [&inputManager = MWVR::VRInputManager::instance()](
                                            std::string_view message) { inputManager.showMessageInTheVoid(message); };
+
+        api["_isLayerRendering"] = [&guiManager = MWVR::VRGUIManager::instance()](
+                                       const std::string& layer) { return guiManager.isLayerRendering(layer);
+            };
 
         // api[]
 

@@ -60,55 +60,6 @@ namespace MWVR
 {
     namespace
     {
-        // Translate a mode to the list of mygui layers that can be visible in that mode
-        // (Often differs from the list of windows)
-        const static std::map<std::string, std::vector<std::string>> modeToLayers
-            = { { "Interface", { "StatsWindow", "InventoryWindow", "MapWindow", "SpellWindow" } },
-                  { "Container", { "InventoryWindow", "InventoryCompanionWindow" } },
-                  { "Companion", { "InventoryWindow", "InventoryCompanionWindow" } },
-                  { "MainMenu", { "Settings", "MainMenu", "MainMenuBackground" } }, { "Journal", { "JournalBooks" } },
-                  { "Scroll", { "JournalBooks" } }, { "Book", { "JournalBooks" } }, { "Alchemy", { "Windows" } },
-                  { "Repair", { "Windows" } }, { "Dialogue", { "DialogueWindow" } },
-                  { "Barter", { "InventoryWindow", "InventoryCompanionWindow" } }, { "Rest", { "Windows" } },
-                  { "SpellBuying", { "Windows" } }, { "Travel", { "Windows" } }, { "SpellCreation", { "Windows" } },
-                  { "Enchanting", { "Windows" } }, { "Recharge", { "Windows" } }, { "Training", { "Windows" } },
-                  { "MerchantRepair", { "Windows" } }, { "LevelUp", { "Windows" } }, { "ChargenName", { "Windows" } },
-                  { "ChargenRace", { "Windows" } }, { "ChargenBirth", { "Windows" } },
-                  { "ChargenClass", { "Windows" } }, { "ChargenClassGenerate", { "Windows" } },
-                  { "ChargenClassPick", { "Windows" } }, { "ChargenClassCreate", { "Windows" } },
-                  { "ChargenClassReview", { "Windows" } }, { "Loading", { "LoadingScreen" } },
-                  { "LoadingWallpaper", { "LoadingScreen", "LoadingScreenBackground" } }, { "Jail", { "Windows" } },
-                  { "QuickKeysMenu", { "Windows" } }, { "VrRadialMenu", { "RadialMenu" } },
-                  { "VrMetaMenu", { "MainMenu", "MainMenuBackground" } } };
-
-        // Translate a window to its corresponding layer
-        static std::map<std::string, std::string> windowToLayers = {
-            { "Alchemy", "Windows" },
-            { "Book", "JournalBooks" },
-            { "Companion", "InventoryCompanionWindow" },
-            { "Container", "InventoryCompanionWindow" },
-            { "Dialogue", "DialogueWindow" },
-            { "EnchantingDialog", "Windows" },
-            { "Inventory", "InventoryWindow" },
-            { "JailScreen", "Windows" },
-            { "Journal", "JournalBooks" },
-            { "LevelUpDialog", "Windows" },
-            { "Magic", "SpellWindow" },
-            { "Map", "MapWindow" },
-            { "MerchantRepair", "Windows" },
-            { "QuickKeys", "Windows" },
-            { "Recharge", "Windows" },
-            { "Repair", "Windows" },
-            { "Scroll", "JournalBooks" },
-            { "SpellBuying", "Windows" },
-            { "SpellCreationDialog", "Windows" },
-            { "Stats", "StatsWindow" },
-            { "Trade", "InventoryCompanionWindow" },
-            { "Training", "Windows" },
-            { "Travel", "Windows" },
-            { "WaitDialog", "Windows" },
-        };
-
         const static std::set<std ::string> resizableWindowLayers = { "InventoryCompanionWindow", "DialogueWindow",
             "InventoryWindow", "StatsWindow", "MapWindow", "SpellWindow" };
 
@@ -229,9 +180,9 @@ namespace MWVR
 
     osg::ref_ptr<osg::Geometry> VRGUILayer::createLayerGeometry(osg::ref_ptr<osg::StateSet> stateset)
     {
-        float left = activeConfig()->center.x() - 0.5;
+        float left = mConfig->center.x() - 0.5;
         float right = left + 1.f;
-        float top = 0.5f + activeConfig()->center.y();
+        float top = 0.5f + mConfig->center.y();
         float bottom = top - 1.f;
 
         osg::ref_ptr<osg::Geometry> geometry = new osg::Geometry();
@@ -308,21 +259,13 @@ namespace MWVR
         , mPickable()
         , mVrLayer()
     {
-        setPickable(defaultPickableLayers.contains(layerName) > 0);
+        setPickable(defaultPickableLayers.contains(layerName));
     }
 
-    void VRGUILayer::setConfig(const std::string& mode, const LayerConfig& config)
+    void VRGUILayer::setConfig(const LayerConfig& config)
     {
-        mPerModeConfigs[mode] = config;
-        if (mode == mActiveMode)
-            mDirty = true;
-    }
-
-    void VRGUILayer::setMode(const std::string& mode)
-    {
-        if (mode != mActiveMode)
-            mDirty = true;
-        mActiveMode = mode;
+        mDirty = true;
+        mConfig = config;
     }
 
     void VRGUILayer::clear()
@@ -352,14 +295,6 @@ namespace MWVR
             mTransform->setNodeMask(MWRender::Mask_3DGUI);
         else
             mTransform->setNodeMask(MWRender::Mask_3DGUI_NonIntersectable);
-    }
-
-    const LayerConfig* VRGUILayer::activeConfig()
-    {
-        auto it = mPerModeConfigs.find(mActiveMode);
-        if (it == mPerModeConfigs.end())
-            return nullptr;
-        return &it->second;
     }
 
     VRGUILayer::~VRGUILayer()
@@ -407,16 +342,15 @@ namespace MWVR
 
     void VRGUILayer::blitLayer(osg::RenderInfo& info)
     {
-        auto config = activeConfig();
-        if (mVrLayer && config)
+        if (mVrLayer && mConfig)
         {
             auto* state = info.getState();
             auto texture = colorTexture();
             mVrLayer->colorSwapchain->beginFrame(state->getGraphicsContext());
             auto glImage = mVrLayer->colorSwapchain->image()->glImage();
 
-            int width = config->pixelResolution.x();
-            int height = config->pixelResolution.y();
+            int width = mConfig->pixelResolution.x();
+            int height = mConfig->pixelResolution.y();
 
             // TODO: Definitely cache fbos when we're done checking that it WORKS
             osg::ref_ptr<osg::FrameBufferObject> targetFbo = new osg::FrameBufferObject();
@@ -439,8 +373,7 @@ namespace MWVR
 
     void VRGUILayer::updatePose()
     {
-        auto config = activeConfig();
-        if (!config)
+        if (!mConfig)
             return;
 
         Stereo::Pose pose = mPose;
@@ -544,8 +477,7 @@ namespace MWVR
 
     void VRGUILayer::update(osg::NodeVisitor* nv)
     {
-        auto config = activeConfig();
-        if (!config)
+        if (!mConfig)
         {
             clear();
             return;
@@ -557,7 +489,7 @@ namespace MWVR
         {
             clear();
 
-            auto extent_units = config->extent * Constants::UnitsPerMeter;
+            auto extent_units = mConfig->extent * Constants::UnitsPerMeter;
 
             // Create the camera that will render the menu texture
             std::string filter = mLayerName;
@@ -567,18 +499,18 @@ namespace MWVR
                 = static_cast<MyGUIPlatform::RenderManager&>(MyGUI::RenderManager::getInstance());
             mMyGUICamera = renderManager.createGUICamera(osg::Camera::NESTED_RENDER, filter);
 
-            auto* rttNode = new GUIRTT(config->pixelResolution.x(), config->pixelResolution.y(),
-                osg::Vec4(0, 0, 0, config->opacity), mMyGUICamera);
+            auto* rttNode = new GUIRTT(mConfig->pixelResolution.x(), mConfig->pixelResolution.y(),
+                osg::Vec4(0, 0, 0, mConfig->opacity), mMyGUICamera);
             mGUIRTT = rttNode;
 
-            if (!config->space.empty())
-                mSpace = OpenXRInput::instance().getSpace(config->space);
+            if (!mConfig->space.empty())
+                mSpace = OpenXRInput::instance().getSpace(mConfig->space);
 
             if (mVrLayer)
             {
-                mVrLayer->colorSwapchain = VR::Session::instance().createSwapchain(config->pixelResolution.x(),
-                    config->pixelResolution.y(), 1, 1, VR::Swapchain::Attachment::Color, mLayerName + "Swapchain");
-                mVrLayer->extent = config->extent;
+                mVrLayer->colorSwapchain = VR::Session::instance().createSwapchain(mConfig->pixelResolution.x(),
+                    mConfig->pixelResolution.y(), 1, 1, VR::Swapchain::Attachment::Color, mLayerName + "Swapchain");
+                mVrLayer->extent = mConfig->extent;
                 mVrLayer->space = XR_NULL_HANDLE;
             }
             else
@@ -637,33 +569,14 @@ namespace MWVR
                 mTransform->addChild(geometry);
         }
 
-        if (!mWidgets.empty())
-        {
-            // if (mConfig->sideBySide && !mWidgets.empty())
-            //{
-            // Auto stretch resizeable windows
-            // Stretch according to config
-            // This genre of layer should only ever have 1 widget as it will cover the full layer
-            auto* widget = mWidgets.front();
-            auto* myGUIWindow = dynamic_cast<MyGUI::Window*>(widget->mMainWidget);
-            auto* windowBase = dynamic_cast<MWGui::WindowBase*>(widget);
-            if (windowBase && myGUIWindow)
-            {
-                // auto w = mConfig.myGUIViewSize.x();
-                // auto h = mConfig.myGUIViewSize.y();
-                // windowBase->setCoordf(0.f, 0.f, 0.7f, 0.7f);
-                // windowBase->onWindowResize(myGUIWindow);
-            }
-            // }
-        }
         updateRect();
 
         //// Pixels per unit
-        float res = static_cast<float>(config->spatialResolution) / Constants::UnitsPerMeter;
+        float res = static_cast<float>(mConfig->spatialResolution) / Constants::UnitsPerMeter;
         float w = static_cast<float>(mRect.right - mRect.left);
         float h = static_cast<float>(mRect.bottom - mRect.top);
 
-        if (config->autoSize)
+        if (mConfig->autoSize)
         {
             if (mVrLayer)
                 mVrLayer->extent = osg::Vec2f(w / res, h / res) / Constants::UnitsPerMeter;
@@ -863,7 +776,7 @@ namespace MWVR
        
         for (auto& config : mDefaultLayerConfigs)
         {
-            getLayer(config.first)->setConfig("", config.second);
+            getLayer(config.first)->setConfig(config.second);
             getLayer(config.first)->mPose = defaultUiPose;
         }
     }
@@ -874,7 +787,6 @@ namespace MWVR
         mGUICameras->removeChildren(0, mGUICameras->getNumChildren());
         setFocusLayer(nullptr);
         mLayers.clear();
-        mSideBySideLayers.clear();
     }
 
     void VRGUIManager::clearLua() {
@@ -956,22 +868,6 @@ namespace MWVR
     void VRGUIManager::onSpaceUpdate()
     {
         std::scoped_lock lock(mMutex);
-        auto wm = MWBase::Environment::get().getWindowManager();
-        for (MWGui::GuiMode m : wm->getGuiModeStack())
-        {
-            auto mode = wm->guiModeToName().at(m);
-            auto it = mModeConfigs.find(std::string(mode));
-            if (it == mModeConfigs.end())
-                continue;
-
-            auto windows = wm->getAllowedWindowIds(m);
-            for (auto window : windows)
-            {
-                auto layer = windowToLayers.at(std::string(window));
-                getLayer(layer)->setMode(std::string(mode));
-            }
-        }
-
         for (auto& it : mLayers)
             it.second->updatePose();
     }
@@ -1039,7 +935,7 @@ namespace MWVR
         mLayers[name] = layer;
         auto defaultConfig = mDefaultLayerConfigs.find(name);
         if (defaultConfig != mDefaultLayerConfigs.end())
-            layer->setConfig("", defaultConfig->second);
+            layer->setConfig(defaultConfig->second);
         return layer;
     }
 
@@ -1161,33 +1057,7 @@ namespace MWVR
     void VRGUIManager::setLayerConfig(const std::string& name, const LayerConfig& config)
     {
         std::scoped_lock lock(mMutex);
-        getLayer(name)->setConfig("", config);
-    }
-
-    void VRGUIManager::setModeConfig(const std::string& mode, const LayerConfig& config)
-    {
-        auto it = modeToLayers.find(mode);
-        if (it == modeToLayers.end())
-        {
-            Log(Debug::Error) << "Mode not recognized: " << mode;
-            return;
-        }
-        mModeConfigs[mode] = config;
-        for (auto& layer : it->second)
-        {
-            getLayer(layer)->setConfig(mode, config);
-        }
-    }
-
-    void VRGUIManager::setModePose(const std::string& mode, const Stereo::Pose& pose, const std::string window)
-    {
-        if (window.empty())
-        {
-            for (auto& layer : modeToLayers.at(mode))
-                getLayer(layer)->mPose = pose;
-        }
-        else
-            getLayer(windowToLayers.at(window))->mPose = pose;
+        getLayer(name)->setConfig(config);
     }
 
     void VRGUIManager::registerLuaElement(const LuaUi::Element* element)
@@ -1216,13 +1086,17 @@ namespace MWVR
         vrLayer->removeLuaElement(element);
     }
 
+    bool VRGUIManager::isLayerRendering(const std::string& layer) {
+        return getLayer(layer)->visible();
+    }
+
     void VRGUIManager::computeGuiCursor(osg::Vec3 hitPoint)
     {
         float x = 0;
         float y = 0;
-        if (mFocusLayer && mFocusLayer->activeConfig())
+        if (mFocusLayer && mFocusLayer->mConfig)
         {
-            osg::Vec2 bottomLeft = mFocusLayer->activeConfig()->center - osg::Vec2(0.5f, 0.5f);
+            osg::Vec2 bottomLeft = mFocusLayer->mConfig->center - osg::Vec2(0.5f, 0.5f);
             x = hitPoint.x() - bottomLeft.x();
             y = hitPoint.z() - bottomLeft.y();
             auto rect = mFocusLayer->mRealRect;

@@ -84,10 +84,10 @@ local function init()
 end
 
 local function update()
-    common.setupDefaults(I.UI.MODE)
+    common.setupDefaults()
     common.updatePoses()
-    common.updateModes(I.UI.modes)
-    common.updateWindowArrangement(I.UI.modes)
+    common.updateLayers()
+    common.updateLayerArrangement(I.UI.modes)
 end
 
 local wasKBMouseMode = false
@@ -109,7 +109,7 @@ local function onVRFrame()
     -- We only want to update the reference poses when the user enters GUI mode. Otherwise, the windows will be actively tracking
     -- them which is weird, uncomfortable, and impractical.
     local isPaused = core.isWorldPaused()
-    if (isPaused and not wasPaused) or common.updateVisibleWindows() then
+    if (isPaused and not wasPaused) or common.updateVisibleLayers() then
         update()
     end
 

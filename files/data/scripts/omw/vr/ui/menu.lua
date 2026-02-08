@@ -9,18 +9,14 @@ local common = require('scripts.omw.vr.ui.common')
 
 common.createDerivedSpaces()
 
--- For some reason, I.UI is not available to MENU scripts, preventing me from properly managing UI based on MODE from this script. 
--- Instead i have to base myself on the knowledge that these and only these modes exist before loading a game.
--- Anything not configured here is configured in the PLAYER script menus.lua
-local modes = {"Loading", "LoadingWallpaper", "MainMenu"}
 common.registerSettingsPage()
 common.registerSettingsGroup()
 
 local initialized = false
 local function init()
-    common.setupDefaults(modes)
+    common.setupDefaults()
     common.updatePoses()
-    common.updateModes(modes)
+    common.updateLayers()
     initialized = true
 end
 

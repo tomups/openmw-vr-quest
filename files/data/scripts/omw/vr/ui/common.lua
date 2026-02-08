@@ -25,76 +25,76 @@
 --- Interface version
 -- @field [parent=#vrui] #number version
 
---- Set config for all hidden layers/windows that aren't exposed to lua yet
--- @function [parent=#vrui] setDefaultWindowConfig
+--- Set Config for the given layer
+-- @function [parent=#vrui] setLayerConfig
 -- @param #GuiConfig config
 
---- Set world pose for all hidden layers/windows that aren't exposed to lua yet
--- @function [parent=#vrui] setDefaultWindowPose
+--- Set pose for the given layer
+-- @function [parent=#vrui] setLayerPose
 -- @param #Pose pose
 
---- Set config for all windows/layers of the given mode.
--- @function [parent=#vrui] setModeConfig
--- @param #string mode see ${UI.MODE}
--- @param #GuiConfig config
-
---- Set pose for the given window of the given mode.
--- @function [parent=#vrui] setModePose
--- @param #string mode see ${UI.MODE}
--- @param #Pose pose
--- @param #string window see ${UI.WINDOW}
-
---- Set config for notifications
--- @function [parent=#vrui] setNotificationConfig
--- @param #GuiConfig config
-
---- Set pose for notifications
--- @function [parent=#vrui] setNotificationPose
--- @param #Pose pose
-
---- Set Config for the 3D HUD
--- @function [parent=#vrui] setHUDConfig
--- @param #GuiConfig config
-
---- Set pose for the 3D HUD
--- @function [parent=#vrui] setHUDPose
--- @param #Pose pose
-
---- Set Config for the HUD layer
--- @function [parent=#vrui] setHUDConfig
--- @param #GuiConfig config
-
---- Set pose for the HUD layer
--- @function [parent=#vrui] setHUDPose
--- @param #Pose pose
-
---- Set Config for Tooltips
--- @function [parent=#vrui] setTooltipConfig
--- @param #GuiConfig config
-
---- Set pose for Tooltips
--- @function [parent=#vrui] setTooltipPose
--- @param #Pose pose
-
---- Set Config for the virtual keyboard
--- @function [parent=#vrui] setVirtualKeyboardConfig
--- @param #GuiConfig config
-
---- Set pose for the virtual keyboard
--- @function [parent=#vrui] setVirtualKeyboardPose
--- @param #Pose pose
-
---- Override configs for a given mode. Stops this script from processing that mode, allowing you to change it however you wish without this script interfering.
--- @function [parent=#vrui] overrideModeConfig
--- @param #string mode ${UI.MODE}
+--- Override configs for a given layer. Stops this script from processing that layer, allowing you to change it however you wish without this script interfering.
+-- @function [parent=#vrui] overrideLayerConfig
+-- @param #string layer
 -- @param #boolean override Set to true to override config. Set to false to stop overriding.
 
 local async = require('openmw.async')
 local core = require('openmw.core')
 local I = require('openmw.interfaces')
 local storage = require('openmw.storage')
+local ui = require('openmw.ui')
 local util = require('openmw.util')
 local vr = require('openmw.vr')
+
+local windowToLayer = {
+    Alchemy = 'Windows',
+    Book = 'JournalBooks',
+    Companion = 'InventoryCompanionWindow',
+    Container = 'InventoryCompanionWindow',
+    Dialogue = 'DialogueWindow',
+    EnchantingDialog = 'Windows',
+    Inventory = 'InventoryWindow',
+    JailScreen = 'Windows',
+    Journal = 'JournalBooks',
+    LevelUpDialog = 'Windows',
+    Magic = 'SpellWindow',
+    Map = 'MapWindow',
+    MerchantRepair = 'Windows',
+    QuickKeys = 'Windows',
+    Recharge = 'Windows',
+    Repair = 'Windows',
+    Scroll = 'JournalBooks',
+    SpellBuying = 'Windows',
+    SpellCreationDialog = 'Windows',
+    Stats = 'StatsWindow',
+    Trade = 'InventoryCompanionWindow',
+    Training = 'Windows',
+    Travel = 'Windows',
+    WaitDialog = 'Windows',
+}
+
+--- List of layer that need to be arranged when multiple windows are opened
+--- In order of priority (left-to-right)
+local layersForArrangement = {
+    'DialogueWindow', 'MapWindow', 'SpellWindow', 'InventoryWindow', 'StatsWindow', 'InventoryCompanionWindow', 'Windows'
+}
+
+local function getWindowLayer(window)
+    return windowToLayer[window] or 'Windows'
+end
+
+local function getAllLayers()
+    local layers = {}
+    for k, v in pairs(ui.layers) do
+        layers[#layers + 1] = v.name
+    end
+
+    return layers
+end
+
+local function getLayerSize(layer)
+    return ui.layers[ui.layers.indexOf(layer)].size
+end
 
 local function createDerivedSpaces()
     I.vrspaces.createDerivedSpace(
@@ -241,35 +241,22 @@ local function createDefaultConfig(backgroundOpacity, autosize)
     }
 end
 
---- List of windows that need to be arranged when multiple windows are opened
---- In order of priority (left-to-right)
-local windowsForArrangement = {
-    'Stats',
-    'Inventory',
-    'Magic',
-    'Map',
-    'Companion',
-    'Container',
-    'Trade',
-    'Dialogue',
-}
-
-local modeConfigOverridden = {}
-
-local modeWindowsForArrangement = {
-    Interface = { "Stats", "Inventory", "Map", "Magic" },
-    Container = { "Inventory", "Container" },
-    Companion = { "Inventory", "Companion" },
-    Barter = { "Inventory", "Trade" },
-    Dialogue = { "Dialogue" },
-}
+local layerConfigOverridden = {}
 
 local spaceForMode = {
     Default = 'DefaultWindow',
     Dialogue = 'DialogueWindow',
 }
 
-local modeConfig = {}
+local function getWindowSpaceForCurrentMode()
+    if not I.UI then
+        return 'DefaultWindow'
+    end
+    local mode = I.UI.getMode()
+    return spaceForMode[mode] or 'DefaultWindow'
+end
+
+local layerConfig = {}
 
 local settingsPageKey = 'OMWVRUI'
 local l10nKey = settingsPageKey
@@ -348,14 +335,28 @@ local function registerSettingsGroup()
     })
 end
 
+local function setLayerConfigIfNotOverridden(layer, config)
+    if not layerConfigOverridden[layer] then
+        I.vrui.setLayerConfig(layer, config)
+    end
+end
+
+local function setLayerPoseIfNotOverridden(layer, pose)
+    if not layerConfigOverridden[layer] then
+        I.vrui.setLayerPose(layer, pose)
+    end
+end
+
 local configHUD3D = createDefaultConfig(0, true)
 configHUD3D.extent = util.vector2(0.033, 0.033)
 configHUD3D.center = util.vector2(0, 0.5)
 configHUD3D.space = 'LeftWristTop'
+layerConfig.HUD_3D = configHUD3D
 
 local configTooltip = createDefaultConfig(0, true)
 configTooltip.extent = util.vector2(0.033, 0.033)
 configTooltip.space = 'RightWristTop'
+layerConfig.Tooltip = configTooltip
 
 local function updateSpacesSettings()
     configHUD3D.space = spacesSection:get('HUDSpace')
@@ -367,47 +368,43 @@ local function updateSpacesSettings()
         configTooltip.space = WristSpaceAliases[configTooltip.space]
     end
     
-    I.vrui.setHUD3DConfig(configHUD3D)
-    I.vrui.setTooltipConfig(configTooltip)
+    setLayerConfigIfNotOverridden('HUD_3D', configHUD3D)
+    setLayerConfigIfNotOverridden('Tooltip', configTooltip)
 end
 spacesSection:subscribe(async:callback(updateSpacesSettings))
 
 
 local function setupDefaults(modes)
     updateSpacesSettings()
-    for _, mode in pairs(modes or {}) do
-        modeConfig[mode] = createDefaultConfig(0.7, true)
-    end
 
-    if modeConfig.Book then
-        modeConfig.Book.backgroundOpacity = 0
-    end
-    if modeConfig.Journal then
-        modeConfig.Journal.backgroundOpacity = 0
-    end
-    if modeConfig.Scroll then
-        modeConfig.Scroll.backgroundOpacity = 0
-    end
-
-    for mode, config in pairs(modeConfig) do
-        if not modeConfigOverridden[mode] then
-            I.vrui.setModeConfig(mode, config)
+    local allLayers = getAllLayers()
+    for _, layer in pairs(allLayers) do
+        if not layerConfig[layer] then
+            layerConfig[layer] = createDefaultConfig(0.7, true)
         end
     end
 
-    local configVirtualKeyboard = createDefaultConfig(0.7, true)
-    configVirtualKeyboard.extent = util.vector2(0.25, 0.25)
-    I.vrui.setVirtualKeyboardConfig(configVirtualKeyboard)
+    local bookLayer = layerConfig[getWindowLayer('Book')]
+    if bookLayer then
+        bookLayer.backgroundOpacity = 0
+    end
+    local journalLayer = layerConfig[getWindowLayer('Journal')]
+    if journalLayer then
+        journalLayer.backgroundOpacity = 0
+    end
+    local scrollLayer = layerConfig[getWindowLayer('Scroll')]
+    if scrollLayer then
+        scrollLayer.backgroundOpacity = 0
+    end
 
-    local configNotification = createDefaultConfig(0, false)
-    configNotification.space = 'DefaultNotification'
-    I.vrui.setNotificationConfig(configNotification)
-
-    local configDefault = createDefaultConfig(0.7, true)
-    I.vrui.setDefaultWindowConfig(configDefault)
-
-    local hudConfig = createDefaultConfig(0, true)
-    I.vrui.setHUDConfig(hudConfig)
+    layerConfig.VirtualKeyboard.extent = util.vector2(0.25, 0.25)
+    layerConfig.Notification = createDefaultConfig(0, false)
+    layerConfig.Notification.space = 'DefaultNotification'
+    layerConfig.HUD = createDefaultConfig(0, true)
+    
+    for layer, config in pairs(layerConfig) do
+        setLayerConfigIfNotOverridden(layer, config)
+    end
 end
 
 local function makeUpright(orientation)
@@ -419,14 +416,9 @@ local referenceWorldPose = {
     orientation = util.transform.identity,
 }
 
-local windowRelativePose = {}
-local function getWindowRelativePose(mode)
-    return windowRelativePose[mode] or windowRelativePose['Default']
-end
+local windowArrangementRelativePose = {}
 local function updateWindowRelativePoses()
-    for mode, space in pairs(spaceForMode) do
-        windowRelativePose[mode] = I.vrspaces.locateSpace(space, I.vrspaces.referenceSpaces.View) or windowRelativePose[mode]
-    end
+    windowArrangementRelativePose = I.vrspaces.locateSpace(getWindowSpaceForCurrentMode(), I.vrspaces.referenceSpaces.View) or windowArrangementRelativePose
 end
 
 local virtualKeyboardRelativePose = {
@@ -434,67 +426,55 @@ local virtualKeyboardRelativePose = {
     orientation = util.transform.rotateX(math.pi/8),
 }
 
-local visibleWindowsForArrangement = {}
+local visibleLayersForArrangement = {}
 
-local function updateWindowArrangement(modes)
-    local mode = I.UI.getMode()
-    if #visibleWindowsForArrangement == 0 or not mode then
+local function updateLayerArrangement()
+    if #visibleLayersForArrangement == 0 then
         return
     end
 
-    local windowPoses = {}
+    local layerPoses = {}
     local step = (-math.pi / 4)
-    local span = step * (#visibleWindowsForArrangement - 1)
+    local span = step * (#visibleLayersForArrangement - 1)
     local angle = -span / 2 + referenceWorldPose.orientation:getYaw()
-    for _, window in ipairs(visibleWindowsForArrangement) do
-        local transform = util.transform.rotateZ(angle) * util.transform.rotateZ(getWindowRelativePose(mode).orientation:getYaw())
-        local rotatedPosition = transform:apply(getWindowRelativePose(mode).position)
+    for _, layer in ipairs(visibleLayersForArrangement) do
+        local transform = util.transform.rotateZ(angle) * util.transform.rotateZ(windowArrangementRelativePose.orientation:getYaw())
+        local rotatedPosition = transform:apply(windowArrangementRelativePose.position)
 
-        windowPoses[window] = {
+        setLayerPoseIfNotOverridden(layer, {
             position = referenceWorldPose.position + rotatedPosition,
             orientation = transform
-        }
+        })
 
         angle = angle + step
     end
-
-    for _, mode in pairs(modes) do
-        local windows = modeWindowsForArrangement[mode]
-        if windows and not modeConfigOverridden[mode] then
-            for _, window in pairs(windows) do
-                if windowPoses[window] then
-                    I.vrui.setModePose(mode, windowPoses[window], window)
-                end
-            end
-        end
-    end
 end
 
-local function updateVisibleWindows()
-    local old = visibleWindowsForArrangement
-    visibleWindowsForArrangement = {}
+local function updateVisibleLayers()
+    local old = visibleLayersForArrangement
+    visibleLayersForArrangement = {}
 
-    for _, window in ipairs(windowsForArrangement) do
-        if I.UI.isWindowVisible(window) then
-            visibleWindowsForArrangement[#visibleWindowsForArrangement+1] = window
+    for _, layer in ipairs(layersForArrangement) do
+        if vr._isLayerRendering(layer) then
+            visibleLayersForArrangement[#visibleLayersForArrangement + 1] = layer
         end
     end
 
-    if #old ~= #visibleWindowsForArrangement then
+    if #old ~= #visibleLayersForArrangement then
         return true
     end
-    for i, window in ipairs(old) do
-        if visibleWindowsForArrangement[i] ~= window then
+    for i, layer in ipairs(old) do
+        if visibleLayersForArrangement[i] ~= layer then
             return true
         end
     end
     return false
 end
 
-local function computeModePose(mode)
-    local transform = util.transform.rotateZ(referenceWorldPose.orientation:getYaw() + getWindowRelativePose(mode).orientation:getYaw())
+local function computeLayerPose()
+    local transform = util.transform.rotateZ(referenceWorldPose.orientation:getYaw() + windowArrangementRelativePose.orientation:getYaw())
     return {
-        position = referenceWorldPose.position + transform:apply(getWindowRelativePose(mode).position),
+        position = referenceWorldPose.position + transform:apply(windowArrangementRelativePose.position),
         orientation = transform
     }
 end
@@ -508,15 +488,15 @@ local function computeVirtualKeyboardPose()
     }
 end
 
-local function updateModes(modes)
+local function updateLayers()
     -- Update all the modes that did not get updated by arrangement.
-    for _, mode in pairs(modes) do
-        if not modeConfigOverridden[mode] then
-            I.vrui.setModePose(mode, computeModePose(mode))
+    local pose = computeLayerPose()
+    for _, layer in pairs(getAllLayers()) do
+        if not layerConfig[layer].space then
+            setLayerPoseIfNotOverridden(layer, pose)
         end
     end
-    I.vrui.setDefaultWindowPose(computeModePose(nil))
-    I.vrui.setVirtualKeyboardPose(computeVirtualKeyboardPose())
+    setLayerPoseIfNotOverridden('VirtualKeyboard', computeVirtualKeyboardPose())
 end
 
 local function updatePoses()
@@ -524,75 +504,23 @@ local function updatePoses()
     updateWindowRelativePoses()
 end
 
-local function overrideModeConfig(mode, v)
-    modeConfigOverridden[mode] = v
+local function overrideLayerConfig(layer, v)
+    layerConfigOverridden[layer] = v
 end
-
---- We need to manage some layers that haven't been exposed to Lua yet:
---- These are MyGUI layers that i don't want to expose directly to Lua, but i still want them to be manageable from Lua.
---- So i made .set*Config methods in I.vrui for these
---- And one I.vrui.setDefaultWindowConfig which sets a default config for all remaining layers that haven't been exposed to Lua
-local secretItems = {
-    'Modal',
-    'RadialMenu',
-    'Windows',
-    'Video',
-    'InputBlocker',
-    'Settings',
-    'Console',
-    'ListBox',
-    'MainMenu',
-    'MainMenuBackground',
-    'LoadingScreen',
-    'LoadingScreenBackground',
-    'Debug',
-}
 
 local interface =
 {
     version = 0,
 
-    setDefaultWindowConfig = function(config)
-        for _, item in pairs(secretItems) do
-            vr._setLayerConfig(item, config)
-        end
-    end,
-
-    setDefaultWindowPose = function(pose)
-        for _, item in pairs(secretItems) do
-            vr._setLayerPose(item, pose)
-        end
-    end,
-
-    setModeConfig = function(mode, options)
-        vr._setModeConfig(mode, options)
-    end,
-
-    setModePose = function(mode, pose, window) vr._setModePose(mode, pose, window) end,
-
-    setNotificationConfig = function(config) vr._setLayerConfig('Notification', config) end,
-
-    setNotificationPose = function(pose) vr._setLayerPose('Notification', pose) end,
-
-    setHUDConfig = function(config) vr._setLayerConfig('HUD', config) end,
-
-    setHUDPose = function(pose) vr._setLayerPose('HUD', pose) end,
-
-    setHUD3DConfig = function(config) vr._setLayerConfig('HUD_3D', config) end,
-
-    setHUD3DPose = function(pose) vr._setLayerPose('HUD_3D', pose) end,
-
-    setTooltipConfig = function(config) vr._setLayerConfig('Tooltip', config) end,
-
-    setTooltipPose = function(pose) vr._setLayerPose('Tooltip', pose) end,
-
-    setVirtualKeyboardConfig = function(config) vr._setLayerConfig('VirtualKeyboard', config) end,
-
-    setVirtualKeyboardPose = function(pose) vr._setLayerPose('VirtualKeyboard', pose) end,
-
-    overrideModeConfig = overrideModeConfig,
+    overrideLayerConfig = overrideLayerConfig,
     
     showMessageInTheVoid = function(message) vr._showMessageInTheVoid(message) end,
+    
+    setLayerConfig = function(layer, config) vr._setLayerConfig(layer, config) end,
+    
+    setLayerPose = function(layer, pose) vr._setLayerPose(layer, pose) end,
+    
+    getWindowLayer = getWindowLayer,
 }
 
 return {
@@ -601,9 +529,9 @@ return {
     setupDefaults = setupDefaults,
     makeUpright = makeUpright,
     updatePoses = updatePoses,
-    updateModes = updateModes,
-    updateVisibleWindows = updateVisibleWindows,
-    updateWindowArrangement = updateWindowArrangement,
+    updateLayers = updateLayers,
+    updateVisibleLayers = updateVisibleLayers,
+    updateLayerArrangement = updateLayerArrangement,
     registerSettingsPage = registerSettingsPage,
     registerSettingsGroup = registerSettingsGroup,
     interface = interface,
