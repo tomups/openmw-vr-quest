@@ -326,7 +326,7 @@ namespace MWVR
         bool visible = mForceVisible || mWidgets.size() > 0;
         for (const auto* luaWidget : mLuaElements)
         {
-            if (luaWidget->mRoot)
+            if (luaWidget && luaWidget->mRoot)
                 visible = visible || luaWidget->mRoot->isVisible();
         }
 
@@ -432,7 +432,7 @@ namespace MWVR
 
         for (const auto& element : mLuaElements)
         {
-            if (!element->mRoot)
+            if (!element || !element->mRoot)
                 continue;
             const auto* widget = element->mRoot->widget();
             if (!widget)
