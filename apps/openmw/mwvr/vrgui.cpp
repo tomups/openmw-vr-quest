@@ -434,6 +434,8 @@ namespace MWVR
         {
             if (!element->mRoot)
                 continue;
+            if (!element->mRoot->isVisible())
+                continue;
             const auto* widget = element->mRoot->widget();
             if (!widget)
                 continue;
