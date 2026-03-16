@@ -100,7 +100,7 @@ I.Settings.registerRenderer('inputBindingVR', function(value, set, arg)
     if type(value) ~= 'table' then error('inputBindingVR: must have a table default value, got '..tostring(type(value))..' instead') end
     if type(value.id) ~= 'string' then error('inputBindingVR: default value table must contain a string id value') end
     if not value.type then error('inputBindingVR: default value table must contain a string type value') end
-    if not inputTypes[value.type] then error('inputBindingVR: type must be "action" or "trigger"') end
+    if not inputTypes[value.type] then error('inputBindingVR: type must be "action" or "trigger", received invalid type "'..tostring(value.type)..'"') end
     if not value.key then error('inputBindingVR: default value table must contain a string type key') end
     local info = inputTypes[value.type][value.key]
     if not info then print(string.format('inputBindingVR: %s %s not found', value.type, value.key)) return end

@@ -790,7 +790,7 @@ namespace MWVR
     }
 
     void VRGUIManager::clearLua() {
-        for (auto layer : mLayers)
+        for (auto& layer : mLayers)
             layer.second->clearLua();
     }
 

@@ -338,13 +338,13 @@ end
 
 local function setLayerConfigIfNotOverridden(layer, config)
     if not layerConfigOverridden[layer] then
-        I.vrui.setLayerConfig(layer, config)
+        vr._setLayerConfig(layer, config)
     end
 end
 
 local function setLayerPoseIfNotOverridden(layer, pose)
     if not layerConfigOverridden[layer] then
-        I.vrui.setLayerPose(layer, pose)
+        vr._setLayerPose(layer, pose)
     end
 end
 
