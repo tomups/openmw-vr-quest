@@ -214,7 +214,7 @@ Ubuntu_GCC_asan:
   script:
     - CI/check_qt_translations.sh
 
-Teal:
+.Teal:
   stage: checks
   extends: .Ubuntu_Image
   before_script:
