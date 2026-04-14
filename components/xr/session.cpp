@@ -443,7 +443,12 @@ namespace XR
             XrInteractionProfileState interactionProfileState{};
             interactionProfileState.type = XR_TYPE_INTERACTION_PROFILE_STATE;
 
-            xrGetCurrentInteractionProfile(XR::Session::instance().xrSession(), xrPath, &interactionProfileState);
+            auto result = xrGetCurrentInteractionProfile(XR::Session::instance().xrSession(), xrPath, &interactionProfileState);
+            if (result != XR_SUCCESS)
+            {
+                Log(Debug::Verbose) << userPath << ": Skipping (xrGetCurrentInteractionProfile returned " << result << ")";
+                continue;
+            }
             if (interactionProfileState.interactionProfile)
             {
                 uint32_t size;

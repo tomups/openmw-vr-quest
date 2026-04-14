@@ -40,6 +40,9 @@
 #include "types/types.hpp"
 #include "userdataserializer.hpp"
 
+#include "../mwvr/vrgui.hpp"
+#include <components/vr/vr.hpp>
+
 namespace MWLua
 {
     namespace
@@ -353,6 +356,8 @@ namespace MWLua
 
     void LuaManager::clear()
     {
+        if (VR::getVR())
+            MWVR::VRGUIManager::instance().clearLua();
         LuaUi::clearGameInterface();
         mUiResourceManager.clear();
         MWBase::Environment::get().getWorld()->getPostProcessor()->disableDynamicShaders();
@@ -743,6 +748,8 @@ namespace MWLua
     {
         Log(Debug::Info) << "Reload Lua";
 
+        if (VR::getVR())
+            MWVR::VRGUIManager::instance().clearLua();
         LuaUi::clearGameInterface();
         LuaUi::clearMenuInterface();
         LuaUi::clearSettings();

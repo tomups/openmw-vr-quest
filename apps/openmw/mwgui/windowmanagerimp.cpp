@@ -619,6 +619,8 @@ namespace MWGui
     {
         try
         {
+            if (VR::getVR())
+                MWVR::VRGUIManager::instance().clearLua();
             LuaUi::clearGameInterface();
             LuaUi::clearMenuInterface();
 
