@@ -1,5 +1,6 @@
-#include <components/misc/strings/lower.hpp>
+#include <SDL2/SDL_syswm.h>
 #include <components/misc/strings/algorithm.hpp>
+#include <components/misc/strings/lower.hpp>
 #include <components/sceneutil/color.hpp>
 #include <components/sceneutil/depth.hpp>
 
@@ -22,6 +23,7 @@
 #endif
 
 #elif __linux__
+#include <EGL/egl.h>
 #include <GL/glx.h>
 #undef None
 
@@ -85,8 +87,9 @@ namespace XR
 
     PlatformPrivate::~PlatformPrivate() {}
 
-    Platform::Platform(osg::GraphicsContext* gc)
+    Platform::Platform(osg::GraphicsContext* gc, SDL_Window* window)
         : mPrivate(new PlatformPrivate(gc))
+        , mWindow(window)
     {
         mMWColorFormatsGL.push_back(GL_SRGB8);
         mMWColorFormatsGL.push_back(GL_SRGB8_ALPHA8);
@@ -166,6 +169,9 @@ namespace XR
         if (XR::Extensions::instance().extensionSupported(XR_KHR_OPENGL_ENABLE_EXTENSION_NAME))
         {
             Extensions::instance().selectGraphicsAPIExtension(XR_KHR_OPENGL_ENABLE_EXTENSION_NAME);
+#ifdef __linux__
+            Extensions::instance().requestExtension("XR_MNDX_egl_enable");
+#endif
             return true;
         }
         else
@@ -309,23 +315,24 @@ namespace XR
             throw std::logic_error("Enum value not implemented");
         }
 #elif __linux__
+        apiName = "OpenGL";
+        // Get system requirements
+        PFN_xrGetOpenGLGraphicsRequirementsKHR p_getRequirements = nullptr;
+        xrGetInstanceProcAddr(
+            instance, "xrGetOpenGLGraphicsRequirementsKHR", reinterpret_cast<PFN_xrVoidFunction*>(&p_getRequirements));
+        XrGraphicsRequirementsOpenGLKHR requirements{};
+        requirements.type = XR_TYPE_GRAPHICS_REQUIREMENTS_OPENGL_KHR;
+        CHECK_XRCMD(p_getRequirements(instance, systemId, &requirements));
+
+        // TODO: Actually get system version
+        const XrVersion systemApiVersion = XR_MAKE_VERSION(4, 6, 0);
+        if (requirements.minApiVersionSupported > systemApiVersion)
         {
-            apiName = "OpenGL";
-            // Get system requirements
-            PFN_xrGetOpenGLGraphicsRequirementsKHR p_getRequirements = nullptr;
-            xrGetInstanceProcAddr(instance, "xrGetOpenGLGraphicsRequirementsKHR",
-                reinterpret_cast<PFN_xrVoidFunction*>(&p_getRequirements));
-            XrGraphicsRequirementsOpenGLKHR requirements{};
-            requirements.type = XR_TYPE_GRAPHICS_REQUIREMENTS_OPENGL_KHR;
-            CHECK_XRCMD(p_getRequirements(instance, systemId, &requirements));
+            std::cout << "Runtime does not support desired Graphics API and/or version" << std::endl;
+        }
 
-            // TODO: Actually get system version
-            const XrVersion systemApiVersion = XR_MAKE_VERSION(4, 6, 0);
-            if (requirements.minApiVersionSupported > systemApiVersion)
-            {
-                std::cout << "Runtime does not support desired Graphics API and/or version" << std::endl;
-            }
-
+        if (glXGetCurrentContext())
+        {
             // Create Session
             GLXContext glxContext = glXGetCurrentContext();
             GLXDrawable glxDrawable = glXGetCurrentDrawable();
@@ -355,6 +362,64 @@ namespace XR
             createInfo.systemId = systemId;
             res = CHECK_XRCMD(xrCreateSession(instance, &createInfo, &session));
         }
+        else if (Extensions::instance().extensionEnabled("XR_MNDX_egl_enable"))
+        {
+            XrGraphicsBindingEGLMNDX graphicsBindings;
+            memset(&graphicsBindings, 0, sizeof(graphicsBindings));
+
+            graphicsBindings.type = XR_TYPE_GRAPHICS_BINDING_EGL_MNDX;
+            graphicsBindings.next = NULL;
+
+            SDL_SysWMinfo wmInfo;
+            SDL_VERSION(&wmInfo.version);
+
+            if (SDL_GetWindowWMInfo(mWindow, &wmInfo))
+            {
+                // Only supporting wayland for now
+                struct wl_display* wlDisplay = wmInfo.info.wl.display;
+                if (wlDisplay)
+                {
+                    // EGL display must correspond to the Wayland display
+                    EGLDisplay eglDisplay = eglGetDisplay((EGLNativeDisplayType)wlDisplay);
+                    EGLContext eglContext = eglGetCurrentContext();
+                    if (eglDisplay && eglContext)
+                    {
+                        graphicsBindings.getProcAddress = (PFNEGLGETPROCADDRESSPROC)eglGetProcAddress;
+                        graphicsBindings.display = eglDisplay;
+                        graphicsBindings.context = eglContext;
+                        eglGetConfigs(eglDisplay, &graphicsBindings.config, sizeof(graphicsBindings.config), nullptr);
+                    }
+                }
+            }
+
+            XrSessionCreateInfo createInfo{};
+            createInfo.type = XR_TYPE_SESSION_CREATE_INFO;
+            createInfo.next = &graphicsBindings;
+            createInfo.systemId = systemId;
+            res = CHECK_XRCMD(xrCreateSession(instance, &createInfo, &session));
+        }
+#if 0
+// Deprecated
+        else
+        {
+            XrGraphicsBindingOpenGLWaylandKHR graphicsBindings;
+            graphicsBindings.type = XR_TYPE_GRAPHICS_BINDING_OPENGL_WAYLAND_KHR;
+            graphicsBindings.next = nullptr;
+            SDL_SysWMinfo info;
+            SDL_VERSION(&info.version);
+
+            if (SDL_GetWindowWMInfo(mWindow, &info))
+            {
+                graphicsBindings.display = info.info.wl.display;
+            }
+
+            XrSessionCreateInfo createInfo{};
+            createInfo.type = XR_TYPE_SESSION_CREATE_INFO;
+            createInfo.next = &graphicsBindings;
+            createInfo.systemId = systemId;
+            res = CHECK_XRCMD(xrCreateSession(instance, &createInfo, &session));
+        }
+#endif
 #endif
         if (!XR_SUCCEEDED(res))
             initFailure(res, instance);

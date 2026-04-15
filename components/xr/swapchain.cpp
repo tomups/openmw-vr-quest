@@ -19,6 +19,7 @@
 #endif
 
 #elif __linux__
+#include <EGL/egl.h>
 #include <GL/glx.h>
 #undef None
 

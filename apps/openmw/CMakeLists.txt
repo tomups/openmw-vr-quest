@@ -165,7 +165,7 @@ if(BUILD_OPENMW_VR)
     #if (WIN32)
     #    target_compile_options(openmw_vr PUBLIC XR_USE_GRAPHICS_API_OPENGL XR_USE_GRAPHICS_API_D3D11 XR_USE_PLATFORM_WIN32)
     #elseif(UNIX)
-    #    target_compile_options(openmw_vr PUBLIC XR_USE_GRAPHICS_API_OPENGL XR_USE_PLATFORM_XLIB)
+    #    target_compile_options(openmw_vr PUBLIC XR_USE_GRAPHICS_API_OPENGL XR_USE_PLATFORM_XLIB XR_USE_PLATFORM_WAYLAND)
     #endif()
 endif()
 

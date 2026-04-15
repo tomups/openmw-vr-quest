@@ -1246,7 +1246,7 @@ void OMW::Engine::configureVRGraphics(osg::GraphicsContext* gc)
     // Interaction profiles need to be configured before XR::Instance, to enable all relevant extensions
     configureVRInputProfiles();
 
-    mXrInstance = std::make_unique<XR::Instance>(gc);
+    mXrInstance = std::make_unique<XR::Instance>(gc, mWindow);
     mXrSession = mXrInstance->createSession();
     if (mXrSession->appShouldShareDepthInfo())
         mSelectDepthFormatOperation->setSupportedFormats(mXrInstance->platform().supportedDepthFormats());

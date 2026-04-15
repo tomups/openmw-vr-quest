@@ -35,7 +35,7 @@ namespace XR
         return *sInstance;
     }
 
-    Instance::Instance(osg::GraphicsContext* gc)
+    Instance::Instance(osg::GraphicsContext* gc, SDL_Window* window)
     {
         if (!sInstance)
             sInstance = this;
@@ -49,7 +49,7 @@ namespace XR
         mExtensions = std::make_unique<Extensions>();
         for (auto& extension : getAllKnownInteractionProfileExtensions())
             mExtensions->requestExtension(extension);
-        mPlatform = std::make_unique<Platform>(gc);
+        mPlatform = std::make_unique<Platform>(gc, window);
         mPlatform->selectGraphicsAPIExtension();
         mXrInstance = mExtensions->createXrInstance("openmw_vr");
         Debugging::setName(mXrInstance, "OpenMW XR Instance");

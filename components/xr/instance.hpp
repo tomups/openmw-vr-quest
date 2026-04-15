@@ -27,7 +27,7 @@ namespace XR
         static Instance& instance();
 
     public:
-        Instance(osg::GraphicsContext* gc);
+        Instance(osg::GraphicsContext* gc, SDL_Window* window);
         ~Instance(void);
 
         void endFrame(VR::Frame& frame);
