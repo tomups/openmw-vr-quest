@@ -54,7 +54,7 @@ namespace MWGui
         int maxHeight = mScrollView->getHeight();
 
         mRows = std::max(maxHeight / 42, 1);
-        mItemCount = dragArea->getChildCount();
+        mItemCount = static_cast<int>(dragArea->getChildCount());
         bool showScrollbar = static_cast<int>(std::ceil(mItemCount / float(mRows))) > mScrollView->getWidth() / 42;
         if (showScrollbar)
         {
@@ -85,6 +85,8 @@ namespace MWGui
             mControllerFocus = -1;
             if (mItemCount > 0)
                 mControllerFocus = std::clamp(mControllerFocus, 0, mItemCount - 1);
+            else
+                mControllerFocus = -1;
             updateControllerFocus(-1, mControllerFocus);
         }
 
@@ -128,7 +130,7 @@ namespace MWGui
             if (item.mType == ItemStack::Type_Equipped)
                 state = ItemWidget::Equip;
             itemWidget->setItem(item.mBase, state);
-            itemWidget->setCount(item.mCount);
+            itemWidget->setCount(static_cast<int>(item.mCount));
 
             itemWidget->eventMouseButtonClick += MyGUI::newDelegate(this, &ItemView::onSelectedItem);
             itemWidget->eventMouseWheel += MyGUI::newDelegate(this, &ItemView::onMouseWheelMoved);
@@ -262,9 +264,6 @@ namespace MWGui
 
     void ItemView::updateControllerFocus(int prevFocus, int newFocus)
     {
-        MWBase::Environment::get().getWindowManager()->setCursorVisible(
-            !MWBase::Environment::get().getWindowManager()->getControllerTooltipVisible());
-
         if (!mItemCount)
             return;
 

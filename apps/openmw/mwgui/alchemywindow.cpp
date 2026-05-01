@@ -274,7 +274,7 @@ namespace MWGui
         mItemNames.clear();
         for (size_t i = 0; i < mModel->getItemCount(); ++i)
         {
-            MWWorld::Ptr item = mModel->getItem(i).mBase;
+            MWWorld::Ptr item = mModel->getItem(static_cast<ItemModel::ModelIndex>(i)).mBase;
             if (item.getType() != ESM::Ingredient::sRecordId)
                 continue;
 
@@ -459,7 +459,7 @@ namespace MWGui
             mItemSelectionDialog->eventDialogCanceled += MyGUI::newDelegate(this, &AlchemyWindow::onItemCancel);
             mItemSelectionDialog->setVisible(true);
             mItemSelectionDialog->openContainer(MWMechanics::getPlayer());
-            mItemSelectionDialog->getSortModel()->setApparatusTypeFilter(i);
+            mItemSelectionDialog->getSortModel()->setApparatusTypeFilter(static_cast<int32_t>(i));
             mItemSelectionDialog->setFilter(SortFilterItemModel::Filter_OnlyAlchemyTools);
         }
         else
@@ -672,11 +672,11 @@ namespace MWGui
         if (arg.button == SDL_CONTROLLER_BUTTON_B)
         {
             // Remove active ingredients or close the window, starting with right-most slot.
-            for (int i = mIngredients.size() - 1; i >= 0; --i)
+            for (size_t i = mIngredients.size(); i > 0; --i)
             {
-                if (mIngredients[i]->isUserString("ToolTipType"))
+                if (mIngredients[i - 1]->isUserString("ToolTipType"))
                 {
-                    onIngredientSelected(mIngredients[i]);
+                    onIngredientSelected(mIngredients[i - 1]);
                     return true;
                 }
             }

@@ -113,7 +113,7 @@ namespace MWGui
         void setConstantEffect(bool constant);
 
     protected:
-        std::map<int, short> mButtonMapping; // maps button ID to effect ID
+        std::map<int, ESM::RefId> mButtonMapping; // maps button ID to effect ID
 
         Gui::MWList* mAvailableEffectsList;
         MyGUI::ScrollView* mUsedEffectsView;
@@ -123,7 +123,7 @@ namespace MWGui
         std::unique_ptr<SelectSkillDialog> mSelectSkillDialog;
 
         int mSelectedEffect;
-        short mSelectedKnownEffectId;
+        ESM::RefId mSelectedKnownEffectId;
 
         bool mConstantEffect;
 
@@ -153,9 +153,9 @@ namespace MWGui
     private:
         Type mType;
 
-        int mAvailableFocus;
-        int mEffectFocus;
-        bool mRightColumn;
+        size_t mAvailableFocus = 0;
+        size_t mEffectFocus = 0;
+        bool mRightColumn = false;
         std::vector<MyGUI::Button*> mAvailableButtons;
         std::vector<std::pair<Widgets::MWSpellEffectPtr, MyGUI::Button*>> mEffectButtons;
     };

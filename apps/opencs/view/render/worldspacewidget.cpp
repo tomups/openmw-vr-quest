@@ -323,7 +323,7 @@ CSVRender::WorldspaceWidget::DropType CSVRender::WorldspaceWidget::getDropType(
     return output;
 }
 
-CSVRender::WorldspaceWidget::dropRequirments CSVRender::WorldspaceWidget::getDropRequirements(DropType type) const
+CSVRender::WorldspaceWidget::DropRequirements CSVRender::WorldspaceWidget::getDropRequirements(DropType type) const
 {
     if (type == Type_DebugProfile)
         return canHandle;
@@ -387,6 +387,11 @@ CSMDoc::Document& CSVRender::WorldspaceWidget::getDocument()
     return mDocument;
 }
 
+const CSMDoc::Document& CSVRender::WorldspaceWidget::getDocument() const
+{
+    return mDocument;
+}
+
 template <typename Tag>
 std::optional<CSVRender::WorldspaceHitResult> CSVRender::WorldspaceWidget::checkTag(
     const osgUtil::LineSegmentIntersector::Intersection& intersection) const
@@ -411,14 +416,9 @@ std::optional<CSVRender::WorldspaceHitResult> CSVRender::WorldspaceWidget::check
 std::tuple<osg::Vec3d, osg::Vec3d, osg::Vec3d> CSVRender::WorldspaceWidget::getStartEndDirection(
     int pointX, int pointY) const
 {
-    // may be okay to just use devicePixelRatio() directly
-    QScreen* screen = SceneWidget::windowHandle() && SceneWidget::windowHandle()->screen()
-        ? SceneWidget::windowHandle()->screen()
-        : QGuiApplication::primaryScreen();
-
     // (0,0) is considered the lower left corner of an OpenGL window
-    int x = pointX * screen->devicePixelRatio();
-    int y = height() * screen->devicePixelRatio() - pointY * screen->devicePixelRatio();
+    int x = pointX * devicePixelRatio();
+    int y = height() * devicePixelRatio() - pointY * devicePixelRatio();
 
     // Convert from screen space to world space
     osg::Matrixd wpvMat;

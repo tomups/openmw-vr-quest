@@ -9,7 +9,6 @@
 #include <osg/LightSource>
 #include <osg/Material>
 #include <osg/PositionAttitudeTransform>
-#include <osg/TexEnvCombine>
 #include <osg/Texture2D>
 #include <osg/ValueObject>
 #include <osgUtil/IntersectionVisitor>
@@ -237,7 +236,6 @@ namespace MWRender
         lightManager->setStartLight(1);
         osg::ref_ptr<osg::StateSet> stateset = lightManager->getOrCreateStateSet();
         stateset->setDefine("FORCE_OPAQUE", "1", osg::StateAttribute::ON);
-        stateset->setMode(GL_LIGHTING, osg::StateAttribute::ON);
         stateset->setMode(GL_NORMALIZE, osg::StateAttribute::ON);
         stateset->setMode(GL_CULL_FACE, osg::StateAttribute::ON);
         osg::ref_ptr<osg::Material> defaultMat(new osg::Material);
@@ -266,13 +264,6 @@ namespace MWRender
         stateset->addUniform(new osg::Uniform("sky", skyTextureSlot));
         stateset->addUniform(new osg::Uniform("emissiveMult", 1.f));
 
-        // Opaque stuff must have 1 as its fragment alpha as the FBO is translucent, so having blending off isn't enough
-        osg::ref_ptr<osg::TexEnvCombine> noBlendAlphaEnv = new osg::TexEnvCombine();
-        noBlendAlphaEnv->setCombine_Alpha(osg::TexEnvCombine::REPLACE);
-        noBlendAlphaEnv->setSource0_Alpha(osg::TexEnvCombine::CONSTANT);
-        noBlendAlphaEnv->setConstantColor(osg::Vec4(0.0, 0.0, 0.0, 1.0));
-        noBlendAlphaEnv->setCombine_RGB(osg::TexEnvCombine::REPLACE);
-        noBlendAlphaEnv->setSource0_RGB(osg::TexEnvCombine::PREVIOUS);
         osg::ref_ptr<osg::Texture2D> dummyTexture = new osg::Texture2D();
         dummyTexture->setWrap(osg::Texture::WRAP_S, osg::Texture::CLAMP_TO_EDGE);
         dummyTexture->setWrap(osg::Texture::WRAP_T, osg::Texture::CLAMP_TO_EDGE);
@@ -282,7 +273,6 @@ namespace MWRender
         dummyTexture->setShadowComparison(true);
         dummyTexture->setShadowCompareFunc(osg::Texture::ShadowCompareFunc::ALWAYS);
         stateset->setTextureAttributeAndModes(7, dummyTexture, osg::StateAttribute::ON);
-        stateset->setTextureAttribute(7, noBlendAlphaEnv, osg::StateAttribute::ON);
 
         osg::ref_ptr<osg::LightModel> lightmodel = new osg::LightModel;
         lightmodel->setAmbientIntensity(osg::Vec4(0.0, 0.0, 0.0, 1.0));
@@ -303,15 +293,8 @@ namespace MWRender
         light->setPosition(osg::Vec4(positionX, positionY, positionZ, 0.0));
         light->setDiffuse(osg::Vec4(diffuseR, diffuseG, diffuseB, 1));
         osg::Vec4 ambientRGBA = osg::Vec4(ambientR, ambientG, ambientB, 1);
-        if (mResourceSystem->getSceneManager()->getForceShaders())
-        {
-            // When using shaders, we now skip the ambient sun calculation as this is the only place it's used.
-            // Using the scene ambient will give identical results.
-            lightmodel->setAmbientIntensity(ambientRGBA);
-            light->setAmbient(osg::Vec4(0, 0, 0, 1));
-        }
-        else
-            light->setAmbient(ambientRGBA);
+        lightmodel->setAmbientIntensity(ambientRGBA);
+        light->setAmbient(osg::Vec4(0, 0, 0, 1));
         light->setSpecular(osg::Vec4(0, 0, 0, 0));
         light->setLightNum(0);
         light->setConstantAttenuation(1.f);
@@ -403,7 +386,8 @@ namespace MWRender
 
         // NB Camera::setViewport has threading issues
         osg::ref_ptr<osg::StateSet> stateset = new osg::StateSet;
-        mViewport = new osg::Viewport(0, mSizeY - sizeY, std::min(mSizeX, sizeX), std::min(mSizeY, sizeY));
+        // This expects Y-down convention; historically the origin was (0, mSizeY - sizeY)
+        mViewport = new osg::Viewport(0, 0, std::min(mSizeX, sizeX), std::min(mSizeY, sizeY));
         stateset->setAttributeAndModes(mViewport);
         mRTTNode->setCameraStateset(stateset);
 
@@ -481,8 +465,8 @@ namespace MWRender
     {
         if (!mViewport)
             return -1;
-        float projX = (posX / mViewport->width()) * 2 - 1.f;
-        float projY = (posY / mViewport->height()) * 2 - 1.f;
+        double projX = (posX / mViewport->width()) * 2 - 1;
+        double projY = (posY / mViewport->height()) * 2 - 1;
         // With Intersector::WINDOW, the intersection ratios are slightly inaccurate. Seems to be a
         // precision issue - compiling with OSG_USE_FLOAT_MATRIX=0, Intersector::WINDOW works ok.
         // Using Intersector::PROJECTION results in better precision because the start/end points and the model matrices

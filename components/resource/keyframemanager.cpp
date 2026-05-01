@@ -52,7 +52,8 @@ namespace Resource
         , mPath(path)
         , mVFS(&vfs)
     {
-        mPath.changeExtension("txt");
+        constexpr VFS::Path::ExtensionView txt("txt");
+        mPath.changeExtension(txt);
     }
 
     bool RetrieveAnimationsVisitor::belongsToLeftUpperExtremity(const std::string& name)
@@ -144,8 +145,8 @@ namespace Resource
 
                 callback->addMergedAnimationTrack(std::move(mergedAnimationTrack));
 
-                float startTime = animation->getStartTime();
-                float stopTime = startTime + animation->getDuration();
+                float startTime = static_cast<float>(animation->getStartTime());
+                float stopTime = static_cast<float>(startTime + animation->getDuration());
 
                 SceneUtil::EmulatedAnimation emulatedAnimation;
                 emulatedAnimation.mStartTime = startTime;
@@ -168,7 +169,7 @@ namespace Resource
             {
                 std::string line;
                 while (getline(*textKeysFile, line))
-                    mTarget.mTextKeys.emplace(parseTimeSignature(line), parseTextKey(line));
+                    mTarget.mTextKeys.emplace(static_cast<float>(parseTimeSignature(line)), parseTextKey(line));
             }
             catch (const std::exception& e)
             {
@@ -214,7 +215,8 @@ namespace Resource
             return osg::ref_ptr<const SceneUtil::KeyframeHolder>(static_cast<SceneUtil::KeyframeHolder*>(obj.get()));
 
         osg::ref_ptr<SceneUtil::KeyframeHolder> loaded(new SceneUtil::KeyframeHolder);
-        if (Misc::getFileExtension(name.value()) == "kf")
+        constexpr VFS::Path::ExtensionView kf("kf");
+        if (name.extension() == kf)
         {
             auto file = std::make_shared<Nif::NIFFile>(name);
             Nif::Reader reader(*file, mEncoder);

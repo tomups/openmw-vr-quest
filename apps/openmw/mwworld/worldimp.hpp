@@ -123,7 +123,7 @@ namespace MWWorld
 
         float mSwimHeightScale;
 
-        float mDistanceToFacedObject;
+        float mDistanceToFocusObject;
 
         bool mTeleportEnabled;
         bool mLevitationEnabled;
@@ -154,7 +154,7 @@ namespace MWWorld
 
         void preloadSpells();
 
-        MWWorld::Ptr getFacedObject(float maxDistance, bool ignorePlayer = true);
+        MWWorld::Ptr getFocusObject(float maxDistance, bool ignorePlayer = true);
 
         void PCDropped(const Ptr& item);
 
@@ -183,9 +183,7 @@ namespace MWWorld
             Loading::Listener* listener);
 
         float feetToGameUnits(float feet);
-//## VR_PATCH BEGIN
-        float getActivationDistancePlusTelekinesis() override;
-//## VR_PATCH END
+// MERGETODO: getActivationDistancePlusTelekinesis was removed for some reason
 
         MWWorld::ConstPtr getClosestMarker(const MWWorld::ConstPtr& ptr, const ESM::RefId& id);
         MWWorld::ConstPtr getClosestMarkerFromExteriorPosition(const osg::Vec3f& worldPos, const ESM::RefId& id);
@@ -218,8 +216,8 @@ namespace MWWorld
 
         void clear() override;
 
-        int countSavedGameRecords() const override;
-        int countSavedGameCells() const override;
+        size_t countSavedGameRecords() const override;
+        size_t countSavedGameCells() const override;
 
         void write(ESM::ESMWriter& writer, Loading::Listener& progress) const override;
 
@@ -292,9 +290,6 @@ namespace MWWorld
         ///< Return a pointer to a liveCellRef with the given name.
         /// \param activeOnly do not search inactive cells.
 
-        Ptr searchPtrViaActorId(int actorId) override;
-        ///< Search is limited to the active cells.
-
         MWWorld::Ptr findContainer(const MWWorld::ConstPtr& ptr) override;
         ///< Return a pointer to a liveCellRef which contains \a ptr.
         /// \note Search is limited to the active cells.
@@ -353,10 +348,10 @@ namespace MWWorld
             bool changeEvent = true) override;
         ///< @param changeEvent If false, do not trigger cell change flag or detect worldspace changes
 
-        MWWorld::Ptr getFacedObject() override;
+        MWWorld::Ptr getFocusObject() override;
         ///< Return pointer to the object the player is looking at, if it is within activation range
 
-        float getDistanceToFacedObject() override;
+        float getDistanceToFocusObject() override;
 
         /// @note No-op for items in containers. Use ContainerStore::removeItem instead.
         void deleteObject(const Ptr& ptr) override;
@@ -423,7 +418,7 @@ namespace MWWorld
         void updatePhysics(
             float duration, bool paused, osg::Timer_t frameStart, unsigned int frameNumber, osg::Stats& stats);
 
-        void updateWindowManager();
+        void updateFocusObject();
 
         MWWorld::Ptr placeObject(
             const MWWorld::Ptr& object, float cursorX, float cursorY, int amount, bool copy = true) override;
@@ -471,7 +466,7 @@ namespace MWWorld
         void applyDeferredPreviewRotationToPlayer(float dt) override;
         void disableDeferredPreviewRotation() override;
 
-        void saveLoaded() override;
+        void saveLoaded(const ESM::ESMReader& reader) override;
 
         void setupPlayer() override;
         void renderPlayer() override;
@@ -520,7 +515,7 @@ namespace MWWorld
         ///< check if the player is allowed to rest
 
         void rest(double hours) override;
-        void rechargeItems(double duration, bool activeOnly);
+        void rechargeItems(float duration, bool activeOnly);
 
         /// \todo Probably shouldn't be here
         MWRender::Animation* getAnimation(const MWWorld::Ptr& ptr) override;
@@ -615,8 +610,10 @@ namespace MWWorld
         void spawnRandomCreature(const ESM::RefId& creatureList) override;
 
         void spawnEffect(VFS::Path::NormalizedView model, const std::string& textureOverride,
-            const osg::Vec3f& worldPos, float scale = 1.f, bool isMagicVFX = true,
-            bool useAmbientLight = true) override;
+            const osg::Vec3f& worldPos, float scale = 1.f, bool isMagicVFX = true, bool useAmbientLight = true,
+            std::string_view effectId = {}, bool loop = false) override;
+
+        void removeEffect(std::string_view effectId) override;
 
         /// @see MWWorld::WeatherManager::isInStorm
         bool isInStorm() const override;

@@ -36,18 +36,24 @@ namespace
 
     osg::Vec3f AimDirToMovingTarget(const MWWorld::Ptr& actor, const MWWorld::Ptr& target,
         const osg::Vec3f& vLastTargetPos, float duration, int weapType, float strength);
+
+    bool hitAttemptMatchesTarget(const MWWorld::Ptr& actor, const MWWorld::Ptr& target)
+    {
+        ESM::RefNum hitNum = actor.getClass().getCreatureStats(actor).getHitAttemptActor();
+        return hitNum.isSet() && target.getCellRef().getRefNum() == hitNum;
+    }
 }
 
 namespace MWMechanics
 {
     AiCombat::AiCombat(const MWWorld::Ptr& actor)
     {
-        mTargetActorId = actor.getClass().getCreatureStats(actor).getActorId();
+        mTargetActor = actor.getCellRef().getRefNum();
     }
 
     AiCombat::AiCombat(const ESM::AiSequence::AiCombat* combat)
     {
-        mTargetActorId = combat->mTargetActorId;
+        mTargetActor = combat->mTargetActor;
     }
 
     void AiCombat::init() {}
@@ -109,14 +115,11 @@ namespace MWMechanics
         if (actor.getClass().getCreatureStats(actor).isDead())
             return true;
 
-        MWWorld::Ptr target = MWBase::Environment::get().getWorld()->searchPtrViaActorId(mTargetActorId);
-        if (target.isEmpty())
-            return true;
+        const MWWorld::Ptr target = getTarget(); // The target to follow
 
-        if (!target.getCellRef().getCount()
-            || !target.getRefData().isEnabled() // Really we should be checking whether the target is currently
-                                                // registered with the MechanicsManager
-            || target.getClass().getCreatureStats(target).isDead())
+        // Stop if the target doesn't exist
+        if (target.isEmpty() || !target.getCellRef().getCount() || !target.getRefData().isEnabled()
+            || target.getClass().getCreatureStats(target).isDead() || !target.getRefData().getBaseNode())
             return true;
 
         if (actor == target) // This should never happen.
@@ -194,8 +197,7 @@ namespace MWMechanics
                 = (std::find(playerFollowersAndEscorters.begin(), playerFollowersAndEscorters.end(), target)
                     != playerFollowersAndEscorters.end());
             if ((target == MWMechanics::getPlayer() || targetSidesWithPlayer)
-                && ((stats.getHitAttemptActorId() == target.getClass().getCreatureStats(target).getActorId())
-                    || (target.getClass().getCreatureStats(target).getHitAttemptActorId() == stats.getActorId())))
+                && (hitAttemptMatchesTarget(actor, target) || hitAttemptMatchesTarget(target, actor)))
                 forceFlee = true;
             else // Otherwise end combat
                 return true;
@@ -432,7 +434,7 @@ namespace MWMechanics
                     storage.mFleeBlindRunTimer += duration;
 
                     storage.mMovement.mRotation[0] = -actor.getRefData().getPosition().rot[0];
-                    storage.mMovement.mRotation[2] = osg::PI
+                    storage.mMovement.mRotation[2] = osg::PIf
                         + getZAngleToDir(
                             target.getRefData().getPosition().asVec3() - actor.getRefData().getPosition().asVec3());
                     storage.mMovement.mPosition[1] = 1;
@@ -486,24 +488,15 @@ namespace MWMechanics
         actorMovementSettings.mRotation[axis] = 0;
         bool isRangedCombat = false;
         storage.mCurrentAction->getCombatRange(isRangedCombat);
-        float eps = isRangedCombat ? osg::DegreesToRadians(0.5) : osg::DegreesToRadians(3.f);
+        float eps = isRangedCombat ? osg::DegreesToRadians(0.5f) : osg::DegreesToRadians(3.f);
         float targetAngleRadians = storage.mMovement.mRotation[axis];
         storage.mRotateMove = !smoothTurn(actor, targetAngleRadians, axis, eps);
-    }
-
-    MWWorld::Ptr AiCombat::getTarget() const
-    {
-        if (mCachedTarget.isEmpty() || mCachedTarget.mRef->isDeleted() || !mCachedTarget.getRefData().isEnabled())
-        {
-            mCachedTarget = MWBase::Environment::get().getWorld()->searchPtrViaActorId(mTargetActorId);
-        }
-        return mCachedTarget;
     }
 
     void AiCombat::writeState(ESM::AiSequence::AiSequence& sequence) const
     {
         auto combat = std::make_unique<ESM::AiSequence::AiCombat>();
-        combat->mTargetActorId = mTargetActorId;
+        combat->mTargetActor = mTargetActor;
 
         ESM::AiSequence::AiPackageContainer package;
         package.mType = ESM::AiSequence::Ai_Combat;
@@ -567,7 +560,7 @@ namespace MWMechanics
         else if (actor.getClass().isBipedal(actor) && !isDistantCombat)
         {
             float moveDuration = 0;
-            float angleToTarget
+            double angleToTarget
                 = Misc::normalizeAngle(mMovement.mRotation[2] - actor.getRefData().getPosition().rot[2]);
             // Apply a big side step if enemy tries to get around and come from behind.
             // Otherwise apply a random side step (kind of dodging) with some probability
@@ -683,7 +676,7 @@ namespace MWMechanics
                         MWBase::Environment::get().getDialogueManager()->say(actor, ESM::RefId::stringRefId("attack"));
                     }
                 }
-                mAttackCooldown = std::min(baseDelay + 0.01 * Misc::Rng::roll0to99(prng), baseDelay + 0.9);
+                mAttackCooldown = std::min(baseDelay + 0.01f * Misc::Rng::roll0to99(prng), baseDelay + 0.9f);
             }
             else
                 mAttackCooldown -= AI_REACTION_TIME;

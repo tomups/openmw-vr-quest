@@ -25,16 +25,18 @@ namespace Misc
     namespace ResourceHelpers
     {
         bool changeExtensionToDds(std::string& path);
-        std::string correctResourcePath(std::span<const std::string_view> topLevelDirectories, std::string_view resPath,
-            const VFS::Manager* vfs, std::string_view ext = {});
-        std::string correctTexturePath(std::string_view resPath, const VFS::Manager* vfs);
-        std::string correctIconPath(std::string_view resPath, const VFS::Manager* vfs);
-        std::string correctBookartPath(std::string_view resPath, const VFS::Manager* vfs);
-        std::string correctBookartPath(std::string_view resPath, int width, int height, const VFS::Manager* vfs);
+        VFS::Path::Normalized correctResourcePath(std::span<const VFS::Path::NormalizedView> topLevelDirectories,
+            VFS::Path::NormalizedView resPath, const VFS::Manager& vfs, VFS::Path::ExtensionView ext = {});
+        VFS::Path::Normalized correctTexturePath(VFS::Path::NormalizedView resPath, const VFS::Manager& vfs);
+        VFS::Path::Normalized correctIconPath(VFS::Path::NormalizedView resPath, const VFS::Manager& vfs);
+        VFS::Path::Normalized correctBigIconPath(VFS::Path::NormalizedView resPath, const VFS::Manager& vfs);
+        VFS::Path::Normalized correctBookartPath(VFS::Path::NormalizedView resPath, const VFS::Manager& vfs);
+        VFS::Path::Normalized correctBookartPath(
+            VFS::Path::NormalizedView resPath, int width, int height, const VFS::Manager& vfs);
         /// Use "xfoo.nif" instead of "foo.nif" if "xfoo.kf" is available
         /// Note that if "xfoo.nif" is actually unavailable, we can't fall back to "foo.nif". :(
         VFS::Path::Normalized correctActorModelPath(VFS::Path::NormalizedView resPath, const VFS::Manager* vfs);
-        std::string correctMaterialPath(std::string_view resPath, const VFS::Manager* vfs);
+        VFS::Path::Normalized correctMaterialPath(VFS::Path::NormalizedView resPath, const VFS::Manager& vfs);
 
         // Prepends "meshes/".
         VFS::Path::Normalized correctMeshPath(VFS::Path::NormalizedView resPath);
@@ -47,6 +49,8 @@ namespace Misc
 
         // Removes "meshes\\".
         std::string_view meshPathForESM3(std::string_view resPath);
+        // Removes "sound\\".
+        std::string_view soundPathForESM3(std::string_view resPath);
 
         VFS::Path::Normalized correctSoundPath(VFS::Path::NormalizedView resPath, const VFS::Manager& vfs);
 

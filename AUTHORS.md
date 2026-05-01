@@ -221,6 +221,7 @@ Programmers
     sir_herrbatka
     smbas
     Sophie Kirschner (pineapplemachine)
+    Sophia Polfliet (Sophie~<3)
     spycrab
     Stefan Galowicz (bogglez)
     Stanislav Bobrov (Jiub)
@@ -285,6 +286,7 @@ Packagers
     Kenny Armstrong (artorius) - Fedora Linux
     Nikolay Kasyanov (corristo) - Mac OS X
     Sandy Carter (bwrsandman) - Arch Linux
+    Sarah Sunday (ssunday) - MacOS
 
 Public Relations and Translations
 ---------------------------------
@@ -292,6 +294,7 @@ Public Relations and Translations
     Artem Kotsynyak (greye) - Russian News Writer
     Dawid Lakomy (Vedyimyn) - Polish News Writer
     ElderTroll - Release Manager
+    Georgi Georgiev (RacerBG) - Bulgarian Translation
     Igor Wiśniewski (Igilq) - Polish Translation
     Jim Clauwaert (Zedd) - Public Outreach
     juanmnzsk8 - Spanish News Writer

@@ -228,6 +228,7 @@ namespace MWGui
             mMagicSelectionDialog = std::make_unique<MagicSelectionDialog>(this);
         }
         mMagicSelectionDialog->setVisible(true);
+        mMagicSelectionDialog->setActiveControllerWindow(true);
 
         mAssignDialog->setVisible(false);
     }
@@ -290,8 +291,8 @@ namespace MWGui
         if (texture)
             scale = texture->getHeight() / 64.f;
 
-        mSelected->button->setFrame(
-            "textures\\menu_icon_select_magic_magic.dds", MyGUI::IntCoord(0, 0, 44 * scale, 44 * scale));
+        mSelected->button->setFrame("textures\\menu_icon_select_magic_magic.dds",
+            MyGUI::IntCoord(0, 0, static_cast<int>(44 * scale), static_cast<int>(44 * scale)));
         mSelected->button->setIcon(item);
 
         mSelected->button->setUserString("ToolTipType", "ItemPtr");
@@ -322,11 +323,8 @@ namespace MWGui
         const ESM::MagicEffect* effect
             = esmStore.get<ESM::MagicEffect>().find(spell->mEffects.mList.front().mData.mEffectID);
 
-        std::string path = effect->mIcon;
-        std::replace(path.begin(), path.end(), '/', '\\');
-        int slashPos = path.rfind('\\');
-        path.insert(slashPos + 1, "b_");
-        path = Misc::ResourceHelpers::correctIconPath(path, MWBase::Environment::get().getResourceSystem()->getVFS());
+        const VFS::Path::Normalized iconPath = Misc::ResourceHelpers::correctBigIconPath(
+            VFS::Path::toNormalized(effect->mIcon), *MWBase::Environment::get().getResourceSystem()->getVFS());
 
         float scale = 1.f;
         MyGUI::ITexture* texture
@@ -334,9 +332,9 @@ namespace MWGui
         if (texture)
             scale = texture->getHeight() / 64.f;
 
-        mSelected->button->setFrame(
-            "textures\\menu_icon_select_magic.dds", MyGUI::IntCoord(0, 0, 44 * scale, 44 * scale));
-        mSelected->button->setIcon(path);
+        const int diameter = static_cast<int>(44 * scale);
+        mSelected->button->setFrame("textures\\menu_icon_select_magic.dds", MyGUI::IntCoord(0, 0, diameter, diameter));
+        mSelected->button->setIcon(iconPath);
 
         if (mMagicSelectionDialog)
             mMagicSelectionDialog->setVisible(false);
@@ -572,9 +570,9 @@ namespace MWGui
         else if (arg.button == SDL_CONTROLLER_BUTTON_B)
             mParent->onCancelButtonClicked(mCancelButton);
         else if (arg.button == SDL_CONTROLLER_BUTTON_DPAD_UP)
-            mControllerFocus = wrap(mControllerFocus - 1, 4);
+            mControllerFocus = wrap(mControllerFocus, 4, -1);
         else if (arg.button == SDL_CONTROLLER_BUTTON_DPAD_DOWN)
-            mControllerFocus = wrap(mControllerFocus + 1, 4);
+            mControllerFocus = wrap(mControllerFocus, 4, 1);
 
         mItemButton->setStateSelected(mControllerFocus == 0);
         mMagicButton->setStateSelected(mControllerFocus == 1);
@@ -734,7 +732,6 @@ namespace MWGui
         WindowModal::onOpen();
 
         mMagicList->setModel(new SpellModel(MWMechanics::getPlayer()));
-        mMagicList->resetScrollbars();
     }
 
     void MagicSelectionDialog::onModelIndexSelected(SpellModel::ModelIndex index)
@@ -754,5 +751,14 @@ namespace MWGui
             mMagicList->onControllerButton(arg.button);
 
         return true;
+    }
+
+    void MagicSelectionDialog::setActiveControllerWindow(bool active)
+    {
+        if (!Settings::gui().mControllerMenus)
+            return;
+
+        mMagicList->setActiveControllerWindow(active);
+        WindowBase::setActiveControllerWindow(active);
     }
 }

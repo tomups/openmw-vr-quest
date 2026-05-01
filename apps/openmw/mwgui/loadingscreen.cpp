@@ -128,8 +128,9 @@ namespace MWGui
             if (view == Misc::CallbackManager::View::Right)
                 return false;
 
-            int w = renderInfo.getCurrentCamera()->getViewport()->width();
-            int h = renderInfo.getCurrentCamera()->getViewport()->height();
+            const osg::Viewport* viewPort = renderInfo.getCurrentCamera()->getViewport();
+            int w = static_cast<int>(viewPort->width());
+            int h = static_cast<int>(viewPort->height());
             mTexture->copyTexImage2D(*renderInfo.getState(), 0, 0, w, h);
 
             return true;
@@ -265,10 +266,10 @@ namespace MWGui
             return false;
 
         // the minimal delay before a loading screen shows
-        const float initialDelay = 0.05;
+        constexpr float initialDelay = 0.05f;
 
         bool alreadyShown = (mLastRenderTime > mLoadingOnTime);
-        float diff = (mTimer.time_m() - mLoadingOnTime);
+        double diff = (mTimer.time_m() - mLoadingOnTime);
 
         if (!alreadyShown)
         {
@@ -317,7 +318,8 @@ namespace MWGui
         mSplashImage->setVisible(false);
 
         mSceneImage->setRenderItemTexture(mGuiTexture.get());
-        mSceneImage->getSubWidgetMain()->_setUVSet(MyGUI::FloatRect(0.f, 0.f, 1.f, 1.f));
+        // The widget is Y-down, the RTT image is Y-up, so this UV is inverted
+        mSceneImage->getSubWidgetMain()->_setUVSet(MyGUI::FloatRect(0.f, 1.f, 1.f, 0.f));
         mSceneImage->setVisible(true);
     }
 

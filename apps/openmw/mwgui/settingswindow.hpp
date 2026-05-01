@@ -72,7 +72,7 @@ namespace MWGui
         MyGUI::Widget* mScriptDisabled;
         MyGUI::ScrollView* mScriptView;
         LuaUi::LuaAdapter* mScriptAdapter;
-        int mCurrentPage;
+        size_t mCurrentPage;
 
         void onTabChanged(MyGUI::TabControl* sender, size_t index);
         void onOkButtonClicked(MyGUI::Widget* sender);
@@ -125,7 +125,7 @@ namespace MWGui
         void apply();
 
         void configureWidgets(MyGUI::Widget* widget, bool init);
-        void updateSliderLabel(MyGUI::ScrollBar* scroller, const std::string& value);
+        MyGUI::TextBox* getSliderLabel(MyGUI::ScrollBar* scroller) const;
 
         void layoutControlsBox();
         void renderScriptSettings();

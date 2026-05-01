@@ -548,7 +548,8 @@ namespace MWGui
         // Reset the image for the case we're unable to recover a screenshot
         mScreenshotTexture.reset();
         mScreenshot->setRenderItemTexture(nullptr);
-        mScreenshot->getSubWidgetMain()->_setUVSet(MyGUI::FloatRect(0.f, 0.f, 1.f, 1.f));
+        // The widget is Y-down, the screenshot is Y-up, so this UV is inverted
+        mScreenshot->getSubWidgetMain()->_setUVSet(MyGUI::FloatRect(0.f, 1.f, 1.f, 0.f));
 
         // Decode screenshot
         const std::vector<char>& data = mCurrentSlot->mProfile.mScreenshot;
@@ -613,7 +614,7 @@ namespace MWGui
         else if (arg.button == SDL_CONTROLLER_BUTTON_Y)
         {
             size_t index = mCharacterSelection->getIndexSelected();
-            index = wrap(index + 1, mCharacterSelection->getItemCount());
+            index = wrap(index, mCharacterSelection->getItemCount(), 1);
             mCharacterSelection->setIndexSelected(index);
             onCharacterSelected(mCharacterSelection, index);
             MWBase::Environment::get().getWindowManager()->playSound(ESM::RefId::stringRefId("Menu Click"));

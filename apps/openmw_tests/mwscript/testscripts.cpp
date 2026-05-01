@@ -1,4 +1,6 @@
 #include <gtest/gtest.h>
+
+#include <array>
 #include <sstream>
 
 #include "testutils.hpp"
@@ -125,6 +127,34 @@ End)mwscript";
 player -> addSpell "fire_bite", 645
 
 PositionCell "Rabenfels, Taverne" 4480.000 3968.000 15820.000 0
+
+End)mwscript";
+
+    const std::string sScript5 = R"mwscript(Begin messagebox_format_script
+
+float fVal
+
+set fVal to 12.34
+
+MessageBox "hello world"
+MessageBox "%.0f" fVal
+MessageBox "%.f" fVal
+MessageBox "a %03.0f b" fVal
+MessageBox "%+04.0f" fVal
+MessageBox "%+4.0f" fVal
+MessageBox "%+ 4.0f" fVal
+MessageBox "%0+ 4.0f" fVal
+MessageBox "%0+ #4.0f" fVal
+MessageBox "%- 5.0f" fVal
+
+MessageBox "%g" fVal
+MessageBox "%.3g" fVal
+MessageBox "%.5g" fVal
+MessageBox "%#.5g" fVal
+MessageBox "%-5g" fVal
+MessageBox "%- 5g" fVal
+
+MessageBox "%.1b" fVal
 
 End)mwscript";
 
@@ -479,6 +509,27 @@ GetDisabled == 1
 
 End)mwscript";
 
+    const std::string sIssue8129 = R"mwscript(Begin issue8129
+
+MessageBox "must include all buttons" "A" "B" "C"
+MessageBox "must ignore all buttons" A B C
+MessageBox "the number of buttons must match the number of quoted arguments (two)" A B "C" D "E"
+MessageBox "use strings that start with numbers, - and ." 1 -2 3.14pi .todd "A" "B" "C" "D"
+MessageBox "use keywords" messagebox set "messagebox2" "set2"
+MessageBox "don't use more than 10 buttons" "1" "2" "3" "4" "5" "6" "7" "8" "9" "10" "11"
+
+End)mwscript";
+
+    const std::string sIssue8990 = R"mwscript(Begin issue8990
+
+short a
+
+set a to 1
+MessageBox "%g" a
+player->setacrobatics 5000
+
+End)mwscript";
+
     TEST_F(MWScriptTest, mwscript_test_invalid)
     {
         EXPECT_THROW(compile("this is not a valid script", true), Compiler::SourceException);
@@ -577,6 +628,47 @@ End)mwscript";
     {
         registerExtensions();
         EXPECT_FALSE(!compile(sScript4));
+    }
+
+    TEST_F(MWScriptTest, mwscript_test_messagebox_format)
+    {
+        if (const auto script = compile(sScript5))
+        {
+            TestInterpreterContext context;
+            run(*script, context);
+            using std::string_view_literals::operator""sv;
+            constexpr std::array expected{
+                "hello world"sv,
+                "12"sv,
+                "12"sv,
+                "a 012 b"sv,
+                "+012"sv,
+                " +12"sv,
+                " +12"sv,
+                "+012"sv,
+                "+12."sv,
+                " 12  "sv,
+
+                "12.34"sv,
+                "12.3"sv,
+                "12.34"sv,
+                "12.340"sv,
+                "12.34"sv,
+                " 12.34"sv,
+
+                "b"sv,
+            };
+            const TestInterpreterContext::Messages& output = context.getMessages();
+            EXPECT_EQ(expected.size(), output.size());
+            for (std::size_t i = 0; i < output.size(); i++)
+            {
+                EXPECT_EQ(expected[i], output[i].first);
+            }
+        }
+        else
+        {
+            FAIL();
+        }
     }
 
     TEST_F(MWScriptTest, mwscript_test_587)
@@ -934,5 +1026,31 @@ End)mwscript";
     {
         registerExtensions();
         EXPECT_FALSE(!compile(sIssue6807));
+    }
+
+    TEST_F(MWScriptTest, mwscript_test_8129)
+    {
+        if (const auto script = compile(sIssue8129))
+        {
+            TestInterpreterContext context;
+            run(*script, context);
+            const TestInterpreterContext::Messages expected{ { "must include all buttons", { "A", "B", "C" } },
+                { "must ignore all buttons", {} },
+                { "the number of buttons must match the number of quoted arguments (two)", { "A", "B" } },
+                { "use strings that start with numbers, - and .", { "1", "-2", "3.14pi", ".todd" } },
+                { "use keywords", { "messagebox", "set" } },
+                { "don't use more than 10 buttons", { "1", "2", "3", "4", "5", "6", "7", "8", "9", "10" } } };
+            EXPECT_EQ(expected, context.getMessages());
+        }
+        else
+        {
+            FAIL();
+        }
+    }
+
+    TEST_F(MWScriptTest, mwscript_test_8990)
+    {
+        registerExtensions();
+        EXPECT_FALSE(!compile(sIssue8990));
     }
 }

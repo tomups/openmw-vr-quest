@@ -138,7 +138,7 @@ namespace MWBase
 
         World() {}
 
-        virtual ~World() {}
+        virtual ~World() = default;
 
         virtual void setRandomSeed(uint32_t seed) = 0;
         ///< \param seed The seed used when starting a new game.
@@ -148,8 +148,8 @@ namespace MWBase
 
         virtual void clear() = 0;
 
-        virtual int countSavedGameRecords() const = 0;
-        virtual int countSavedGameCells() const = 0;
+        virtual size_t countSavedGameRecords() const = 0;
+        virtual size_t countSavedGameCells() const = 0;
 
         virtual void write(ESM::ESMWriter& writer, Loading::Listener& listener) const = 0;
 
@@ -214,9 +214,6 @@ namespace MWBase
         ///< Return a pointer to a liveCellRef with the given name.
         /// \param activeOnly do non search inactive cells.
 
-        virtual MWWorld::Ptr searchPtrViaActorId(int actorId) = 0;
-        ///< Search is limited to the active cells.
-
         virtual MWWorld::Ptr findContainer(const MWWorld::ConstPtr& ptr) = 0;
         ///< Return a pointer to a liveCellRef which contains \a ptr.
         /// \note Search is limited to the active cells.
@@ -275,10 +272,10 @@ namespace MWBase
             = 0;
         ///< @param changeEvent If false, do not trigger cell change flag or detect worldspace changes
 
-        virtual MWWorld::Ptr getFacedObject() = 0;
+        virtual MWWorld::Ptr getFocusObject() = 0;
         ///< Return pointer to the object the player is looking at, if it is within activation range
 
-        virtual float getDistanceToFacedObject() = 0;
+        virtual float getDistanceToFocusObject() = 0;
 
         virtual float getMaxActivationDistance() const = 0;
 
@@ -393,7 +390,7 @@ namespace MWBase
         virtual void applyDeferredPreviewRotationToPlayer(float dt) = 0;
         virtual void disableDeferredPreviewRotation() = 0;
 
-        virtual void saveLoaded() = 0;
+        virtual void saveLoaded(const ESM::ESMReader& reader) = 0;
 
         virtual void setupPlayer() = 0;
         virtual void renderPlayer() = 0;
@@ -547,8 +544,11 @@ namespace MWBase
         virtual void spawnRandomCreature(const ESM::RefId& creatureList) = 0;
 
         virtual void spawnEffect(VFS::Path::NormalizedView model, const std::string& textureOverride,
-            const osg::Vec3f& worldPos, float scale = 1.f, bool isMagicVFX = true, bool useAmbientLight = true)
+            const osg::Vec3f& worldPos, float scale = 1.f, bool isMagicVFX = true, bool useAmbientLight = true,
+            std::string_view effectId = {}, bool loop = false)
             = 0;
+
+        virtual void removeEffect(std::string_view effectId) = 0;
 
         /// @see MWWorld::WeatherManager::isInStorm
         virtual bool isInStorm() const = 0;

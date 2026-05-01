@@ -577,6 +577,50 @@ de ordinarie fonterna i Morrowind. Bocka denna ruta om du ändå föredrar ordin
         <source>Text file (*.txt)</source>
         <translation>Textfil (*.txt)</translation>
     </message>
+    <message>
+        <source>Open Directory</source>
+        <translation>Öppna katalog</translation>
+    </message>
+    <message>
+        <source>Open %1</source>
+        <translation>Öppna %1</translation>
+    </message>
+    <message>
+        <source>Local config directory used because it contains an openmw.cfg.
+Logs and settings changed through the launcher and in-game will be saved here.</source>
+        <translation>Lokal konfigurationskatalog används eftersom den innehåller en openmw.cfg.
+Loggar och inställningar som ändras genom startaren och inne i spelet kommer sparas här.</translation>
+    </message>
+    <message>
+        <source>Local config directory used because it contains an openmw.cfg.</source>
+        <translation>Lokal konfigurationskatalog används eftersom den innehåller en openmw.cfg.</translation>
+    </message>
+    <message>
+        <source>Logs and settings changed through the launcher and in-game will be saved here.</source>
+        <translation>Loggar och inställningar som ändras genom startaren och inne i spelet kommer sparas här.</translation>
+    </message>
+    <message>
+        <source>Global config directory used because local directory did not contain an openmw.cfg.
+Logs and settings changed through the launcher and in-game will be saved here.
+This is typically a symptom of a broken OpenMW installation or bad package.</source>
+        <translation>Global konfigurationskatalog används eftersom den lokala konfigurationskatalogen inte innehöll en openmw.cfg.
+Loggar och inställningar som ändras genom startaren och inne i spelet kommer sparas här.
+Det här är oftast ett symtom på en trasig OpenMW-installation eller ett dåligt paket.</translation>
+    </message>
+    <message>
+        <source>Global config directory used because local directory did not contain an openmw.cfg.</source>
+        <translation>Global konfigurationskatalog används eftersom den lokala konfigurationskatalogen inte innehöll en openmw.cfg.</translation>
+    </message>
+    <message>
+        <source>User config directory used because %1 contains the line config=%2.
+Logs and settings changed through the launcher and in-game will be saved here.</source>
+        <translation>Användarens konfigurationskatalog används eftersom %1 innehåller raden config=%2.
+Loggar och inställningar som ändras genom startaren och inne i spelet kommer sparas här.</translation>
+    </message>
+    <message>
+        <source>User config directory used because %1 contains the line config=%2.</source>
+        <translation>Användarens konfigurationskatalog används eftersom %1 innehåller raden config=%2.</translation>
+    </message>
 </context>
 <context>
     <name>MainWindow</name>
@@ -776,11 +820,9 @@ de ordinarie fonterna i Morrowind. Bocka denna ruta om du ändå föredrar ordin
     <message>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Normally environment map reflections aren&apos;t affected by lighting, which makes environment-mapped (and thus bump-mapped objects) glow in the dark.
                   Morrowind Code Patch includes an option to remedy that by doing environment-mapping before applying lighting, this is the equivalent of that option.
-                  Affected objects will use shaders.
                   &lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
-        <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Normalt sett påverkas omgivningskartors reflektioner inte av ljus, vilket gör att omgivningskartor (och således så kallade bump mappade objekt) glöder i mörkret.
-                  Morrowind Code Patch inkluderar en inställning att kringå detta genom att lägga omgivningskartor före ljussättningen. Det här är motsvarigheten till den inställningen.
-                  Påverkade objekt kommer använda shaders.
+        <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Normalt påverkas inte omgivningskartor (så kallade environment maps) av ljussättningen, vilket gör att objekt med omgivningskartor (och således även objekt med bump mapping) lyser i mörkret.
+                  Morrowind Code Patch har ett alternativ som åtgärdar detta genom att applicera omgivningskartor före ljussättningen. Detta motsvarar det alternativet.
                   &lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
     <message>
@@ -1087,17 +1129,11 @@ de ordinarie fonterna i Morrowind. Bocka denna ruta om du ändå föredrar ordin
     </message>
     <message>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Set the internal handling of light sources.&lt;/p&gt;
-&lt;p&gt; &quot;Legacy&quot; always uses 8 lights per object. It provides results most similar to Morrowind&apos;s lighting.&lt;/p&gt;
-&lt;p&gt;&quot;Shaders (compatibility)&quot; removes the 8 light limit. This mode also enables lighting on groundcover. It is recommended to use this with older hardware and a light limit closer to 8.&lt;/p&gt;
+&lt;p&gt;&quot;Shaders (compatibility)&quot; It is recommended to use this with older hardware and a light limit closer to 8.&lt;/p&gt;
 &lt;p&gt; &quot;Shaders&quot; carries all of the benefits that &quot;Shaders (compatibility)&quot; does, but uses a modern approach that allows for a higher max lights count with little to no performance penalties on modern hardware.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
         <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Välj intern hantering av ljuskällor.&lt;/p&gt;
-&lt;p&gt; &quot;Gammaldags&quot; använder alltid max 8 ljuskällor per objekt och ger ljussättning likt ett gammaldags spel.&lt;/p&gt;
-&lt;p&gt;&quot;Shader (kompatibilitet)&quot; tar bort begränsningen med max 8 ljuskällor per objekt. Detta läge aktiverar också ljus på marktäckning. Rekommenderas för äldre hårdvara tillsammans med en ljusbegränsning nära 8.&lt;/p&gt;
+&lt;p&gt;&quot;Shader (kompatibilitet)&quot; Rekommenderas för äldre hårdvara tillsammans med en ljusbegränsning nära 8.&lt;/p&gt;
 &lt;p&gt; &quot;Shader&quot; har alla fördelar som &quot;Shader (kompatibilitet)&quot; har, men med ett modernt förhållningssätt som möjliggör fler maximalt antal ljuskällor med liten eller ingen prestandaförlust på modern hårdvara.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
-    </message>
-    <message>
-        <source>Legacy</source>
-        <translation>Gammaldags</translation>
     </message>
     <message>
         <source>Shaders (compatibility)</source>
@@ -1493,6 +1529,10 @@ de ordinarie fonterna i Morrowind. Bocka denna ruta om du ändå föredrar ordin
     <message>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Controls the strength of the Doppler effect. Zero means it is completely disabled.&lt;/p&gt;&lt;p&gt;The Doppler effect increases or decreases the pitch of sounds relative to the velocity of the sound source and the listener.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
         <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Kontrollerar styrkan på dopplereffekten. Noll innebär helt inaktiverat.&lt;/p&gt;&lt;p&gt;Dopplereffekten höjer eller sänker tonhöjden på ljud i förhållande till ljudkällans hastighet och lyssnaren.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
+    </message>
+    <message>
+        <source>Active Config Directories</source>
+        <translation>Aktiva konfigurationskataloger</translation>
     </message>
 </context>
 </TS>

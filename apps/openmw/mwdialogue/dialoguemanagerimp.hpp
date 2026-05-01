@@ -14,9 +14,10 @@
 #include <components/misc/strings/algorithm.hpp>
 #include <components/translation/translation.hpp>
 
+#include "../mwscript/compilercontext.hpp"
 #include "../mwworld/ptr.hpp"
 
-#include "../mwscript/compilercontext.hpp"
+#include "keywordsearch.hpp"
 
 namespace ESM
 {
@@ -42,6 +43,9 @@ namespace MWDialogue
         std::map<ESM::RefId, ActorKnownTopicInfo> mActorKnownTopics;
 
         Translation::Storage& mTranslationDataStorage;
+        mutable bool mKeywordSearchInitialized{ false };
+        mutable MWDialogue::KeywordSearch mKeywordSearch;
+
         MWScript::CompilerContext mCompilerContext;
         Compiler::StreamErrorHandler mErrorHandler;
 
@@ -59,7 +63,8 @@ namespace MWDialogue
         int mCurrentDisposition;
         int mPermanentDispositionChange;
 
-        std::vector<ESM::RefId> parseTopicIdsFromText(const std::string& text);
+        const MWDialogue::KeywordSearch& getKeywordSearch() const;
+        std::vector<ESM::RefId> parseTopicIdsFromText(const std::string& text) const;
         void addTopicsFromText(const std::string& text);
 
         void updateActorKnownTopics();
@@ -112,7 +117,7 @@ namespace MWDialogue
         /// @note Controlled by an option, gets discarded when dialogue ends by default
         void applyBarterDispositionChange(int delta) override;
 
-        int countSavedGameRecords() const override;
+        size_t countSavedGameRecords() const override;
 
         void write(ESM::ESMWriter& writer, Loading::Listener& progress) const override;
 

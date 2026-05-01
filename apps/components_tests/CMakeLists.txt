@@ -92,6 +92,9 @@ file(GLOB UNITTEST_SRC_FILES
 
     bsa/testbsafile.cpp
     bsa/testcompressedbsafile.cpp
+
+    nif/node.hpp
+    nif/testphysics.cpp
 )
 
 source_group(apps\\components-tests FILES ${UNITTEST_SRC_FILES})
@@ -103,6 +106,10 @@ target_link_libraries(components-tests
     GMock::GMock
     components
 )
+
+if (WIN32)
+    target_sources(components-tests PRIVATE ${CMAKE_SOURCE_DIR}/files/windows/other-apps.manifest)
+endif()
 
 # Fix for not visible pthreads functions for linker with glibc 2.15
 if (UNIX AND NOT APPLE)

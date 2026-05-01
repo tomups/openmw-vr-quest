@@ -6,6 +6,29 @@ Events
 Actor events
 ------------
 
+**DialogueResponse**
+
+This event is sent to the player's local script when an actor triggers a greeting, topic response, service refusal, or plays a voice line.
+It returns a lua table with the following fields:
+- ``actor``: The actor that responded.
+- ``type``: The type of ``DialogueRecord`` that triggered the event, can be ``"greeting"``, ``"journal"``, ``"persuasion"``, ``"topic"``, or ``"voice"``.
+- ``recordId``: The ID of the ``DialogueRecord``.
+- ``infoId``: The ID of the ``DialogueRecordInfo`` in question.
+
+.. code-block:: Lua
+
+    eventHandlers = {
+        DialogueResponse = function(e)
+            local topic = core.dialogue[e.type].records[e.recordId];
+            for _, info in pairs(topic.infos) do
+                if info.id == e.infoId then
+                    print(e.actor, 'said', info.text)
+                    return
+                end
+            end
+        end
+    }
+
 **Died**
 
 This event is sent to an actor's local script when that actor dies.
@@ -133,7 +156,7 @@ Example:
     if item then
         -- Reduce condition by 1
         -- Note that actor should be included, if applicable, to allow forcibly unequipping items whose condition is reduced to 0
-        core:sendGlobalEvent('ModifyItemCondition', {actor = self, item = item, amount: -1})
+        core.sendGlobalEvent('ModifyItemCondition', {actor = self, item = item, amount = -1})
     end
 
 UI events
@@ -218,7 +241,7 @@ Lock a container or door
 
 .. code-block:: Lua
 
-    core.sendGlobalEvent('Lock', {taret = selected, magnitude = 50})
+    core.sendGlobalEvent('Lock', {target = selected, magnitude = 50})
 
 **Unlock**
 
@@ -226,4 +249,4 @@ Unlock a container or door
 
 .. code-block:: Lua
 
-    core.sendGlobalEvent('Unlock', {taret = selected})
+    core.sendGlobalEvent('Unlock', {target = selected})

@@ -67,9 +67,9 @@ namespace MWRender
         }
         void drawImplementation(osg::RenderInfo& renderInfo, const osg::Drawable* /*drawable*/) const override
         {
-            int screenW = renderInfo.getCurrentCamera()->getViewport()->width();
-            int screenH = renderInfo.getCurrentCamera()->getViewport()->height();
-            double imageaspect = (double)mWidth / (double)mHeight;
+            int screenW = static_cast<int>(renderInfo.getCurrentCamera()->getViewport()->width());
+            int screenH = static_cast<int>(renderInfo.getCurrentCamera()->getViewport()->height());
+            double imageaspect = double(mWidth) / double(mHeight);
             int leftPadding = std::max(0, static_cast<int>(screenW - screenH * imageaspect) / 2);
             int topPadding = std::max(0, static_cast<int>(screenH - screenW / imageaspect) / 2);
             int width = screenW - leftPadding * 2;

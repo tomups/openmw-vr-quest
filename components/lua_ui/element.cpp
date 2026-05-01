@@ -2,6 +2,7 @@
 
 #include <MyGUI_Gui.h>
 
+#include "components/settings/values.hpp"
 #include "content.hpp"
 #include "util.hpp"
 #include "widget.hpp"
@@ -20,6 +21,10 @@ namespace LuaUi
             constexpr std::string_view events = "events";
             constexpr std::string_view content = "content";
             constexpr std::string_view external = "external";
+            constexpr std::string_view userData = "userData";
+
+            const std::vector<std::string_view> allKeys
+                = { type, name, layer, templateLayout, props, events, content, external, userData };
         }
 
         const std::string defaultWidgetType = "LuaWidget";
@@ -49,14 +54,6 @@ namespace LuaUi
             MyGUI::Gui::getInstancePtr()->destroyWidget(ext->widget());
         }
 
-        void destroyChild(WidgetExtension* ext)
-        {
-            if (!ext->isRoot())
-                destroyWidget(ext);
-            else
-                ext->detachFromParent();
-        }
-
         void detachElements(WidgetExtension* ext)
         {
             auto predicate = [](WidgetExtension* child) {
@@ -67,6 +64,17 @@ namespace LuaUi
             };
             ext->detachChildrenIf(predicate);
             ext->detachTemplateChildrenIf(predicate);
+        }
+
+        void destroyChild(WidgetExtension* ext)
+        {
+            if (!ext->isRoot())
+            {
+                detachElements(ext);
+                destroyWidget(ext);
+            }
+            else
+                ext->detachFromParent();
         }
 
         void destroyRoot(WidgetExtension* ext)
@@ -238,17 +246,21 @@ namespace LuaUi
     std::map<Element*, std::shared_ptr<Element>> Element::sMenuElements;
     std::map<Element*, std::shared_ptr<Element>> Element::sGameElements;
 
-    Element::Element(sol::table layout)
+    Element::Element(sol::table layout, sol::optional<sol::table> options)
         : mRoot(nullptr)
         , mLayout(std::move(layout))
         , mLayer()
         , mState(Element::New)
     {
+        if (options.has_value())
+        {
+            mNoWarnUnused = options->get_or("noWarnUnused", false);
+        }
     }
 
-    std::shared_ptr<Element> Element::make(sol::table layout, bool menu)
+    std::shared_ptr<Element> Element::make(sol::table layout, bool menu, sol::optional<sol::table> options)
     {
-        std::shared_ptr<Element> ptr(new Element(std::move(layout)));
+        std::shared_ptr<Element> ptr(new Element(std::move(layout), std::move(options)));
         auto& container = menu ? sMenuElements : sGameElements;
         container[ptr.get()] = ptr;
         return ptr;
@@ -261,6 +273,11 @@ namespace LuaUi
         sGameElements.erase(element);
     }
 
+    const std::vector<std::string_view>& Element::allLayoutProperties()
+    {
+        return LayoutKeys::allKeys;
+    }
+
     void Element::create(uint64_t depth)
     {
         if (mState == New)
@@ -270,6 +287,7 @@ namespace LuaUi
             mLayer = setLayer(mRoot, layout());
             updateRootCoord(mRoot);
             mState = Created;
+            checkWarnings();
         }
     }
 
@@ -309,6 +327,7 @@ namespace LuaUi
             mLayer = setLayer(mRoot, layout());
             updateRootCoord(mRoot);
             mState = Created;
+            checkWarnings();
         }
     }
 
@@ -328,5 +347,31 @@ namespace LuaUi
             mLayout.reset();
         }
         mState = Destroyed;
+    }
+
+    void Element::checkWarnings()
+    {
+        if (mNoWarnUnused)
+            // Currently unused warnings are our only warnings so we can just early out here.
+            return;
+
+        if (Settings::lua().mLuaDebug)
+        {
+            assert(mRoot);
+            WidgetExtension::Warnings warnings;
+            mRoot->collectWarnings(warnings, 0, true);
+            for (const auto& warning : warnings)
+                Log(Debug::Warning) << warning;
+        }
+        else if (!mWarnedOnce)
+        {
+            mWarnedOnce = true;
+            WidgetExtension::Warnings dummy;
+            if (mRoot->collectWarnings(dummy, 0, false))
+            {
+                Log(Debug::Warning) << "Warning generated while parsing layouts of a(n) " + mRoot->diagnosticName() + ". Set 'lua "
+                                       "debug=true' in the [Lua] section of settings.cfg to enable detailed warnings.";
+            }
+        }
     }
 }

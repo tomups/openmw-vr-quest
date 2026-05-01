@@ -73,17 +73,6 @@ namespace CSMWorld
         return ESM::RefId::stringRefId(Land::createUniqueRecordId(record.mX, record.mY));
     }
 
-    inline ESM::RefId getRecordId(const ESM::MagicEffect& record)
-    {
-        return ESM::RefId::stringRefId(CSMWorld::getStringId(record.mId));
-    }
-
-    inline void setRecordId(const ESM::RefId& id, ESM::MagicEffect& record)
-    {
-        int index = ESM::MagicEffect::indexNameToIndex(id.getRefIdString());
-        record.mId = ESM::RefId::index(ESM::REC_MGEF, static_cast<std::uint32_t>(index));
-    }
-
     inline void setRecordId(const ESM::RefId& id, ESM::Skill& record)
     {
         if (const auto* skillId = id.getIf<ESM::SkillId>())
@@ -367,7 +356,7 @@ namespace CSMWorld
     template <typename ESXRecordT>
     int Collection<ESXRecordT>::getSize() const
     {
-        return mRecords.size();
+        return static_cast<int>(mRecords.size());
     }
 
     template <typename ESXRecordT>
@@ -391,7 +380,7 @@ namespace CSMWorld
     template <typename ESXRecordT>
     int Collection<ESXRecordT>::getColumns() const
     {
-        return mColumns.size();
+        return static_cast<int>(mColumns.size());
     }
 
     template <typename ESXRecordT>

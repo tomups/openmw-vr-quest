@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
 
     - name: Add OpenMW PPA Dependencies
       run: sudo add-apt-repository ppa:openmw/openmw; sudo apt-get update
@@ -66,20 +66,8 @@ jobs:
     #     path: ./build_artifact.7z
     #     name: build_artifact.7z
 
-  Output-Envs:
-    name: Read .env file and expose it as output
-    runs-on: ubuntu-latest
-    outputs:
-      VCPKG_DEPS_TAG: ${{ env.VCPKG_DEPS_TAG }}
-      BUILD_TYPE: ${{ env.BUILD_TYPE }}
-    steps:
-      - uses: actions/checkout@v4
-      - run: cat "${{ github.workspace }}/CI/github.env" >> $GITHUB_ENV
 
   Windows:
-    needs:
-      - Output-Envs
-
     strategy:
       fail-fast: true
       matrix:
@@ -89,5 +77,3 @@ jobs:
     uses: ./.github/workflows/windows.yml
     with:
       image: ${{ matrix.image }}
-      vcpkg-deps-tag: ${{ needs.Output-Envs.outputs.VCPKG_DEPS_TAG }}
-      build-type: ${{ needs.Output-Envs.outputs.BUILD_TYPE }}

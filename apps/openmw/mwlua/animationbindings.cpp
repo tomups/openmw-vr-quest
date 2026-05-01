@@ -166,8 +166,8 @@ namespace MWLua
                 return completion;
             return sol::nullopt;
         };
-        api["getLoopCount"] = [](const LObject& object, std::string groupname) -> sol::optional<size_t> {
-            size_t loops = 0;
+        api["getLoopCount"] = [](const LObject& object, std::string groupname) -> sol::optional<uint32_t> {
+            uint32_t loops = 0;
             if (getConstAnimationOrThrow(object)->getInfo(groupname, nullptr, nullptr, &loops))
                 return loops;
             return sol::nullopt;
@@ -292,6 +292,12 @@ namespace MWLua
     {
         sol::table api(context.mLua->unsafeState(), sol::create);
 
+        api["remove"] = [context](std::string vfxId) {
+            context.mLuaManager->addAction(
+                [vfxId = std::move(vfxId)] { MWBase::Environment::get().getWorld()->removeEffect(vfxId); },
+                "openmw.vfx.remove");
+        };
+
         api["spawn"]
             = [context](std::string_view model, const osg::Vec3f& worldPos, sol::optional<sol::table> options) {
                   if (options)
@@ -299,12 +305,14 @@ namespace MWLua
                       bool magicVfx = options->get_or("mwMagicVfx", true);
                       std::string texture = options->get_or<std::string>("particleTextureOverride", "");
                       float scale = options->get_or("scale", 1.f);
+                      std::string vfxId = options->get_or<std::string>("vfxId", "");
+                      bool loop = options->get_or("loop", false);
                       bool useAmbientLight = options->get_or("useAmbientLight", true);
                       context.mLuaManager->addAction(
                           [model = VFS::Path::Normalized(model), texture = std::move(texture), worldPos, scale,
-                              magicVfx, useAmbientLight]() {
+                              magicVfx, useAmbientLight, vfxId = std::move(vfxId), loop]() {
                               MWBase::Environment::get().getWorld()->spawnEffect(
-                                  model, texture, worldPos, scale, magicVfx, useAmbientLight);
+                                  model, texture, worldPos, scale, magicVfx, useAmbientLight, vfxId, loop);
                           },
                           "openmw.vfx.spawn");
                   }

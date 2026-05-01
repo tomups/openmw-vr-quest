@@ -101,7 +101,7 @@ namespace CSVRender
             Type_DebugProfile
         };
 
-        enum dropRequirments
+        enum DropRequirements
         {
             canHandle,
             needPaged,
@@ -145,7 +145,7 @@ namespace CSVRender
 
         static DropType getDropType(const std::vector<CSMWorld::UniversalId>& data);
 
-        virtual dropRequirments getDropRequirements(DropType type) const;
+        virtual DropRequirements getDropRequirements(DropType type) const;
 
         virtual void useViewHint(const std::string& hint);
         ///< Default-implementation: ignored.
@@ -166,6 +166,7 @@ namespace CSVRender
         virtual void setEditLock(bool locked);
 
         CSMDoc::Document& getDocument();
+        const CSMDoc::Document& getDocument() const;
 
         /// \param elementMask Elements to be affected by the clear operation
         virtual void clearSelection(int elementMask) = 0;

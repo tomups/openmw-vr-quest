@@ -157,7 +157,7 @@ namespace MyGUIPlatform
                         reinterpret_cast<const char*>(vbo->getArray(0)->getDataPointer()) + 16);
                 }
 
-                glDrawArrays(GL_TRIANGLES, 0, batch.mVertexCount);
+                glDrawArrays(GL_TRIANGLES, 0, static_cast<GLsizei>(batch.mVertexCount));
 
                 if (batch.mStateSet)
                 {
@@ -348,7 +348,8 @@ namespace MyGUIPlatform
 
     osg::UByteArray* OSGVertexBuffer::create()
     {
-        mVertexArray[mCurrentBuffer] = new osg::UByteArray(mNeedVertexCount * sizeof(MyGUI::Vertex));
+        mVertexArray[mCurrentBuffer]
+            = new osg::UByteArray(static_cast<unsigned int>(mNeedVertexCount * sizeof(MyGUI::Vertex)));
 
         mBuffer[mCurrentBuffer] = new osg::VertexBufferObject;
         mBuffer[mCurrentBuffer]->setDataVariance(osg::Object::DYNAMIC);

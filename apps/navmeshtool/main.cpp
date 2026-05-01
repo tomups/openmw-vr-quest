@@ -24,6 +24,7 @@
 #include <components/resource/imagemanager.hpp>
 #include <components/resource/niffilemanager.hpp>
 #include <components/resource/scenemanager.hpp>
+#include <components/sceneutil/workqueue.hpp>
 #include <components/settings/values.hpp>
 #include <components/toutf8/toutf8.hpp>
 #include <components/version/version.hpp>
@@ -39,9 +40,9 @@
 #include <filesystem>
 #include <iostream>
 #include <map>
+#include <regex>
 #include <string>
 #include <thread>
-#include <type_traits>
 #include <utility>
 #include <vector>
 
@@ -119,6 +120,13 @@ namespace NavMeshTool
             addOption("write-binary-log", bpo::value<bool>()->implicit_value(true)->default_value(false),
                 "write progress in binary messages to be consumed by the launcher");
 
+            addOption("collect-stats", bpo::value<bool>()->implicit_value(true)->default_value(false),
+                "collect statistics for generated navmesh tiles including existing ones stored in database");
+
+            addOption("worldspace-filter", bpo::value<std::string>()->default_value(".*"),
+                "Regular expression to filter in specified worldspaces in modified ECMAScript grammar (see "
+                "https://en.cppreference.com/w/cpp/regex/ecmascript.html)");
+
             Files::ConfigurationManager::addCommonOptions(result);
 
             return result;
@@ -179,6 +187,9 @@ namespace NavMeshTool
             const bool processInteriorCells = variables["process-interior-cells"].as<bool>();
             const bool removeUnusedTiles = variables["remove-unused-tiles"].as<bool>();
             const bool writeBinaryLog = variables["write-binary-log"].as<bool>();
+            const bool collectStats = variables["collect-stats"].as<bool>();
+
+            const std::regex worldspaceFilter(variables["worldspace-filter"].as<std::string>());
 
 #ifdef WIN32
             if (writeBinaryLog)
@@ -229,11 +240,72 @@ namespace NavMeshTool
             navigatorSettings.mRecast.mSwimHeightScale
                 = EsmLoader::getGameSetting(esmData.mGameSettings, "fSwimHeightScale").getFloat();
 
-            WorldspaceData cellsData = gatherWorldspaceData(
-                navigatorSettings, readers, vfs, bulletShapeManager, esmData, processInteriorCells, writeBinaryLog);
+            const std::unordered_map<ESM::RefId, std::vector<std::size_t>> worldspaceCells
+                = collectWorldspaceCells(esmData, processInteriorCells, worldspaceFilter);
 
-            const Status status = generateAllNavMeshTiles(agentBounds, navigatorSettings, threadsNumber,
-                removeUnusedTiles, writeBinaryLog, cellsData, std::move(db));
+            Status status = Status::Ok;
+            std::size_t provided = 0;
+            std::size_t inserted = 0;
+            std::size_t updated = 0;
+            std::size_t deleted = 0;
+            std::size_t count = 0;
+            GenerateTilesStats stats;
+
+            {
+                SceneUtil::WorkQueue workQueue(threadsNumber);
+
+                Log(Debug::Info) << "Using " << threadsNumber << " parallel workers...";
+
+                for (const auto& [worldspace, cells] : worldspaceCells)
+                {
+                    const WorldspaceData worldspaceData = gatherWorldspaceData(navigatorSettings, readers, vfs,
+                        bulletShapeManager, esmData, writeBinaryLog, worldspace, cells);
+
+                    const GenerateAllNavMeshTilesOptions generateAllNavMeshTilesOptions{
+                        .mRemoveUnusedTiles = removeUnusedTiles,
+                        .mWriteBinaryLog = writeBinaryLog,
+                        .mCollectStats = collectStats,
+                    };
+
+                    const GenerateTilesResult result = generateAllNavMeshTiles(
+                        agentBounds, navigatorSettings, generateAllNavMeshTilesOptions, worldspaceData, db, workQueue);
+
+                    ++count;
+
+                    Log(Debug::Info) << "Processed worldspace (" << count << "/" << worldspaceCells.size() << ") "
+                                     << worldspace;
+
+                    status = result.mStatus;
+                    provided += result.mProvided;
+                    inserted += result.mInserted;
+                    updated += result.mUpdated;
+                    deleted += result.mDeleted;
+
+                    if (collectStats)
+                    {
+                        stats.mMaxPolyCountPerTile
+                            = std::max(stats.mMaxPolyCountPerTile, result.mStats.mMaxPolyCountPerTile);
+                    }
+
+                    if (status != Status::Ok)
+                        break;
+                }
+            }
+
+            Log(Debug::Info) << "Generated navmesh for " << provided << " tiles: " << inserted << " inserted, "
+                             << updated << " updated, " << deleted << " deleted";
+
+            if (collectStats)
+            {
+                Log(Debug::Info) << "Stats:";
+                Log(Debug::Info) << "max polygons per tile = " << stats.mMaxPolyCountPerTile;
+            }
+
+            if (status == Status::Ok && inserted + updated + deleted > 0)
+            {
+                Log(Debug::Info) << "Vacuuming the database...";
+                db.vacuum();
+            }
 
             switch (status)
             {

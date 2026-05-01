@@ -63,6 +63,8 @@ namespace MWMechanics
         float mCheckIdlePositionTimer;
         int mStuckCount;
 
+        bool mGreeting{ false };
+
         AiWanderStorage();
 
         void setState(const WanderState wanderState, const bool isManualWander = false)
@@ -131,7 +133,7 @@ namespace MWMechanics
         /// @return Success or error
         bool playIdle(const MWWorld::Ptr& actor, unsigned short idleSelect);
         bool checkIdle(const MWWorld::Ptr& actor, unsigned short idleSelect);
-        int getRandomIdle() const;
+        unsigned short getRandomIdle() const;
         void setPathToAnAllowedPosition(
             const MWWorld::Ptr& actor, AiWanderStorage& storage, const ESM::Position& actorPos);
         void evadeObstacles(const MWWorld::Ptr& actor, AiWanderStorage& storage);

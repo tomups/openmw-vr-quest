@@ -389,15 +389,8 @@ namespace MWInput
                     && (arg.axis == SDL_CONTROLLER_AXIS_LEFTX || arg.axis == SDL_CONTROLLER_AXIS_LEFTY))
                 {
                     // Treat the left stick like a cursor, which is the default behavior.
-                    if (winMgr->getControllerTooltipVisible())
-                    {
-                        winMgr->setControllerTooltipVisible(false);
-                        winMgr->setCursorVisible(true);
-                    }
-                    else if (mGamepadGuiCursorEnabled)
-                    {
-                        winMgr->setCursorVisible(true);
-                    }
+                    winMgr->setControllerTooltipVisible(false);
+                    winMgr->setCursorVisible(true);
                     return false;
                 }
 
@@ -561,6 +554,12 @@ namespace MWInput
                     return "textures/omw_psx_button_triangle.dds";
                 return "textures/omw_steam_button_y.dds";
             case SDL_CONTROLLER_BUTTON_GUIDE:
+            case SDL_CONTROLLER_BUTTON_MISC1:
+            case SDL_CONTROLLER_BUTTON_PADDLE1:
+            case SDL_CONTROLLER_BUTTON_PADDLE2:
+            case SDL_CONTROLLER_BUTTON_PADDLE3:
+            case SDL_CONTROLLER_BUTTON_PADDLE4:
+            case SDL_CONTROLLER_BUTTON_TOUCHPAD:
             default:
                 return {};
         }

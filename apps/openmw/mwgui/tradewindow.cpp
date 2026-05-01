@@ -237,9 +237,6 @@ namespace MWGui
         // Cycle to the buy window if it's not active.
         if (Settings::gui().mControllerMenus && !mActiveControllerWindow)
             MWBase::Environment::get().getWindowManager()->cycleActiveControllerWindow(true);
-
-        for (const auto& source : itemSources)
-            source.getClass().getContainerStore(source).setContListener(this);
     }
 
     void TradeWindow::onFrame(float dt)
@@ -304,7 +301,7 @@ namespace MWGui
         const ItemStack& item = mSortModel->getItem(index);
 
         MWWorld::Ptr object = item.mBase;
-        int count = item.mCount;
+        size_t count = item.mCount;
         bool shift = MyGUI::InputManager::getInstance().isShiftPressed();
         if (MyGUI::InputManager::getInstance().isControlPressed())
             count = 1;
@@ -315,7 +312,7 @@ namespace MWGui
             std::string message = "#{sQuanityMenuMessage02}";
             std::string name{ object.getClass().getName(object) };
             name += MWGui::ToolTips::getSoulString(object.getCellRef());
-            dialog->openCountDialog(name, message, count);
+            dialog->openCountDialog(name, message, static_cast<int>(count));
             dialog->eventOkClicked.clear();
             dialog->eventOkClicked += MyGUI::newDelegate(this, &TradeWindow::sellItem);
             mItemToSell = mSortModel->mapToSource(index);
@@ -341,14 +338,14 @@ namespace MWGui
             // this was an item borrowed to us by the player
             mTradeModel->returnItemBorrowedToUs(mItemToSell, count);
             playerTradeModel->returnItemBorrowedFromUs(mItemToSell, mTradeModel, count);
-            buyFromNpc(item.mBase, count, true);
+            updateOffer();
         }
         else
         {
             // borrow item to player
             playerTradeModel->borrowItemToUs(mItemToSell, mTradeModel, count);
             mTradeModel->borrowItemFromUs(mItemToSell, count);
-            buyFromNpc(item.mBase, count, false);
+            updateOffer();
         }
 
         MWBase::Environment::get().getWindowManager()->getInventoryWindow()->updateItemView();
@@ -361,17 +358,16 @@ namespace MWGui
             = MWBase::Environment::get().getWindowManager()->getInventoryWindow()->getTradeModel();
         mTradeModel->borrowItemToUs(index, playerTradeModel, count);
         mItemView->update();
-        sellToNpc(playerTradeModel->getItem(index).mBase, count, false);
+        updateOffer();
     }
 
     void TradeWindow::returnItem(int index, size_t count)
     {
         TradeItemModel* playerTradeModel
             = MWBase::Environment::get().getWindowManager()->getInventoryWindow()->getTradeModel();
-        const ItemStack& item = playerTradeModel->getItem(index);
         mTradeModel->returnItemBorrowedFromUs(index, playerTradeModel, count);
         mItemView->update();
-        sellToNpc(item.mBase, count, true);
+        updateOffer();
     }
 
     void TradeWindow::addOrRemoveGold(int amount, const MWWorld::Ptr& actor)
@@ -390,7 +386,7 @@ namespace MWGui
 
     void TradeWindow::onOfferSubmitted(MyGUI::Widget* /*sender*/, size_t offerAmount)
     {
-        mCurrentBalance = offerAmount * (mCurrentBalance < 0 ? -1 : 1);
+        mCurrentBalance = static_cast<int>(offerAmount) * (mCurrentBalance < 0 ? -1 : 1);
         updateLabels();
         onOfferButtonClicked(mOfferButton);
     }
@@ -446,7 +442,7 @@ namespace MWGui
                 MWBase::Environment::get().getWindowManager()->messageBox(msg);
 
                 MWBase::Environment::get().getMechanicsManager()->confiscateStolenItemToOwner(
-                    player, itemStack.mBase, mPtr, itemStack.mCount);
+                    player, itemStack.mBase, mPtr, static_cast<int>(itemStack.mCount));
 
                 onCancelButtonClicked(mCancelButton);
                 MWBase::Environment::get().getWindowManager()->exitCurrentGuiMode();
@@ -629,7 +625,7 @@ namespace MWGui
         const std::vector<ItemStack>& playerBorrowed = playerTradeModel->getItemsBorrowedToUs();
         for (const ItemStack& itemStack : playerBorrowed)
         {
-            const int basePrice = getEffectiveValue(itemStack.mBase, itemStack.mCount);
+            const int basePrice = getEffectiveValue(itemStack.mBase, static_cast<int>(itemStack.mCount));
             const int cap
                 = static_cast<int>(std::max(1.f, 0.75f * basePrice)); // Minimum buying price -- 75% of the base
             const int buyingPrice
@@ -640,7 +636,7 @@ namespace MWGui
         const std::vector<ItemStack>& merchantBorrowed = mTradeModel->getItemsBorrowedToUs();
         for (const ItemStack& itemStack : merchantBorrowed)
         {
-            const int basePrice = getEffectiveValue(itemStack.mBase, itemStack.mCount);
+            const int basePrice = getEffectiveValue(itemStack.mBase, static_cast<int>(itemStack.mCount));
             const int cap
                 = static_cast<int>(std::max(1.f, 0.75f * basePrice)); // Maximum selling price -- 75% of the base
             const int sellingPrice
@@ -652,16 +648,6 @@ namespace MWGui
         mCurrentMerchantOffer = merchantOffer;
         mCurrentBalance += diff;
         updateLabels();
-    }
-
-    void TradeWindow::sellToNpc(const MWWorld::Ptr& item, int count, bool boughtItem)
-    {
-        updateOffer();
-    }
-
-    void TradeWindow::buyFromNpc(const MWWorld::Ptr& item, int count, bool soldItem)
-    {
-        updateOffer();
     }
 
     void TradeWindow::onReferenceUnavailable()
@@ -790,13 +776,9 @@ namespace MWGui
         mItemView->update();
     }
 
-    void TradeWindow::itemAdded(const MWWorld::ConstPtr& item, int count)
+    void TradeWindow::onInventoryUpdate(const MWWorld::Ptr& ptr)
     {
-        mUpdateNextFrame = true;
-    }
-
-    void TradeWindow::itemRemoved(const MWWorld::ConstPtr& item, int count)
-    {
-        mUpdateNextFrame = true;
+        if (mTradeModel && mTradeModel->usesContainer(ptr))
+            mUpdateNextFrame = true;
     }
 }

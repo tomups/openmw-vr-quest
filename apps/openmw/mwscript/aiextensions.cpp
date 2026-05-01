@@ -26,7 +26,6 @@
 
 #include "../mwbase/environment.hpp"
 #include "../mwbase/mechanicsmanager.hpp"
-#include "../mwbase/soundmanager.hpp"
 #include "../mwbase/world.hpp"
 
 #include "interpretercontext.hpp"
@@ -124,7 +123,7 @@ namespace MWScript
                 if (!ptr.getClass().isActor() || ptr == MWMechanics::getPlayer())
                     return;
 
-                MWMechanics::AiEscort escortPackage(actorID, static_cast<int>(duration), x, y, z, repeat);
+                MWMechanics::AiEscort escortPackage(actorID, {}, static_cast<int>(duration), x, y, z, repeat);
                 ptr.getClass().getCreatureStats(ptr).getAiSequence().stack(escortPackage, ptr);
 
                 Log(Debug::Info) << "AiEscort: " << x << ", " << y << ", " << z << ", " << duration;
@@ -226,7 +225,7 @@ namespace MWScript
                 {
                     if (!repeat)
                         repeat = true;
-                    Interpreter::Type_Integer idleValue = std::clamp(runtime[0].mInteger, 0, 255);
+                    auto idleValue = static_cast<unsigned char>(std::clamp(runtime[0].mInteger, 0, 255));
                     idleList.push_back(idleValue);
                     runtime.pop();
                     --arg0;
@@ -353,7 +352,7 @@ namespace MWScript
                 if (!ptr.getClass().isActor() || ptr == MWMechanics::getPlayer())
                     return;
 
-                MWMechanics::AiFollow followPackage(actorID, duration, x, y, z, repeat);
+                MWMechanics::AiFollow followPackage(actorID, {}, duration, x, y, z, repeat);
                 ptr.getClass().getCreatureStats(ptr).getAiSequence().stack(followPackage, ptr);
 
                 Log(Debug::Info) << "AiFollow: " << actorID << ", " << x << ", " << y << ", " << z << ", " << duration;
@@ -488,9 +487,8 @@ namespace MWScript
                     else if (testedTargetId == "Player") // Currently the player ID is hardcoded
                     {
                         MWBase::MechanicsManager* mechMgr = MWBase::Environment::get().getMechanicsManager();
-                        bool greeting = mechMgr->getGreetingState(actor) == MWMechanics::GreetingState::InProgress;
-                        bool sayActive = MWBase::Environment::get().getSoundManager()->sayActive(actor);
-                        targetsAreEqual = (greeting && sayActive) || mechMgr->isTurningToPlayer(actor);
+                        if (mechMgr->getGreetingState(actor) == MWMechanics::GreetingState::InProgress)
+                            targetsAreEqual = true;
                     }
                 }
                 runtime.push(targetsAreEqual);

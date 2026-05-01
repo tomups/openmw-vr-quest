@@ -83,14 +83,14 @@ namespace MWRender
          * Save the fog of war for this cell to its CellStore.
          * @remarks This should be called when unloading a cell, and for all active cells prior to saving the game.
          */
-        void saveFogOfWar(MWWorld::CellStore* cell);
+        void saveFogOfWar(MWWorld::CellStore* cell) const;
 
         /**
          * Get the interior map texture index and normalized position on this texture, given a world position
          */
-        void worldToInteriorMapPosition(osg::Vec2f pos, float& nX, float& nY, int& x, int& y);
+        void worldToInteriorMapPosition(osg::Vec2f pos, float& nX, float& nY, int& x, int& y) const;
 
-        osg::Vec2f interiorMapToWorldPosition(float nX, float nY, int x, int y);
+        osg::Vec2f interiorMapToWorldPosition(float nX, float nY, int x, int y) const;
 
         /**
          * Check if a given position is explored by the player (i.e. not obscured by fog of war)
@@ -144,12 +144,12 @@ namespace MWRender
         static const int sFogOfWarResolution = 32;
 
         // size of a map segment (for exteriors, 1 cell)
-        float mMapWorldSize;
+        int mMapWorldSize;
 
         int mCellDistance;
 
         float mAngle;
-        const osg::Vec2f rotatePoint(const osg::Vec2f& point, const osg::Vec2f& center, const float angle);
+        const osg::Vec2f rotatePoint(const osg::Vec2f& point, const osg::Vec2f& center, const float angle) const;
 
         void requestExteriorMap(const MWWorld::CellStore* cell, MapSegment& segment);
         void requestInteriorMap(const MWWorld::CellStore* cell);

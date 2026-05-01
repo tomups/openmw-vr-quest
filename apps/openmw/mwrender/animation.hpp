@@ -178,7 +178,9 @@ namespace MWRender
 
             std::string mGroupname;
             std::string mStartKey;
+            std::string mStopKey;
 
+            float getCompletion() const;
             float getTime() const { return *mTime; }
             void setTime(float time) { *mTime = time; }
             bool blendMaskContains(size_t blendMask) const { return (mBlendMask & (1 << blendMask)); }
@@ -326,6 +328,8 @@ namespace MWRender
             const AnimBlendStateData& stateData, const osg::ref_ptr<const SceneUtil::AnimBlendRules>& blendRules,
             const AnimState& active);
 
+        void animationEnded(AnimState& state) const;
+
     public:
         Animation(
             const MWWorld::Ptr& ptr, osg::ref_ptr<osg::Group> parentNode, Resource::ResourceSystem* resourceSystem);
@@ -422,7 +426,7 @@ namespace MWRender
          * \return True if the animation is active, false otherwise.
          */
         bool getInfo(std::string_view groupname, float* complete = nullptr, float* speedmult = nullptr,
-            size_t* loopcount = nullptr) const;
+            uint32_t* loopcount = nullptr) const;
 
         /// Returns the group name of the animation currently active on that bone group.
         std::string_view getActiveGroup(BoneGroup boneGroup) const;
