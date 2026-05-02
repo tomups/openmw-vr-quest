@@ -207,7 +207,7 @@ local function createDerivedSpaces()
     )
 end
 
-local HUDpaces = {
+local HUDSpaces = {
     'LeftWristInner',
     'LeftWristTop',
     'RightWristInner',
@@ -264,6 +264,8 @@ local uiGroupKey = 'UiGroup'
 local uiSection = storage.playerSection(uiGroupKey)
 local spacesGroupKey = 'SpacesGroup'
 local spacesSection = storage.playerSection(spacesGroupKey)
+local spaceOffsetGroupKey = 'SpaceOffsetGroup'
+local spaceOffsetSection = storage.playerSection(spaceOffsetGroupKey)
 
 local function registerSettingsPage()
     I.Settings.registerPage({
@@ -311,6 +313,20 @@ local function selectSetting(key, items, default)
     }
 end
 
+local function spaceOffsetSetting(space)
+    local key = space..'Offset'
+    return {
+        key = key,
+        renderer = 'spaceOffset',
+        name = key,
+        description = key .. 'Description',
+        default = util.vector3(0,0,0),
+        argument = {
+            space = space
+        }
+    }
+end
+
 local function registerSettingsGroup()
     I.Settings.registerGroup({
         key = spacesGroupKey,
@@ -319,8 +335,8 @@ local function registerSettingsGroup()
         name = spacesGroupKey,
         permanentStorage = true,
         settings = {
-            selectSetting('HUDSpace', HUDpaces),
-            selectSetting('TooltipSpace', HUDpaces),
+            selectSetting('HUDSpace', HUDSpaces),
+            selectSetting('TooltipSpace', HUDSpaces),
             boolSetting('DialogueSpace', true),
         },
     })
@@ -333,6 +349,18 @@ local function registerSettingsGroup()
         settings = {
             boolSetting('ShowTutorials', true),
         },
+    })
+    local spaceOffsetSettings = {}
+    for _, v in ipairs(HUDSpaces) do
+        spaceOffsetSettings[#spaceOffsetSettings+1] = v
+    end
+    I.Settings.registerGroup({
+        key = spaceOffsetGroupKey,
+        page = settingsPageKey,
+        l10n = l10nKey,
+        name = spaceOffsetGroupKey,
+        permanentStorage = true,
+        settings = spaceOffsetSettings,
     })
 end
 

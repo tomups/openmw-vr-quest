@@ -97,9 +97,27 @@ local function isActionSpaceSupported(space)
     return supportedActionSpaces[space] ~= nil
 end
 
+local function isDerivedSpace(name)
+    return customSpaces[name] ~= nil
+end
+
+local function getReferenceSpace(name)
+    if not isDerivedSpace(name) then
+        error('getReferenceSpace: Can only get origin space for derived spaces')
+    end
+    return customSpaces[name].reference
+end
+
 local function createDerivedSpace(name, reference, pose)
+    if not reference then
+        error('createDerivedSpace: reference cannot be nil')
+    end
     vr._createDerivedSpace(name, reference, pose)
-    customSpaces[name] = name
+    customSpaces[name] = {
+        name = name,
+        reference = reference,
+        pose = pose,
+    }
 end
 
 return {
@@ -147,7 +165,14 @@ return {
         --- Check if the given string is the name of an action space
         -- @function [parent=#vrspaces] isActionSpace
         -- @param #string name
+        -- @return #boolean
         isActionSpace = isActionSpace,
+
+        --- Check if the given string is the name of a custom space
+        -- @function [parent=#vrspaces] isDerivedSpace
+        -- @param #string name
+        -- @return #boolean
+        isDerivedSpace = isDerivedSpace,
 
         --- Check if the given string is the name of a reference space
         -- @function [parent=#vrspaces] isReferenceSpace

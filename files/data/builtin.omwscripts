@@ -46,5 +46,6 @@ MENU: scripts/omw/vr/inputs/menu.lua
 PLAYER: scripts/omw/vr/inputs/player.lua
 
 # VR UI
+MENU: scripts/omw/vr/ui/settingsrenderer.lua
 MENU: scripts/omw/vr/ui/menu.lua
 PLAYER: scripts/omw/vr/ui/player.lua

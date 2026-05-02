@@ -318,7 +318,7 @@ local function onFrame(dt)
 
     -- Only want to process inputs/actions in this script during pre-game.
     if menu.getState() == menu.STATE.NoGame then
-        common.onFrame(dt)
+        common.onFrame()
     end
 
     if not gameLoaded and menu.getState() == menu.STATE.Running then
