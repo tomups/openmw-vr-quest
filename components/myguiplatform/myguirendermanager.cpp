@@ -514,15 +514,9 @@ namespace MyGUIPlatform
 //## VR_PATCH BEGIN
 // VR-TODO: State now handled here
 // Camera is its own GUICamera object
-        mGuiStateSet->setMode(GL_LIGHTING, osg::StateAttribute::OFF);
         mGuiStateSet->setTextureMode(0, GL_TEXTURE_2D, osg::StateAttribute::ON);
         mGuiStateSet->setMode(GL_DEPTH_TEST, osg::StateAttribute::OFF);
         mGuiStateSet->setMode(GL_BLEND, osg::StateAttribute::ON);
-        // need to flip tex coords since MyGUI uses DirectX convention of top left image origin
-        osg::Matrix flipMat;
-        flipMat.preMultTranslate(osg::Vec3f(0, 1, 0));
-        flipMat.preMultScale(osg::Vec3f(1, -1, 1));
-        mGuiStateSet->setTextureAttribute(0, new osg::TexMat(flipMat), osg::StateAttribute::ON);
 
 // VR-TODO: Nope, definitely not cleaning this up correctly
         mSceneRoot->addChild(createGUICamera(osg::Camera::POST_RENDER, ""));

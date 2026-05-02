@@ -14,6 +14,15 @@
 
 #include "types.hpp"
 
+// Something is bringing these cursed defines in...
+#ifdef near
+#undef near
+#endif
+
+#ifdef far
+#undef far
+#endif
+
 namespace osg
 {
     class FrameBufferObject;

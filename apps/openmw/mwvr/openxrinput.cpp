@@ -38,9 +38,6 @@ namespace
     using Interactions = std::vector<Interaction>;
     using Controllers = std::map<std::string, Interactions>;
     using InteractionProfiles = std::vector<std::pair<std::vector<Controller>, Controllers>>;
-
-    InteractionProfiles interactionProfiles;
-
 }
 
 namespace MWVR
@@ -83,14 +80,14 @@ namespace MWVR
     void OpenXRInput::createLuaActions() 
     {
         // Use the list of known interactionProfiles to populate a list of actions
-        auto interactionProfiles = XR::getAllKnownInteractionProfiles();
+        auto allKnownInteractionProfiles = XR::getAllKnownInteractionProfiles();
         std::set<std::string> axisActions;
         std::set<std::string> boolActions;
         std::set<std::string> floatActions;
         std::set<std::string> poseActions;
         std::set<std::string> hapticsActions;
 
-        for (auto& ip : interactionProfiles)
+        for (auto& ip : allKnownInteractionProfiles)
         {
             for (auto& ctrl : ip.second)
             {

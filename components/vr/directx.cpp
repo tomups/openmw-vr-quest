@@ -5,6 +5,14 @@
 #undef NOGDI
 #endif
 
+#ifdef UNICODE
+#undef UNICODE
+#endif
+
+#ifdef _UNICODE
+#undef _UNICODE
+#endif
+
 #include <Windows.h>
 #include <objbase.h>
 

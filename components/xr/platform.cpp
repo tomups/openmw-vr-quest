@@ -1,3 +1,25 @@
+#ifdef _WIN32
+// Need to include windows header before anything else so we can control use of UNICODE and LEANANDMEAN.
+#ifdef NOGDI
+#undef NOGDI
+#endif
+
+#ifdef UNICODE
+#undef UNICODE
+#endif
+
+#ifdef _UNICODE
+#undef _UNICODE
+#endif
+
+#include <Windows.h>
+#include <objbase.h>
+
+#ifdef XR_USE_GRAPHICS_API_D3D11
+#include <d3d11_1.h>
+#endif
+#endif
+
 #include <SDL2/SDL_syswm.h>
 #include <components/misc/strings/algorithm.hpp>
 #include <components/misc/strings/lower.hpp>
@@ -12,15 +34,6 @@
 
 // The OpenXR SDK's platform headers assume we've included platform headers
 #ifdef _WIN32
-#ifdef NOGDI
-#undef NOGDI
-#endif
-#include <Windows.h>
-#include <objbase.h>
-
-#ifdef XR_USE_GRAPHICS_API_D3D11
-#include <d3d11_1.h>
-#endif
 
 #elif __linux__
 #include <EGL/egl.h>
