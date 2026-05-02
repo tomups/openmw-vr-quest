@@ -297,7 +297,6 @@ add_component_dir (esm4
 )
 
 add_component_dir (misc
-// MERGETODO: Duplicates?
     barrier budgetmeasurement callbackmanager color compression constants convert coordinateconverter display endianness float16 frameratelimiter
     guarded math mathutil messageformatparser notnullptr objectpool osgpluginchecker osguservalues progressreporter resourcehelpers
     rng strongtypedef thread timeconvert timer tuplehelpers tuplemeta utf8stream weakcache windows

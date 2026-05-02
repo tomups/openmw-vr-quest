@@ -361,7 +361,7 @@ namespace MWVR
         stateset->addUniform(new osg::Uniform("sky", skyTextureSlot));
         stateset->addUniform(new osg::Uniform("emissiveMult", 1.f));
 
-        MWBase::Environment::get().getResourceSystem()->getSceneManager()->recreateShaders(geometry, "objects", true);
+        MWBase::Environment::get().getResourceSystem()->getSceneManager()->recreateShaders(geometry, "objects");
 
         return geometry;
     }

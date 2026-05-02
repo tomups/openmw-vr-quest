@@ -643,8 +643,8 @@ namespace MWBase
         /// @param world position to place object
         /// @param number of objects to place
 
-        virtual float getActivationDistancePlusTelekinesis() = 0;
-//## VR_PATCH END
+        // virtual float getActivationDistancePlusTelekinesis() = 0;
+        // ## VR_PATCH END
     };
 }
 

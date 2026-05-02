@@ -110,8 +110,7 @@ namespace MWGui
 
         bool onControllerButtonEvent(const SDL_ControllerButtonEvent& arg) override;
         void filterListButtonHandler(const SDL_ControllerButtonEvent& arg);
-//## VR_PATCH BEGIN
-        // MERGETODO: Upstream changed things in this class. Test.
+// ## VR_PATCH BEGIN
         MyGUI::ComboBox* mFilterCombo;
         MyGUI::EditBox* mFilterEdit;
         MyGUI::Button* mFilterButton;

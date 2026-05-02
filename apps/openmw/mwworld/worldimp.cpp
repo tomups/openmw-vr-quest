@@ -948,7 +948,7 @@ namespace MWWorld
             return MWVR::Util::getPointerTarget().second;
         }
         else
-            return mDistanceToFacedObject;
+            return mDistanceToFocusObject;
 //## VR_PATCH END
     }
 
@@ -2914,7 +2914,7 @@ namespace MWWorld
         if(VR::getVR())
         {
             if (VR::getKBMouseModeActive())
-                target = getFacedObject();
+                target = getFocusObject();
             else
                 target = MWVR::Util::getTouchTarget().first;
         }

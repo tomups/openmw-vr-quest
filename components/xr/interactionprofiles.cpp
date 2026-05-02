@@ -1,9 +1,9 @@
 #include "interactionprofiles.hpp"
 #include <components/debug/debuglog.hpp>
 #include <components/misc/strings/algorithm.hpp>
-#include <extern/oics/tinyxml.h>
-#include <set>
 #include <cstring>
+#include <set>
+#include <tinyxml.h>
 
 namespace
 {

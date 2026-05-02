@@ -183,7 +183,6 @@ namespace MWWorld
             Loading::Listener* listener);
 
         float feetToGameUnits(float feet);
-// MERGETODO: getActivationDistancePlusTelekinesis was removed for some reason
 
         MWWorld::ConstPtr getClosestMarker(const MWWorld::ConstPtr& ptr, const ESM::RefId& id);
         MWWorld::ConstPtr getClosestMarkerFromExteriorPosition(const osg::Vec3f& worldPos, const ESM::RefId& id);

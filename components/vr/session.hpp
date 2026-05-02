@@ -100,7 +100,6 @@ namespace VR
 
         Stereo::Unit getSneakOffset() const { return mSneakOffset; }
 
-        // MERGETODO: New system for enabling sneak eyelevel offset
         void setSneak(bool sneak);
 
         void setMovementAngleOffset(osg::Vec2 offsets) { mMovementAnglesOffset = offsets; }

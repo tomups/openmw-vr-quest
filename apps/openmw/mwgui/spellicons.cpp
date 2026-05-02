@@ -37,8 +37,6 @@ namespace MWGui
             const MyGUI::IntCoord coord(0, 0, size, size);
             MyGUI::ImageBox* widget = parent.createWidget<MyGUI::ImageBox>("ImageBox", coord, MyGUI::Align::Default);
             widget->setImageTexture(Misc::ResourceHelpers::correctIconPath(VFS::Path::toNormalized(icon), vfs));
-// MERGETODO: Someone completely rewrote this for some reason so it's not mergeable
-// The change i made was to reverse the direction magic effects grow to keep them stable in the VR style
             ToolTipInfo tooltipInfo;
             tooltipInfo.caption = name;
             tooltipInfo.icon = icon;
@@ -109,6 +107,8 @@ namespace MWGui
 
         const MWWorld::Ptr player = MWMechanics::getPlayer();
         const MWMechanics::CreatureStats& stats = player.getClass().getCreatureStats(player);
+        std::vector<MyGUI::ImageBox*> images;
+
         for (const auto& params : stats.getActiveSpells())
         {
             for (const auto& source : params.getEffects())
@@ -133,6 +133,7 @@ namespace MWGui
                     if (source.mDuration >= fadeTime && fadeTime > 0.f)
                         widget.setAlpha(std::min(source.mTimeLeft / fadeTime, 1.f));
                     horizontalOffset += size;
+                    images.push_back(&widget);
                 }
 
                 std::string& desc = widget.getUserData<ToolTipInfo>()->text;
@@ -156,6 +157,22 @@ namespace MWGui
                     desc += MWGui::ToolTips::getDurationString(source.mTimeLeft, " #{sDuration}");
             }
         }
+
+        // ## VR_PATCH BEGIN
+        if (VR::getVR())
+        {
+            // In VR mode, the effect box grows to the right.
+            // They are therefore added in the reverse order to retain positional stability.
+            // TODO: What if users configure the hud to be on the right hand side?
+            int reverseHorizontalOffset = horizontalOffset;
+            for (auto* image : images)
+            {
+                reverseHorizontalOffset -= 16;
+                image->setPosition(reverseHorizontalOffset, verticalOffset);
+            }
+        }
+
+        // ## VR_PATCH END
 
         if (adjustSize)
         {

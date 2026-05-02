@@ -12,8 +12,7 @@
 
 #include <set>
 
-#include <extern/oics/tinyxml.h>
-
+#include <tinyxml.h>
 
 namespace
 {

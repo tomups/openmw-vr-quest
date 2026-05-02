@@ -41,7 +41,7 @@
 #include "../mwrender/camera.hpp"
 #include "../mwrender/renderingmanager.hpp"
 
-#include <extern/oics/ICSInputControlSystem.h>
+#include <oics/ICSInputControlSystem.h>
 
 #include <SDL_timer.h>
 #include <iostream>

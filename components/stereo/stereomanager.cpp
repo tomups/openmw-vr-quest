@@ -408,8 +408,6 @@ namespace Stereo
 
     bool getStereo()
     {
-        // MERGETODO: Make sure VR::getVR() is used to determine sStereoEnabled
-//## VR_PATCH END
         return sStereoEnabled;
     }
 

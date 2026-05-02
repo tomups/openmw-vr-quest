@@ -933,13 +933,6 @@ void OMW::Engine::prepareEngine()
     mEnvironment.setWorldModel(mWorld->getWorldModel());
     mEnvironment.setESMStore(mWorld->getStore());
 
-    // ## VR_PATCH BEGIN
-    if (VR::getVR())
-    {
-        configureVRScene();
-    }
-    // ## VR_PATCH END
-
     const MWWorld::Store<ESM::GameSetting>* gmst = &mWorld->getStore().get<ESM::GameSetting>();
     mL10nManager->setGmstLoader([gmst, misses = std::set<std::string, Misc::StringUtils::CiComp>()](
                                     std::string_view gmstName) mutable -> const std::string* {
@@ -1008,6 +1001,13 @@ void OMW::Engine::prepareEngine()
     mWorld->setRandomSeed(mRandomSeed);
     mWindowManager->initUI();
     mLuaManager->initPostLoad();
+
+    // ## VR_PATCH BEGIN
+    if (VR::getVR())
+    {
+        configureVRScene();
+    }
+    // ## VR_PATCH END
 
     // scripts
     if (mCompileAll)

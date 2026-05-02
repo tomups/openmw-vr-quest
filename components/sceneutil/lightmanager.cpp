@@ -301,7 +301,6 @@ namespace SceneUtil
         osg::Matrix mViewMatrix;
     };
 
-// MERGETODO: The generate() function got banished to the shadow realm. Understand and reproduce the changes i originally made to it...
     struct StateSetGeneratorSingleUBO : StateSetGenerator
     {
         osg::ref_ptr<osg::StateSet> generate(

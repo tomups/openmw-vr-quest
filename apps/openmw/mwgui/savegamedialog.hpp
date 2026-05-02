@@ -80,7 +80,6 @@ namespace MWGui
         bool onControllerButtonEvent(const SDL_ControllerButtonEvent& arg) override;
         bool mOkButtonFocus = true;
 //## VR_PATCH BEGIN
-        // MERGETODO: Upstream added onControllerButtonEvent() and mOkButtonFocus. Test this.
         void onCharacterSelectionButtonClicked(MyGUI::Widget* sender);
         MWVR::VrListBox* mCharacterSelectionListBox;
         MyGUI::Button* mCharacterSelectionButton;

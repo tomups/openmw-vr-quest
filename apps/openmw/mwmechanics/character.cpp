@@ -1106,10 +1106,6 @@ namespace MWMechanics
                     attackType = ESM::Weapon::AT_Thrust;
             }
             else if (action == "chop hit")
-//## VR_PATCH BEGIN
-                // MERGETODO: old else was: charClass.hit(mPtr, mAttackStrength, -1); vr had added the -1. Make sure this is still equivalent
-                // Read up on what .48 VR was doing here.
-//## VR_PATCH END
                 attackType = ESM::Weapon::AT_Chop;
             else if (action == "slash hit")
                 attackType = ESM::Weapon::AT_Slash;
