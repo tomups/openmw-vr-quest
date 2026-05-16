@@ -128,8 +128,6 @@ local recordingDialogue = ui.create{
     props = { visible = false }
 }
 
-local buttons = {}
-
 I.Settings.registerRenderer('spaceOffset', function(value, set, arg)
     if not arg or not arg.space then
         error('spaceOffset: Must have an argument with a space and a reference space')
@@ -165,11 +163,7 @@ I.Settings.registerRenderer('spaceOffset', function(value, set, arg)
             end,
         }
     end
-    if buttons[space] then
-        button.destroy(buttons[space])
-    end
     local element = button.new(label, cb)
-    buttons[space] = element
     return disable(arg.disabled, element)
 end)
 
