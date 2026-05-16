@@ -313,18 +313,26 @@ local function selectSetting(key, items, default)
     }
 end
 
-local function spaceOffsetSetting(space)
-    local key = space..'Offset'
+local function spaceOffsetSettingKey(space)
+    return space..'Offset'
+end
+
+local function spaceOffsetSetting(space, disabled)
+    local key = spaceOffsetSettingKey(space)
     return {
         key = key,
         renderer = 'spaceOffset',
         name = key,
         description = key .. 'Description',
-        default = util.vector3(0,0,0),
         argument = {
-            space = space
+            space = space,
+            disabled = disabled,
         }
     }
+end
+
+local function updateSpaceOffsetSetting(space, disabled)
+    I.Settings.updateRendererArgument(spaceOffsetGroupKey, spaceOffsetSettingKey(space), {space = space, disabled = disabled})
 end
 
 local function registerSettingsGroup()
@@ -352,7 +360,7 @@ local function registerSettingsGroup()
     })
     local spaceOffsetSettings = {}
     for _, v in ipairs(HUDSpaces) do
-        spaceOffsetSettings[#spaceOffsetSettings+1] = v
+        spaceOffsetSettings[#spaceOffsetSettings+1] = spaceOffsetSetting(v, false)
     end
     I.Settings.registerGroup({
         key = spaceOffsetGroupKey,
@@ -405,6 +413,10 @@ local function updateSpacesSettings()
     
     setLayerConfigIfNotOverridden('HUD_3D', configHUD3D)
     setLayerConfigIfNotOverridden('Tooltip', configTooltip)
+
+    for _, v in ipairs(HUDSpaces) do
+        updateSpaceOffsetSetting(v, v ~= configHUD3D.space)
+    end
 end
 spacesSection:subscribe(async:callback(updateSpacesSettings))
 
@@ -414,6 +426,7 @@ local function setupDefaults(modes)
 
     local allLayers = getAllLayers()
     for _, layer in pairs(allLayers) do
+        print('setupDefaults : '..tostring(layer))
         if not layerConfig[layer] then
             layerConfig[layer] = createDefaultConfig(0.7, true)
         end
@@ -556,6 +569,8 @@ local interface =
     setLayerPose = function(layer, pose) vr._setLayerPose(layer, pose) end,
     
     getWindowLayer = getWindowLayer,
+
+    setLayerPickable = vr._setLayerPickable
 }
 
 return {

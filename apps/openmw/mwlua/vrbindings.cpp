@@ -199,6 +199,9 @@ namespace MWLua
         api["_setLayerPose"] = [&guiManager = MWVR::VRGUIManager::instance()](const std::string& layer,
                                    const sol::table& pose) { guiManager.setLayerPose(layer, poseFromTable(pose)); };
 
+        api["_setLayerPickable"] = [&guiManager = MWVR::VRGUIManager::instance()](const std::string& layer,
+                                       bool pickable) { guiManager.setLayerPickable(layer, pickable); };
+
         api["_setPointerLeft"] = [&inputManager = MWVR::VRInputManager::instance()](
                                      bool enabled) { inputManager.setPointerLeft(enabled); };
 

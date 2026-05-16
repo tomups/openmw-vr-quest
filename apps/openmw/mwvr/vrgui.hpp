@@ -189,6 +189,7 @@ namespace MWVR
 
         void setLayerConfig(const std::string& layer, const LayerConfig& config);
         void setLayerPose(const std::string& layer, const Stereo::Pose& pose);
+        void setLayerPickable(const std::string& layer, bool pickable);
 
         void registerLuaElement(const LuaUi::Element* element);
         void deregisterLuaElement(const LuaUi::Element* element);

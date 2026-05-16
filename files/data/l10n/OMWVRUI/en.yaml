@@ -20,3 +20,14 @@ DialogueSpaceDescription: |
 ShowTutorials: "Show Tutorials"
 ShowTutorialsDescription: |
     Show a few tutorial messages when a character is loaded into VR for the first time (including new game).
+
+SpaceOffsetGroup: "Space Offsets"
+SpaceOffsetGroupDescription: |
+    Adjust the exact position of the HUD/Tooltip using these settings. A position is only possible to adjust if there is currently something
+    assigned to it.
+SpaceOffsetRecordingDialogue1: "New offset is: {offset}"
+SpaceOffsetRecordingDialogue2KBM: "Press Enter to accept, or Esc to cancel"
+SpaceOffsetRecordingDialogue2MC: "Press {AcceptBinding} to accept, or {CancelBinding} to cancel. Or use your keyboard and press Enter to accept, or Esc to cancel"
+
+NotBound: "Not Bound"
+NoBinding: "No Binding"

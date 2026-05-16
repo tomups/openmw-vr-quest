@@ -168,6 +168,7 @@ set(BUILTIN_DATA_FILES
     scripts/omw/input/smoothmovement.lua
     scripts/omw/input/gamepadcontrols.lua
     scripts/omw/vr/spaces.lua
+    scripts/omw/vr/ui/button.lua
     scripts/omw/vr/ui/common.lua
     scripts/omw/vr/ui/menu.lua
     scripts/omw/vr/ui/player.lua

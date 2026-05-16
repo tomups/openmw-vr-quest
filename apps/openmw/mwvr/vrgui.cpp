@@ -109,6 +109,7 @@ namespace MWVR
             "Video",
             "InputBlocker",
             "VideoPlayer",
+            "SpaceOffsetRecording",
             "VirtualKeyboard",
             "Pointer",
         });
@@ -1054,6 +1055,12 @@ namespace MWVR
     {
         std::scoped_lock lock(mMutex);
         getLayer(name)->mPose = pose;
+    }
+
+    void VRGUIManager::setLayerPickable(const std::string &name, bool pickable)
+    {
+        std::scoped_lock lock(mMutex);
+        getLayer(name)->setPickable(pickable);
     }
 
     void VRGUIManager::setLayerConfig(const std::string& name, const LayerConfig& config)
