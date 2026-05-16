@@ -426,7 +426,6 @@ local function setupDefaults(modes)
 
     local allLayers = getAllLayers()
     for _, layer in pairs(allLayers) do
-        print('setupDefaults : '..tostring(layer))
         if not layerConfig[layer] then
             layerConfig[layer] = createDefaultConfig(0.7, true)
         end

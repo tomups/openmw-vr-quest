@@ -301,6 +301,28 @@ local function init()
     end))
 end
 
+-- OpenMW bug: https://gitlab.com/OpenMW/openmw/-/work_items/9115
+local menuTriggersHeartBeat = true
+input.registerTrigger {
+    key = 'MenuTriggerHandlersHeartBeat',
+    l10n = 'dummy',
+    name = 'MenuTriggerHandlersHeartBeat',
+    description = 'MenuTriggerHandlersHeartBeat is used to detect when the engine wipes all menu trigger handlers, leading to the need to re-register them.',
+}
+local menuTriggersHeartBeatHandler = async:callback(function()
+    menuTriggersHeartBeat = true
+end)
+local menuTriggersHeartBeatListeners = {}
+
+local function registerTriggerHandlers()
+    input.registerTriggerHandler('MenuTriggerHandlersHeartBeat', menuTriggersHeartBeatHandler)
+end
+registerTriggerHandlers()
+
+local function addMenuTriggersHeartBeatListener(listener)
+    menuTriggersHeartBeatListeners[#menuTriggersHeartBeatListeners+1] = listener
+end
+
 local gameLoaded = false
 
 local function onFrame(dt)
@@ -320,6 +342,16 @@ local function onFrame(dt)
     if menu.getState() == menu.STATE.NoGame then
         common.onFrame()
     end
+
+    if not menuTriggersHeartBeat then
+        print('MENU script trigger handlers wiped, re-registering')
+        for _, handler in ipairs(menuTriggersHeartBeatListeners) do
+            handler()
+        end
+        registerTriggerHandlers()
+    end
+    menuTriggersHeartBeat = false
+    input.activateTrigger('MenuTriggerHandlersHeartBeat')
 end
 return {
     engineHandlers = {
@@ -348,6 +380,6 @@ return {
         getActiveTriggerBindings = common.getActiveTriggerBindings,
         getInteractionName = common.getInteractionName,
         -- Workaround for OpenMW not processing actions/triggers during main menu.
-        registerTriggerHandlerForMainMenu = common.registerTriggerHandlerForMainMenu,
+        addMenuTriggersHeartBeatListener = addMenuTriggersHeartBeatListener
     }
 }

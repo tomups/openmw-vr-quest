@@ -39,6 +39,8 @@ namespace MWInput
         , mGuiCursorEnabled(true)
         , mJoystickLastUsed(false)
         , mGamepadMousePressed(false)
+        , mLeftTriggerGuiPressed(false)
+        , mRightTriggerGuiPressed(false)
 //## VR_PATCH BEGIN
         , mThumbstickAutoRun(Settings::Manager::getBool("thumbstick auto run", "Input"))
 //## VR_PATCH END
@@ -355,6 +357,22 @@ namespace MWInput
 
     bool ControllerManager::gamepadToGuiControl(const SDL_ControllerAxisEvent& arg)
     {
+        const int triggerPressThreshold = Settings::gui().mControllerTriggerPressThreshold;
+        const int rawTriggerReleaseThreshold = Settings::gui().mControllerTriggerReleaseThreshold;
+        const int triggerReleaseThreshold = std::clamp(rawTriggerReleaseThreshold, 0, triggerPressThreshold - 1);
+
+        auto handleTriggerPress = [&](Sint16 value, bool& triggerGuiPressed, const auto& onPress) {
+            if (value >= triggerPressThreshold && !triggerGuiPressed)
+            {
+                onPress();
+                triggerGuiPressed = true;
+            }
+            else if (value <= triggerReleaseThreshold)
+            {
+                triggerGuiPressed = false;
+            }
+        };
+
         MWBase::WindowManager* winMgr = MWBase::Environment::get().getWindowManager();
 
         if (Settings::gui().mControllerMenus)
@@ -362,14 +380,14 @@ namespace MWInput
             // Left and right triggers toggle through open GUI windows.
             if (arg.axis == SDL_CONTROLLER_AXIS_TRIGGERRIGHT)
             {
-                if (arg.value == 32767) // Treat like a button.
-                    winMgr->cycleActiveControllerWindow(true);
+                handleTriggerPress(
+                    arg.value, mRightTriggerGuiPressed, [&] { winMgr->cycleActiveControllerWindow(true); });
                 return true;
             }
             else if (arg.axis == SDL_CONTROLLER_AXIS_TRIGGERLEFT)
             {
-                if (arg.value == 32767) // Treat like a button.
-                    winMgr->cycleActiveControllerWindow(false);
+                handleTriggerPress(
+                    arg.value, mLeftTriggerGuiPressed, [&] { winMgr->cycleActiveControllerWindow(false); });
                 return true;
             }
 
@@ -417,12 +435,12 @@ namespace MWInput
         switch (arg.axis)
         {
             case SDL_CONTROLLER_AXIS_TRIGGERRIGHT:
-                if (arg.value == 32767) // Treat like a button.
-                    winMgr->injectKeyPress(MyGUI::KeyCode::Minus, 0, false);
+                handleTriggerPress(arg.value, mRightTriggerGuiPressed,
+                    [&] { winMgr->injectKeyPress(MyGUI::KeyCode::Minus, 0, false); });
                 break;
             case SDL_CONTROLLER_AXIS_TRIGGERLEFT:
-                if (arg.value == 32767) // Treat like a button.
-                    winMgr->injectKeyPress(MyGUI::KeyCode::Equals, 0, false);
+                handleTriggerPress(arg.value, mLeftTriggerGuiPressed,
+                    [&] { winMgr->injectKeyPress(MyGUI::KeyCode::Equals, 0, false); });
                 break;
             case SDL_CONTROLLER_AXIS_LEFTX:
             case SDL_CONTROLLER_AXIS_LEFTY:

@@ -164,7 +164,7 @@ local function addPose(pose1, pose2)
     local pos2 = pose2.position or util.vector3(0,0,0)
     local ori2 = pose2.orientation or util.transform.identity
     local pos3 = pos1 + ori1 * pos2
-    local ori3 = ori2 * ori1
+    local ori3 = ori1 * ori2
 
     return {
         position = pos3,

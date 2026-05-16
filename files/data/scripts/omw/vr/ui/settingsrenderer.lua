@@ -173,17 +173,22 @@ I.Settings.registerRenderer('spaceOffset', function(value, set, arg)
     return disable(arg.disabled, element)
 end)
 
-input.registerTriggerHandler('PointerActivate', async:callback(function()
-    if recording then
-        recording.accepted = true
-    end
-end))
+local function registerTriggerHandlers()
+    input.registerTriggerHandler('PointerActivate', async:callback(function()
+        if recording then
+            recording.accepted = true
+        end
+    end))
 
-input.registerTriggerHandler('MenuBack', async:callback(function()
-    if recording then
-        recording.accepted = false
-    end
-end))
+    input.registerTriggerHandler('MenuBack', async:callback(function()
+        if recording then
+            recording.accepted = false
+        end
+    end))
+end
+registerTriggerHandlers()
+-- OpenMW bug: https://gitlab.com/OpenMW/openmw/-/work_items/9115
+I.vrinputs.addMenuTriggersHeartBeatListener(registerTriggerHandlers)
 
 local function spaceOffsetRecordingDialogueText(offset)
     local text = l10n('SpaceOffsetRecordingDialogue1', {offset = makeLabel(offset)})
@@ -194,6 +199,7 @@ local function spaceOffsetRecordingDialogueText(offset)
     end
     return text
 end
+
 
 local function onVRFrame()
     if not recording then
