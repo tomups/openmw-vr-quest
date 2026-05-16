@@ -306,8 +306,10 @@ local function getTriggerBindingsForController(controller)
     return getBindingsForController(triggerBindings, controller)[currentActionSet]
 end
 
-local function setManualTriggerCallback(key, callback)
-    manualTriggerCallbacks[key] = callback
+local function registerTriggerHandlerForMainMenu(key, callback)
+    local t = manualTriggerCallbacks[key] or {}
+    t[#t+1] = callback
+    manualTriggerCallbacks[key] = t
 end
 
 local activeProfiles = {
@@ -404,8 +406,11 @@ local function tryManualTriggers(path)
     local once = {}
     
     for id, key in pairs(activeTriggerBindings[path] or {}) do            
-        if manualTriggerCallbacks[key] and not once[key] then
-            manualTriggerCallbacks[key]()
+        local t = manualTriggerCallbacks[key]
+        if t and not once[key] then
+            for _, v in ipairs(t) do
+                v()
+            end
             once[key] = true
         end
     end
@@ -946,7 +951,7 @@ return {
     interactionNames = interactionNames,
     getInteractionName = getInteractionName,
     getInteractionProfileOfController = getInteractionProfileOfController,
-    setManualTriggerCallback = setManualTriggerCallback,
+    registerTriggerHandlerForMainMenu = registerTriggerHandlerForMainMenu,
     controllers = controllers,
     l10nKey = l10nKey,
     settingsPageKey = settingsPageKey,

@@ -3,6 +3,8 @@ if not vr.isVr() then
     return {}
 end
 local util = require('openmw.util')
+local input = require('openmw.input')
+local async = require('openmw.async')
 local I = require('openmw.interfaces')
 local core = require('openmw.core')
 local ui = require('openmw.ui')
@@ -75,8 +77,6 @@ local function recordingAccept()
     recording.accepted = true
 end
 
---local recordingDialogueTextFmt = 'New offset is: %s.\nPress %s or Enter to accept, or press %s or Esc to cancel'
-
 local recordingDialogueText = {
     type = ui.TYPE.TextEdit,
     props = {
@@ -147,7 +147,7 @@ I.Settings.registerRenderer('spaceOffset', function(value, set, arg)
         [I.vrspaces.referenceSpaces.Stage] = true,
     }
     if invalidReferences[getBaseReferenceSpace(space)] then
-        error('spaceOffset: argument space cannot be located in fixed reference spaces such as Local or Stage. spaceOffsets can only be defined for action spaces and the View reference space')
+        error('spaceOffset: argument space "'..tostring(space)..'" cannot be located in fixed reference spaces such as Local or Stage. spaceOffsets can only be defined for action spaces and the View reference space')
     end
     local label = makeLabel(value)
     print('spaceOffset renderer running for '..tostring(space)..' with label '..tostring(label)..' and current value '..tostring(value))
@@ -166,15 +166,34 @@ I.Settings.registerRenderer('spaceOffset', function(value, set, arg)
         }
     end
     if buttons[space] then
-        --buttons[space].layout.content[1].userData.text = label
-        --buttons[space]:update()
-        --return disable(arg.disabled, buttons[space])
         button.destroy(buttons[space])
     end
     local element = button.new(label, cb)
     buttons[space] = element
     return disable(arg.disabled, element)
 end)
+
+input.registerTriggerHandler('PointerActivate', async:callback(function()
+    if recording then
+        recording.accepted = true
+    end
+end))
+
+input.registerTriggerHandler('MenuBack', async:callback(function()
+    if recording then
+        recording.accepted = false
+    end
+end))
+
+local function spaceOffsetRecordingDialogueText(offset)
+    local text = l10n('SpaceOffsetRecordingDialogue1', {offset = makeLabel(offset)})
+    if I.vrinputs.isKBMouseMode() then
+        text = text..'\n'..l10n('SpaceOffsetRecordingDialogue2KBM')
+    else
+        text = text..'\n'..l10n('SpaceOffsetRecordingDialogue2MC', {AcceptBinding = getBindingDescription('PointerActivate'), CancelBinding = getBindingDescription('MenuBack')})
+    end
+    return text
+end
 
 local function onVRFrame()
     if not recording then
@@ -187,6 +206,7 @@ local function onVRFrame()
     end
 
     if recording.accepted ~= nil then
+        print('Ending recording: '..tostring(recording.accepted))
         endRecording(recording.accepted)
         return
     end
@@ -222,26 +242,19 @@ local function onVRFrame()
     if not pose then
         error('Failed to locate space '..recorderSpace)
     end
-    -- (pose - recording.origin) is the new offset
+    -- (recording.origin - pose) is the new offset
     recording.offset = I.vrspaces.poseUtils.subtract(recording.origin, pose)
 
     recordingDialogue.layout.props.visible = true
-    --recordingDialogueText.props.text
-        --= string.format(recordingDialogueTextFmt, makeLabel(recording.offset.position), 'A', 'B')
-    local text = l10n('SpaceOffsetRecordingDialogue1', {offset = makeLabel(recording.offset)})
-    if I.vrinputs.isKBMouseMode() then
-        text = text..'\n'..l10n('SpaceOffsetRecordingDialogue2KBM')
-    else
-        text = text..'\n'..l10n('SpaceOffsetRecordingDialogue2MC', {AcceptBinding = getBindingDescription('PointerActivate'), CancelBinding = getBindingDescription('MenuBack')})
-        -- To avoid confusion / accidentally activating something unrelated, disable pointers during this dialogue.
-        -- We could use yes/no buttons but it might be annoying to keep the desired offset stable while also pointing
-        -- and clicking at buttons.
-        vr._setPointerLeft(false)
-        vr._setPointerRight(false)
-    end
-    recordingDialogueText.props.text = text
+    recordingDialogueText.props.text = spaceOffsetRecordingDialogueText(recording.offset)
     recordingDialogue:update()
     I.vrui.setLayerPickable(recordingDialogueLayer, true)
+
+    -- To avoid confusion / accidentally activating something unrelated, disable pointers during this dialogue.
+    -- We could use yes/no buttons but it might be annoying to keep the desired offset stable while also pointing
+    -- and clicking at buttons.
+    vr._setPointerLeft(false)
+    vr._setPointerRight(false)
 end
 
 return {

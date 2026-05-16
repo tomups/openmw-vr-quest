@@ -338,8 +338,8 @@ namespace MWInput
     void MouseManager::warpMouse()
     {
         float guiUiScale = Settings::gui().mScalingFactor;
-        mInputWrapper->warpMouse(
-            static_cast<int>(mGuiCursorX * guiUiScale), static_cast<int>(mGuiCursorY * guiUiScale));
+        // mInputWrapper->warpMouse(
+        //     static_cast<int>(mGuiCursorX * guiUiScale), static_cast<int>(mGuiCursorY * guiUiScale));
     }
 
     // ## VR_PATCH BEGIN

@@ -282,20 +282,20 @@ local function init()
 
     -- Current .RC does not process actions during the main menu.
     -- So until a game has been loaded we have to manually deal with menu bindings.
-    common.setManualTriggerCallback('PointerActivate', function()
+    common.registerTriggerHandlerForMainMenu('PointerActivate', async:callback(function()
         if not justRecorded then
             vr._pointerActivate(true)
         end
-    end)
+    end))
 
-    common.setManualTriggerCallback('MenuBack', async:callback(function()
+    common.registerTriggerHandlerForMainMenu('MenuBack', async:callback(function()
         -- There isn't a catch-all solution for closing the current menu item from lua.
         -- I.UI.removeMode can only remove modes, not dialogue boxes, the console, or the postprocessing hud.
         -- From VR I need a one click solution, so i am using this placeholder internal function.
         ui._menuBack()
     end))
 
-    common.setManualTriggerCallback('Recenter', async:callback(function()
+    common.registerTriggerHandlerForMainMenu('Recenter', async:callback(function()
         print('Recenter')
         I.vrspaces.recenterXY()
     end))
@@ -319,15 +319,6 @@ local function onFrame(dt)
     -- Only want to process inputs/actions in this script during pre-game.
     if menu.getState() == menu.STATE.NoGame then
         common.onFrame()
-    end
-
-    if not gameLoaded and menu.getState() == menu.STATE.Running then
-        -- Now managed by the Player script, we can disable this callback.
-        --common.setManualTriggerCallback('PointerLeft', nil)
-        --common.setManualTriggerCallback('PointerRight', nil)
-        common.setManualTriggerCallback('PointerActivate', nil)
-        common.setManualTriggerCallback('MenuBack', nil)
-        common.setManualTriggerCallback('Recenter', nil)
     end
 end
 return {
@@ -356,5 +347,7 @@ return {
         getActiveActionBindings = common.getActiveActionBindings,
         getActiveTriggerBindings = common.getActiveTriggerBindings,
         getInteractionName = common.getInteractionName,
+        -- Workaround for OpenMW not processing actions/triggers during main menu.
+        registerTriggerHandlerForMainMenu = common.registerTriggerHandlerForMainMenu,
     }
 }
