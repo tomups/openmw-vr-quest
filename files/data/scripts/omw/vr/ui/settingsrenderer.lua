@@ -150,7 +150,6 @@ I.Settings.registerRenderer('spaceOffset', function(value, set, arg)
         error('spaceOffset: argument space "'..tostring(space)..'" cannot be located in fixed reference spaces such as Local or Stage. spaceOffsets can only be defined for action spaces and the View reference space')
     end
     local label = makeLabel(value)
-    print('spaceOffset renderer running for '..tostring(space)..' with label '..tostring(label)..' and current value '..tostring(value))
     I.vrspaces.offsetDerivedSpace(space, value)
     local cb = function()
         if recording then
@@ -169,7 +168,6 @@ I.Settings.registerRenderer('spaceOffset', function(value, set, arg)
     if buttons[space] then
         -- Settings API has already destroyed this button's element, but the widget still needs to run its own cleanup
         buttons[space]:cleanup()
-        buttons[space] = nil
     end
 
     buttons[space] = buttonConstructor(label, cb)

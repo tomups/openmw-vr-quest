@@ -13,6 +13,7 @@ local menu = require('openmw.menu')
 local core = require('openmw.core')
 local async = require('openmw.async')
 local common = require('scripts.omw.vr.inputs.common')
+local buttonScript = require('scripts.omw.vr.ui.button')
 local l10nContext = core.l10n(common.l10nKey)
 local inputTypes = {
     action = input.actions,
@@ -95,6 +96,21 @@ local function setActivePath(paths, path)
     paths[profile][otherController] = nil
 end
 
+local function disable(disabled, layout)
+    if disabled then
+        return {
+            template = I.MWUI.templates.disabled,
+            content = ui.content {
+                layout,
+            },
+        }
+    else
+        return layout
+    end
+end
+
+local buttons = {}
+
 I.Settings.registerRenderer('inputBindingVR', function(value, set, arg)
     if type(value) ~= 'table' then error('inputBindingVR: must have a table default value, got '..tostring(type(value))..' instead') end
     if type(value.id) ~= 'string' then error('inputBindingVR: default value table must contain a string id value') end
@@ -140,53 +156,26 @@ I.Settings.registerRenderer('inputBindingVR', function(value, set, arg)
         print(tostring(value.id)..': set to defaults')
     end
     local label = bindingLabel(recording and recording.value.id == value.id, binding, value.id)
-
-    local recorder = {
-        template = I.MWUI.templates.textNormal,
-        props = {
-            text = label,
-        },
-        events = {
-            -- Although we're in VR. The VR pointer fakes mouse clicks so we're still
-            -- listening for a mouseclick here.
-            mouseClick = async:callback(function()
-                if recording ~= nil then return end
-                if justRecorded then return end
-                if binding ~= nil and not value.required then 
-                    -- clear any bound paths in active profiles
-                    clearActive(binding.paths)
-                    bindingSection:set(value.id, binding) 
-                end
-                recording = {
-                    value = value,
-                    refresh = function() set(value) end,
-                }
-                recording.refresh()
-                justRecorded = true
-            end),
-        },
-    }
-
-    local row = {
-        type = ui.TYPE.Flex,
-        props = {
-            horizontal = true,
-        },
-        content = ui.content {
-            --name,
-            --{ props = { size = util.vector2(10, 0) } },
-            recorder,
-        },
-    }
-    local column = {
-        type = ui.TYPE.Flex,
-        content = ui.content {
-            row,
-            --description,
-        },
-    }
-
-    return column
+    local recorder = async:callback(function()
+        if recording ~= nil then return end
+        if justRecorded then return end
+        if binding ~= nil and not value.required then
+            -- clear any bound paths in active profiles
+            clearActive(binding.paths)
+            bindingSection:set(value.id, binding)
+        end
+        recording = {
+            value = value,
+            refresh = function() set(value) end,
+        }
+        recording.refresh()
+        justRecorded = true
+    end)
+    if buttons[value.id] then
+        buttons[value.id]:cleanup()
+    end
+    buttons[value.id] = buttonScript(label, recorder)
+    return disable(I.vrinputs.isKBMouseMode(), buttons[value.id].element)
 end)
 
 local function tableHasValueInCommon(t1, t2)
