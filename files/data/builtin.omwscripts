@@ -42,6 +42,7 @@ NPC,CREATURE: scripts/omw/music/actor.lua
 PLAYER, MENU: scripts/omw/vr/spaces.lua
 
 # VR Bindings
+MENU: scripts/omw/vr/inputs/settingsrenderer.lua
 MENU: scripts/omw/vr/inputs/menu.lua
 PLAYER: scripts/omw/vr/inputs/player.lua
 

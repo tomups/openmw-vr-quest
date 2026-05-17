@@ -56,9 +56,9 @@ input.registerTriggerHandler('MenuBack', async:callback(function()
 end))
 
 common.setOnInputChangedBoolean(function(path, action)
-    if action.valueBoolean then
+    if not action.valueBoolean then
         if not controlsAllowed() then
-            -- The Menu script doesn't process inputs itself, so we need to send
+            -- The settingsrenderer script doesn't process inputs itself, so we need to send
             -- this event to allow input bindings to take place
             types.Player.sendMenuEvent(self, "RecordVRBinding", {path = path})
         end

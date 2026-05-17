@@ -178,6 +178,7 @@ set(BUILTIN_DATA_FILES
     scripts/omw/vr/inputs/defaultBindingsLeftHanded.lua
     scripts/omw/vr/inputs/defaultBindingsRightHanded.lua
     scripts/omw/vr/inputs/menu.lua
+    scripts/omw/vr/inputs/settingsrenderer.lua
     
     shaders/adjustments.omwfx
     shaders/bloomlinear.omwfx
