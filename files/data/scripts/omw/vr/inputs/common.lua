@@ -123,7 +123,7 @@ local inputActions = {
 local function registerInputAction(path, type, func)
     -- I wanted to use openmw.input's action system for this
     -- but it doesn't work during the main menu.
-    
+
     --input.registerAction {
     --    key = path,
     --    type = type,
@@ -133,7 +133,7 @@ local function registerInputAction(path, type, func)
     --    defaultValue = default,
     --}
     --input.bindAction(path, async:callback(func), {})
-    
+
     -- Instead I'm rolling my own
     inputActions[path] = {
         type = type,
@@ -158,17 +158,17 @@ end
 for path, type in pairs(supportedInteractionPaths.input) do
     if type == vr.INTERACTION_VALUE_TYPES.Boolean then
         registerInputAction(
-            path, 
+            path,
             input.ACTION_TYPE.Boolean,
-            function() 
-                return I.vrinputs.getInputValue(path) == true 
+            function()
+                return I.vrinputs.getInputValue(path) == true
             end
         )
     elseif type == vr.INTERACTION_VALUE_TYPES.Float then
         registerInputAction(
-            path, 
+            path,
             input.ACTION_TYPE.Number,
-            function() 
+            function()
                 return deadzone(I.vrinputs.getInputValue(path))
             end
         )
@@ -176,9 +176,9 @@ for path, type in pairs(supportedInteractionPaths.input) do
         -- It's easier to make a binding system for each individual direction than for whole axes.
         -- So we split them apart into /x=/left,/right, and /y=/down,/up
         --registerAction(
-        --    path, 
+        --    path,
         --    input.ACTION_TYPE.Number,
-        --    function() 
+        --    function()
         --        return deadzone(I.vrinputs.getInputValue(path))
         --    end
         --)
@@ -194,7 +194,7 @@ for path, type in pairs(supportedInteractionPaths.input) do
         registerInputAction(
             neg,
             input.ACTION_TYPE.Number,
-            function() 
+            function()
                 local v = deadzone(I.vrinputs.getInputValue(path))
                 return (v < 0) and -v or 0
             end
@@ -202,7 +202,7 @@ for path, type in pairs(supportedInteractionPaths.input) do
         registerInputAction(
             pos,
             input.ACTION_TYPE.Number,
-            function() 
+            function()
                 local v = deadzone(I.vrinputs.getInputValue(path))
                 return (v > 0) and v or 0
             end
@@ -243,7 +243,7 @@ local controlsGroupKey = settingsPageKey..'Controls'
 local controlsSection = storage.playerSection(controlsGroupKey)
 
 -- userBinding and binding are separate groups because bindingSection is the section
--- used by the bindings renderer and doens't correspond to any entres in the settings page, 
+-- used by the bindings renderer and doens't correspond to any entres in the settings page,
 -- while userBindingsGroup is where we register the settings that appear on the page.
 local userBindingsGroupKey = settingsPageKey..'UserBindings'..handedness
 local userBindingsSection = storage.playerSection(userBindingsGroupKey)
@@ -292,8 +292,8 @@ end
 
 local function getBindingsForController(tab, controller)
     local profile = I.vrinputs.getInteractionProfileOfController(controller)
-    if not profile then 
-        return {} 
+    if not profile then
+        return {}
     end
     return getOrInitBindingsForProfile(tab, profile)[controller]
 end
@@ -374,7 +374,7 @@ local function updateActiveProfiles()
             activeProfiles[controller] = profile
         end
     end
-    
+
     if changed then
         updateActiveBindings()
     end
@@ -404,8 +404,8 @@ end
 -- Until actions work during the main menu, we have to manually fire some actions
 local function tryManualTriggers(path)
     local once = {}
-    
-    for id, key in pairs(activeTriggerBindings[path] or {}) do            
+
+    for id, key in pairs(activeTriggerBindings[path] or {}) do
         local t = manualTriggerCallbacks[key]
         if t and not once[key] then
             for _, v in ipairs(t) do
@@ -550,7 +550,7 @@ local controlsSettings = {
 
 local bindingsSettings = {
     }
-    
+
 local function bindSetting(key, actionSets, type, default, required, long)
     if not default then print('error default nil') end
     bindingsSettings[#bindingsSettings+1] = {
@@ -593,8 +593,8 @@ local function registerTriggers()
     --reg('MenuSelect', ActionSetTemplates.Menu)
     reg('MenuBack', ActionSetTemplates.MenuOnly)
     reg('RadialMenu', ActionSetTemplates.NotMenu, false, true)
-    
-    
+
+
     -- Existing triggers.
     -- The intent was to only add the bindings for these existing triggers.
     -- But upstream isn't registering them until loading a game...
@@ -644,7 +644,7 @@ local function registerActions()
     regRange('LookRight', ActionSetTemplates.Always)
     regRange('MenuScrollDown', ActionSetTemplates.MenuOnly)
     regRange('MenuScrollUp', ActionSetTemplates.MenuOnly)
-    
+
     -- Existing actions.
     -- The intent was to only add the bindings for these existing actions.
     -- But upstream isn't registering them until loading a game...
@@ -669,21 +669,21 @@ local function registerActions()
     regExistingRange('MoveBackward', ActionSetTemplates.NotMenu)
     regExistingBool('Sneak', ActionSetTemplates.NotMenu)
     regExistingBool('Use', ActionSetTemplates.GameplayOnly)
-    
+
     -- Reuse the LookLeft/LookRight actions for snap turning so we don't end up with two sets of bindings.
     regAction('SnapTurnLeft', input.ACTION_TYPE.Boolean, false)
     regAction('SnapTurnRight', input.ACTION_TYPE.Boolean, false)
-    input.bindAction('SnapTurnLeft', async:callback(function(dt, previous, lookLeft) 
+    input.bindAction('SnapTurnLeft', async:callback(function(dt, previous, lookLeft)
         return lookLeft > 0.6 or (previous and lookLeft > 0.4)
     end), { 'LookLeft' })
-    input.bindAction('SnapTurnRight', async:callback(function(dt, previous, lookLeft) 
+    input.bindAction('SnapTurnRight', async:callback(function(dt, previous, lookLeft)
         return lookLeft > 0.6 or (previous and lookLeft > 0.4)
     end), { 'LookRight' })
 end
 
 registerActions()
 registerTriggers()
-    
+
 local function registerSettingsPage()
     I.Settings.registerPage{
         key = settingsPageKey,
@@ -812,7 +812,7 @@ local longPressTime = 2.0 / 3.0
 local function tryTriggers(path, long)
     for id, key in pairs (activeTriggerBindings[path] or {}) do
         if (isLong[id] and long) or (not isLong[id] and not long) then
-            if alias[key] then 
+            if alias[key] then
                 key = alias[key]
             end
             if input.triggers[key] then
@@ -833,7 +833,7 @@ local function inputChangedBoolean(path, action, value)
             inputHoldTime[path] = nil
         end
     end
-    
+
     if onInputChangedBoolean then
         onInputChangedBoolean(path, action, value)
     end
@@ -847,7 +847,7 @@ local function updateInputs(dt)
             action.valueNumber = value
             -- When converting a float input to bool, we want to transition from false to true and back at different values,
             -- to avoid rapid change-spam when input near 0.5
-            action.valueBoolean = prevBoolean 
+            action.valueBoolean = prevBoolean
                 and value > 0.4
                 or value > 0.6
         else
@@ -913,7 +913,7 @@ local function init()
             end
         end
     end
-    
+
     updateActiveBindings()
 end
 
@@ -922,8 +922,8 @@ local lt = nil
 local function onFrame()
     updateCurrentActionSet()
     updateActiveProfiles()
-    if not initialized then 
-        init() 
+    if not initialized then
+        init()
         initialized = true
     end
 

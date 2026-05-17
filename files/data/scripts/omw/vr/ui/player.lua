@@ -20,6 +20,10 @@ local function getBindingDescription(binding)
     for id, path in pairs(bindings or {}) do
         return I.vrinputs.getInteractionName(path)
     end
+    bindings = I.vrinputs.getActiveActionBindings(binding)
+   for id, path in pairs(bindings or {}) do
+       return I.vrinputs.getInteractionName(path)
+   end
     return '('..l10nContext('NotBound')..')'
 end
 
@@ -41,23 +45,35 @@ local function MCTutorialMessages()
         pointerKey = 'PointerLeft'
         handTutorialKey = 'Tutorial_LeftHandedMode'
     end
+
     local hand = l10nContext(handKey)
     local pointer = l10nContext(pointerKey)
+
+    local variables = {
+        dominantHand = hand,
+        activateBinding = getBindingDescription('PointerActivate'),
+        pointerBinding = getBindingDescription(pointerKey),
+        recenterBinding = getRecenterBindingDescription(),
+    }
+
+    print('What: '..tostring(pointerKey))
     
-    I.vrui.showMessageInTheVoid(string.format(l10nContext('Tutorial_MC'), hand, pointer))
-    I.vrui.showMessageInTheVoid(string.format(l10nContext('Tutorial_RecenterUiStuckInObject'), getRecenterBindingDescription()))
-    I.vrui.showMessageInTheVoid(l10nContext('Tutorial_Bindings'))
-    I.vrui.showMessageInTheVoid(string.format(l10nContext('Tutorial_PointClickMC'), pointer, getBindingDescription('PointerActivate')))
-    I.vrui.showMessageInTheVoid(l10nContext(handTutorialKey))
+    I.vrui.showMessageInTheVoid(l10nContext('Tutorial_MC', variables))
+    I.vrui.showMessageInTheVoid(l10nContext('Tutorial_RecenterUiStuckInObject', variables))
+    I.vrui.showMessageInTheVoid(l10nContext('Tutorial_Bindings', variables))
+    I.vrui.showMessageInTheVoid(l10nContext('Tutorial_PointClickMC', variables))
+    I.vrui.showMessageInTheVoid(l10nContext(handTutorialKey, variables))
     
     saveData.hasSeenMCTutorial = true
 end
 
 local function KBMTutorialMessages()
-    
-    I.vrui.showMessageInTheVoid(l10nContext('Tutorial_KBM'))
-    I.vrui.showMessageInTheVoid(string.format(l10nContext('Tutorial_RecenterUiStuckInObject'), getRecenterBindingDescription()))
-    I.vrui.showMessageInTheVoid(l10nContext('Tutorial_PointClickKBM'))
+    local variables = {
+        recenterBinding = getRecenterBindingDescription(),
+    }
+    I.vrui.showMessageInTheVoid(l10nContext('Tutorial_KBM', variables))
+    I.vrui.showMessageInTheVoid(l10nContext('Tutorial_RecenterUiStuckInObject', variables))
+    I.vrui.showMessageInTheVoid(l10nContext('Tutorial_PointClickKBM', variables))
     
     saveData.hasSeenKBMTutorial = true
 end
