@@ -9,7 +9,7 @@ local I = require('openmw.interfaces')
 local core = require('openmw.core')
 local ui = require('openmw.ui')
 local auxUtil = require('openmw_aux.util')
-local button = require('scripts.omw.vr.ui.button')
+local buttonConstructor = require('scripts.omw.vr.ui.button')
 
 local recording = nil
 local recorderSpace = 'SettingsOffsetRecorderSpace'
@@ -91,18 +91,18 @@ local recordingDialogueText = {
     }
 }
 
-local recordingAcceptButton = button.new('OK', recordingAccept)
-local recordingCancelButton = button.new('Cancel', recordingCancel)
+local recordingAcceptButton = buttonConstructor('OK', recordingAccept)
+local recordingCancelButton = buttonConstructor('Cancel', recordingCancel)
 
-recordingAcceptButton.layout.props.position = V2(8, 2)
-recordingCancelButton.layout.props.position = V2(300, 2)
+recordingAcceptButton.element.layout.props.position = V2(8, 2)
+recordingCancelButton.element.layout.props.position = V2(300, 2)
 
 local recordingDialogueButtons = {
     type = ui.TYPE.Widget,
     props = {
         size = V2(360, 30),
     },
-    content = ui.content{recordingAcceptButton, recordingCancelButton}
+    content = ui.content{recordingAcceptButton.element, recordingCancelButton.element}
 }
 
 local recordingDialogueFlex = {
@@ -127,6 +127,8 @@ local recordingDialogue = ui.create{
     layer = recordingDialogueLayer,
     props = { visible = false }
 }
+
+local buttons = {}
 
 I.Settings.registerRenderer('spaceOffset', function(value, set, arg)
     if not arg or not arg.space then
@@ -163,8 +165,15 @@ I.Settings.registerRenderer('spaceOffset', function(value, set, arg)
             end,
         }
     end
-    local element = button.new(label, cb)
-    return disable(arg.disabled, element)
+
+    if buttons[space] then
+        -- Settings API has already destroyed this button's element, but the widget still needs to run its own cleanup
+        buttons[space]:cleanup()
+        buttons[space] = nil
+    end
+
+    buttons[space] = buttonConstructor(label, cb)
+    return disable(arg.disabled, buttons[space].element)
 end)
 
 local function registerTriggerHandlers()

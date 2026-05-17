@@ -50,7 +50,7 @@ local buttonEvents = {
     end),
 }
 
-local function initButton(text, cb)
+local function newButton(text, cb)
     local widget = {
         text = text,
         callback = cb,
@@ -78,6 +78,15 @@ local function initButton(text, cb)
         end
     end
 
+    function widget:cleanup()
+        self.buttonContent[1].userData = nil
+    end
+
+    function widget:destroy()
+        self:cleanup()
+        self.element:destroy()
+    end
+
     widget.textContent = ui.content{{
         name = 'text',
         type = ui.TYPE.Text,
@@ -100,14 +109,6 @@ local function initButton(text, cb)
         content = widget.buttonContent,
     }
     widget:update()
-    return widget.element
+    return widget
 end
-local function destroyButton(element)
-    -- Break circular reference to let GC do its work
-    element.layout.content[1].userData = nil
-    auxUi.deepDestroy(element)
-end
-return {
-    new = initButton,
-    destroy = destroyButton,
-}
+return newButton
