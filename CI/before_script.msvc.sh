@@ -569,6 +569,13 @@ VCPKG_PDB_PATH="vcpkg-x64-windows-${DEPS_MSVC_YEAR:?}-pdb-${VCPKG_TAG:?}"
 VCPKG_MANIFEST="${VCPKG_PATH:?}-manifest.txt"
 VCPKG_PDB_MANIFEST="${VCPKG_PDB_PATH:?}-manifest.txt"
 
+if [[ -n "$OSG_MULTIVIEW_BUILD" ]]; then
+    # TODO: Upstream changed how manifest files are formatted, but i'm not going to retroactively change my builds.
+    # This will need to be updated whenever i rebuild dependencies
+    VCPKG_MANIFEST="vcpkg-x64-${DEPS_MSVC_YEAR:?}-${VCPKG_TAG:?}.txt"
+    VCPKG_PDB_MANIFEST="vcpkg-x64-${DEPS_MSVC_YEAR:?}-pdb-${VCPKG_TAG:?}.txt"
+fi
+
 echo
 echo "==================================="
 echo "Starting prebuild on MSVC${MSVC_DISPLAY_YEAR} WIN${BITS}"
