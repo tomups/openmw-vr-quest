@@ -18,7 +18,7 @@ namespace Settings
     {
         using WithIndex::WithIndex;
 
-        SettingValue<float> mPlayerHeight { mIndex, "VR", "player height", makeMaxStrictSanitizerFloat(0.1) };
+        SettingValue<float> mPlayerHeight{ mIndex, "VR", "player height", makeMaxStrictSanitizerFloat(0.1f) };
         SettingValue<bool> mMirrorTexture{ mIndex, "VR", "mirror texture" };
         SettingValue<std::string> mMirrorTextureEye{ mIndex, "VR", "mirror texture eye",
             makeEnumSanitizerString({ "left", "right", "both" }) };
@@ -27,10 +27,10 @@ namespace Settings
         SettingValue<std::string> mLeftEyeResolutionY{ mIndex, "VR", "left eye resolution y" };
         SettingValue<std::string> mRightEyeResolutionX{ mIndex, "VR", "right eye resolution x" };
         SettingValue<std::string> mRightEyeResolutionY{ mIndex, "VR", "right eye resolution y" };
-        SettingValue<float> mRealisticCombatMinimumSwingVelocity{ mIndex, "VR", "realistic combat minimum swing velocity",
-            makeMaxStrictSanitizerFloat(0.1) };
-        SettingValue<float> mRealisticCombatMaximumSwingVelocity{ mIndex, "VR", "realistic combat maximum swing velocity",
-            makeMaxStrictSanitizerFloat(0.1) };
+        SettingValue<float> mRealisticCombatMinimumSwingVelocity{ mIndex, "VR",
+            "realistic combat minimum swing velocity", makeMaxStrictSanitizerFloat(0.1f) };
+        SettingValue<float> mRealisticCombatMaximumSwingVelocity{ mIndex, "VR",
+            "realistic combat maximum swing velocity", makeMaxStrictSanitizerFloat(0.1f) };
         SettingValue<bool> mHapticsEnabled{ mIndex, "VR", "haptics enabled" };
         SettingValue<bool> mHandDirectedMovement{ mIndex, "VR", "hand directed movement" };
         SettingValue<float> mHandsOffsetX{ mIndex, "VR", "hands offset x" };
@@ -76,7 +76,7 @@ namespace Settings
         SettingValue<bool> mXR_EXT_debug_utilsMessageTypeConformance{ mIndex, "VR Debug",
             "XR_EXT_debug_utils message type conformance" };
         SettingValue<float> mCharacterBaseHeight{ mIndex, "VR Debug", "character base height",
-            makeMaxStrictSanitizerFloat(0.1) };
+            makeMaxStrictSanitizerFloat(0.1f) };
         SettingValue<bool> mSubmitStencilFormats{ mIndex, "VR Debug", "submit stencil formats" };
         SettingValue<bool> mDisableTextureFormat{ mIndex, "VR Debug", "disable texture format" };
         SettingValue<bool> mSkywindBlasterWorkaround{ mIndex, "VR Debug", "skywind blaster workaround" };
