@@ -44,7 +44,9 @@ local I = require('openmw.interfaces')
 local storage = require('openmw.storage')
 local ui = require('openmw.ui')
 local util = require('openmw.util')
+local auxUtil = require('openmw_aux.util')
 local vr = require('openmw.vr')
+local isPlayer, self = pcall(require, 'openmw.self')
 
 local windowToLayer = {
     Alchemy = 'Windows',
@@ -265,7 +267,17 @@ local uiSection = storage.playerSection(uiGroupKey)
 local spacesGroupKey = 'SpacesGroup'
 local spacesSection = storage.playerSection(spacesGroupKey)
 local spaceOffsetGroupKey = 'SpaceOffsetGroup'
-local spaceOffsetSection = storage.playerSection(spaceOffsetGroupKey)
+
+local configHUD3D = createDefaultConfig(0, true)
+configHUD3D.extent = util.vector2(0.033, 0.033)
+configHUD3D.center = util.vector2(0, 0.5)
+configHUD3D.space = 'LeftWristTop'
+layerConfig.HUD_3D = configHUD3D
+
+local configTooltip = createDefaultConfig(0, true)
+configTooltip.extent = util.vector2(0.033, 0.033)
+configTooltip.space = 'RightWristTop'
+layerConfig.Tooltip = configTooltip
 
 local function registerSettingsPage()
     I.Settings.registerPage({
@@ -370,6 +382,13 @@ local function registerSettingsGroup()
         permanentStorage = true,
         settings = spaceOffsetSettings,
     })
+
+    I.SpaceOffsetSettingsRenderer.addRecordingHandler(function(space, _)
+        -- The HUD is already our recording preview
+        if space == configHUD3D.space then
+            return false
+        end
+    end)
 end
 
 local function setLayerConfigIfNotOverridden(layer, config)
@@ -383,17 +402,6 @@ local function setLayerPoseIfNotOverridden(layer, pose)
         vr._setLayerPose(layer, pose)
     end
 end
-
-local configHUD3D = createDefaultConfig(0, true)
-configHUD3D.extent = util.vector2(0.033, 0.033)
-configHUD3D.center = util.vector2(0, 0.5)
-configHUD3D.space = 'LeftWristTop'
-layerConfig.HUD_3D = configHUD3D
-
-local configTooltip = createDefaultConfig(0, true)
-configTooltip.extent = util.vector2(0.033, 0.033)
-configTooltip.space = 'RightWristTop'
-layerConfig.Tooltip = configTooltip
 
 local function updateSpacesSettings()
     configHUD3D.space = spacesSection:get('HUDSpace')
@@ -414,14 +422,14 @@ local function updateSpacesSettings()
     setLayerConfigIfNotOverridden('HUD_3D', configHUD3D)
     setLayerConfigIfNotOverridden('Tooltip', configTooltip)
 
-    for _, v in ipairs(HUDSpaces) do
-        updateSpaceOffsetSetting(v, v ~= configHUD3D.space)
+    for _, space in ipairs(HUDSpaces) do
+        local disabled = (space ~= configHUD3D.space) and (space ~= configTooltip.space)
+        I.Settings.updateRendererArgument(spaceOffsetGroupKey, spaceOffsetSettingKey(space), {space = space, disabled = disabled})
     end
 end
 spacesSection:subscribe(async:callback(updateSpacesSettings))
 
-
-local function setupDefaults(modes)
+local function setupDefaults()
     updateSpacesSettings()
 
     local allLayers = getAllLayers()
@@ -555,22 +563,31 @@ local function overrideLayerConfig(layer, v)
     layerConfigOverridden[layer] = v
 end
 
-local interface =
-{
+local interface = {
     version = 0,
-
     overrideLayerConfig = overrideLayerConfig,
-    
     showMessageInTheVoid = function(message) vr._showMessageInTheVoid(message) end,
-    
     setLayerConfig = function(layer, config) vr._setLayerConfig(layer, config) end,
-    
     setLayerPose = function(layer, pose) vr._setLayerPose(layer, pose) end,
-    
-    getWindowLayer = getWindowLayer,
 
+    --getWindowLayer = getWindowLayer,
     setLayerPickable = vr._setLayerPickable
 }
+if isPlayer then
+    -- Player script cannot interface with this code directly, but must call it via events
+    local copy = auxUtil.shallowCopy(interface)
+    for k, v in pairs(copy) do
+        if type(v) == 'function' then
+            interface[k] = function(...)
+                core.sendMenuEvent(self, 'InterfaceCall', {
+                arg = arg,
+                interface = 'vrui',
+                func = k,
+            })
+            end
+        end
+    end
+end
 
 return {
     createDefaultConfig = createDefaultConfig,

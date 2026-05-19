@@ -5,8 +5,9 @@ end
 
 local util = require('openmw.util')
 local core = require('openmw.core')
+local self = require('openmw.self')
+local storage = require('openmw.storage')
 local I = require('openmw.interfaces')
-local common = require('scripts.omw.vr.ui.common')
 
 local saveData = {
 
@@ -14,6 +15,7 @@ local saveData = {
 
 local l10nKey = 'OMWVRTutorial'
 local l10nContext = core.l10n(l10nKey)
+local uiSection = storage.playerSection('UiGroup')
 
 local function getBindingDescription(binding)
     local bindings = I.vrinputs.getActiveTriggerBindings(binding)
@@ -81,7 +83,7 @@ end
 local initialized = false
 
 local function tutorials()
-    if common.uiSection:get('ShowTutorials') then
+    if uiSection:get('ShowTutorials') then
         if not I.vrinputs.isKBMouseMode() and not saveData.hasSeenMCTutorial then
             MCTutorialMessages()
         end
@@ -99,39 +101,6 @@ local function init()
     initialized = true
 end
 
-local function update()
-    common.setupDefaults()
-    common.updatePoses()
-    common.updateLayers()
-    common.updateLayerArrangement(I.UI.modes)
-end
-
-local wasKBMouseMode = false
-local wasPaused = false
-local updateOnce = true
-local function onVRFrame()
-
-    local KBMouseMode = I.vrinputs.isKBMouseMode()
-    if KBMouseMode ~= wasKBMouseMode then
-        updateOnce = true
-        wasKBMouseMode = KBMouseMode
-    end
-
-    if updateOnce then 
-        update()
-        updateOnce = false
-    end
-    
-    -- We only want to update the reference poses when the user enters GUI mode. Otherwise, the windows will be actively tracking
-    -- them which is weird, uncomfortable, and impractical.
-    local isPaused = core.isWorldPaused()
-    if (isPaused and not wasPaused) or common.updateVisibleLayers() then
-        update()
-    end
-
-    wasPaused = isPaused
-end
-
 local function onFrame()
     if not initialized then
         init()
@@ -146,14 +115,32 @@ local function onSave()
     return saveData
 end
 
+local remoteInterface = {
+    'overrideLayerConfig',
+    'showMessageInTheVoid',
+    'setLayerConfig',
+    'setLayerPose',
+    'setLayerPickable',
+}
+
+local interface = {
+    version = 0,
+}
+for _, func in ipairs(remoteInterface) do
+    interface[func] = function(...)
+        core.sendMenuEvent(self, 'InterfaceCall', {
+            arg = {...},
+            interface = 'vrui',
+            func = func,
+        })
+    end
+end
+
 return {
     interfaceName = 'vrui',
-    interface = common.interface,
-
+    interface = interface,
     engineHandlers = {
         onFrame = onFrame,
-        onVRFrame = onVRFrame,
-        onVRRecenter = update,
         onLoad = onLoad,
         onSave = onSave,
     },

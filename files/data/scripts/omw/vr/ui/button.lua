@@ -27,18 +27,24 @@ local function buttonPress(layout, press)
 end
 
 local function buttonFocus(layout, focus)
-    layout.userData.focused = focus
-    layout.userData:update()
+    if layout.userData then
+        layout.userData.focused = focus
+        layout.userData:update()
+    end
 end
 
 local buttonEvents = {
     mousePress = async:callback(function(_, layout)
-        buttonPress(layout, true)
-        ambient.playSound('menu click')
+        if layout.userData then
+            buttonPress(layout, true)
+            ambient.playSound('menu click')
+        end
     end),
     mouseRelease = async:callback(function(_, layout)
-        buttonPress(layout, false)
-        layout.userData.callback()
+        if layout.userData then
+            buttonPress(layout, false)
+            layout.userData.callback()
+        end
     end),
     focusGain = async:callback(function(_, layout)
         buttonFocus(layout, true)

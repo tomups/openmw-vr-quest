@@ -170,6 +170,7 @@ set(BUILTIN_DATA_FILES
     scripts/omw/vr/spaces.lua
     scripts/omw/vr/ui/button.lua
     scripts/omw/vr/ui/common.lua
+    scripts/omw/vr/ui/defaultRecorderHandler.lua
     scripts/omw/vr/ui/menu.lua
     scripts/omw/vr/ui/player.lua
     scripts/omw/vr/ui/settingsrenderer.lua

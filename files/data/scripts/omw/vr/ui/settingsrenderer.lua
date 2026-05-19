@@ -19,6 +19,13 @@ local normalColor = util.color.commaString(core.getGMST("FontColor_color_normal"
 local V2 = util.vector2
 local V3 = util.vector3
 
+local recordingHandlers = {
+    require('scripts.omw.vr.ui.defaultRecorderHandler')
+}
+local function addRecordingHandler(handler)
+    recordingHandlers[#recordingHandlers+1] = handler
+end
+
 local function makeLabel(pose)
     if pose and pose.position then
         return string.format('%.2f, %.2f, %.2f', pose.position.x, pose.position.y, pose.position.z)
@@ -65,6 +72,7 @@ local function endRecording(accept)
         I.vrspaces.offsetDerivedSpace(space, spaceInfo.offset)
     end
     recording = nil
+    auxUtil.callEventHandlers(recordingHandlers, space, false)
 end
 
 local function recordingCancel()
@@ -115,7 +123,7 @@ local recordingDialogueFlex = {
     },
     content = ui.content{
         recordingDialogueText,
-        recordingDialogueButtons,
+    --    recordingDialogueButtons,
     }
 }
 
@@ -231,6 +239,7 @@ local function onVRFrame()
             recording = nil
             error('Cannot change offset of inactive space: '..tostring(space)..', dependent on inactive reference '..tostring(getBaseReferenceSpace(space)))
         end
+        auxUtil.callEventHandlers(recordingHandlers, space, true)
 
         -- To give a live preview of the offset, we need to pause the space being changed.
         -- We do this by redefining it as a space defined in reference to Local and instead tracking a clone of the original
@@ -268,4 +277,11 @@ return {
     engineHandlers = {
         onVRFrame = onVRFrame,
     },
+    interfaceName = 'SpaceOffsetSettingsRenderer',
+    -- Used to provide handlers for when the space offset settings renderer
+    -- is running for a space. Useful to enable displaying some visual clue to the user.
+    interface = {
+        version = 0,
+        addRecordingHandler = addRecordingHandler,
+    }
 }

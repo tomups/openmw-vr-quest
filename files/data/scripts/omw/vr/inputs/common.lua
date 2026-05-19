@@ -751,7 +751,6 @@ local function generateVRInputBinding(info)
     local key = info.key
     local description = info.description
     local name = info.name
-    print('Adding VRInputBinding for key='..key..' with name='..tostring(name)..' and description='..tostring(description))
     if info.l10n then
         -- each mod will have its own l10n context, but we cannot set
         -- l10n context per setting. So we resolve description/name
@@ -763,9 +762,7 @@ local function generateVRInputBinding(info)
         if name then
             name = l10n(name)
         end
-        print('l10n for key='..key..': name='..tostring(name)..' and description='..tostring(description))
     end
-    print('OKAY WTF IS MY TYPE THEN: '..tostring(info.type))
     return {
         key = key..'_SettingKey',
         renderer = 'inputBindingVR',
