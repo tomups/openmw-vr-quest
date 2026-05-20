@@ -26,7 +26,9 @@ SpaceOffsetGroupDescription: |
     Adjust the exact position of the HUD/Tooltip using these settings. A position is only possible to adjust if there is currently something
     assigned to it.
 SpaceOffsetRecordingDialogue1: "New offset is: {offset}"
-SpaceOffsetRecordingDialogue2KBM: "Press Enter to accept, or Esc to cancel"
+SpaceOffsetRecordingDialogue2Keyboard: "Press Enter to accept, or Esc to cancel"
+SpaceOffsetRecordingDialogue2Mouse: "Press Left Mouse Button to accept, or Right Mouse Button to cancel"
+SpaceOffsetRecordingDialogue2Controller: "Press A or Start to accept, or B or Back to cancel"
 SpaceOffsetRecordingDialogue2MC: "Press {AcceptBinding} to accept, or {CancelBinding} to cancel. Or use your keyboard and press Enter to accept, or Esc to cancel"
 
 NotBound: "Not Bound"

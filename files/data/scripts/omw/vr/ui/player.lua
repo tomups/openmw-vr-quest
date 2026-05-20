@@ -3,11 +3,12 @@ if not vr.isVr() then
     return {}
 end
 
-local util = require('openmw.util')
 local core = require('openmw.core')
 local self = require('openmw.self')
 local storage = require('openmw.storage')
 local I = require('openmw.interfaces')
+local types = require('openmw.types')
+local common = require('scripts.omw.vr.ui.common')
 
 local saveData = {
 
@@ -15,15 +16,15 @@ local saveData = {
 
 local l10nKey = 'OMWVRTutorial'
 local l10nContext = core.l10n(l10nKey)
-local uiSection = storage.playerSection('UiGroup')
+local uiSection = common.uiSection
 
 local function getBindingDescription(binding)
     local bindings = I.vrinputs.getActiveTriggerBindings(binding)
-    for id, path in pairs(bindings or {}) do
+    for _, path in pairs(bindings or {}) do
         return I.vrinputs.getInteractionName(path)
     end
     bindings = I.vrinputs.getActiveActionBindings(binding)
-   for id, path in pairs(bindings or {}) do
+   for _, path in pairs(bindings or {}) do
        return I.vrinputs.getInteractionName(path)
    end
     return '('..l10nContext('NotBound')..')'
@@ -33,7 +34,7 @@ local function getRecenterBindingDescription()
     if I.vrinputs.isKBMouseMode() then
         return l10nContext('MenuBindingDefaultEsc')
     end
-    
+
     return getBindingDescription('Recenter')
 end
 
@@ -41,7 +42,7 @@ local function MCTutorialMessages()
     local handKey = 'RightHand'
     local pointerKey = 'PointerRight'
     local handTutorialKey = 'Tutorial_RightHandedMode'
-    
+
     if vr.isLeftHandedMode() then
         handKey = 'LeftHand'
         pointerKey = 'PointerLeft'
@@ -49,7 +50,6 @@ local function MCTutorialMessages()
     end
 
     local hand = l10nContext(handKey)
-    local pointer = l10nContext(pointerKey)
 
     local variables = {
         dominantHand = hand,
@@ -58,14 +58,12 @@ local function MCTutorialMessages()
         recenterBinding = getRecenterBindingDescription(),
     }
 
-    print('What: '..tostring(pointerKey))
-    
     I.vrui.showMessageInTheVoid(l10nContext('Tutorial_MC', variables))
     I.vrui.showMessageInTheVoid(l10nContext('Tutorial_RecenterUiStuckInObject', variables))
     I.vrui.showMessageInTheVoid(l10nContext('Tutorial_Bindings', variables))
     I.vrui.showMessageInTheVoid(l10nContext('Tutorial_PointClickMC', variables))
     I.vrui.showMessageInTheVoid(l10nContext(handTutorialKey, variables))
-    
+
     saveData.hasSeenMCTutorial = true
 end
 
@@ -76,7 +74,6 @@ local function KBMTutorialMessages()
     I.vrui.showMessageInTheVoid(l10nContext('Tutorial_KBM', variables))
     I.vrui.showMessageInTheVoid(l10nContext('Tutorial_RecenterUiStuckInObject', variables))
     I.vrui.showMessageInTheVoid(l10nContext('Tutorial_PointClickKBM', variables))
-    
     saveData.hasSeenKBMTutorial = true
 end
 
@@ -94,8 +91,8 @@ local function tutorials()
 end
 
 local function init()
-    I.vrspaces.recenterXY() 
-    I.vrspaces.recenterZ() 
+    I.vrspaces.recenterXY()
+    I.vrspaces.recenterZ()
     tutorials()
 
     initialized = true
@@ -107,7 +104,7 @@ local function onFrame()
     end
 end
 
-local function onLoad(data, initData)
+local function onLoad(data, _)
     saveData = data or {}
 end
 
@@ -125,10 +122,11 @@ local remoteInterface = {
 
 local interface = {
     version = 0,
+    getWindowLayer = common.getWindowLayer
 }
 for _, func in ipairs(remoteInterface) do
     interface[func] = function(...)
-        core.sendMenuEvent(self, 'InterfaceCall', {
+        types.Player.sendMenuEvent(self, 'InterfaceCall', {
             arg = {...},
             interface = 'vrui',
             func = func,
@@ -144,10 +142,12 @@ return {
         onLoad = onLoad,
         onSave = onSave,
     },
-    
+
     eventHandlers = {
         UiModeChanged = function(data)
-            updateOnce = true
+            -- UI interface and its events is not visible to MENU scripts, so send an event
+            -- to let our menu script know it's time to update
+            types.Player.sendMenuEvent(self, 'vruiUpdateOnce', {})
         end,
     },
 }

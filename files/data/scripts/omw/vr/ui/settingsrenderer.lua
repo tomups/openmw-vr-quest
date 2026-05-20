@@ -199,10 +199,17 @@ registerTriggerHandlers()
 -- OpenMW bug: https://gitlab.com/OpenMW/openmw/-/work_items/9115
 I.vrinputs.addMenuTriggersHeartBeatListener(registerTriggerHandlers)
 
+local lastInputTypeUsed = 'Keyboard'
+local inputTypeToDialogueText = {
+    Keyboard = l10n('SpaceOffsetRecordingDialogue2Keyboard'),
+    -- Not Used: Mouse = l10n('SpaceOffsetRecordingDialogue2Mouse'),
+    Controller = l10n('SpaceOffsetRecordingDialogue2Controller'),
+}
 local function spaceOffsetRecordingDialogueText(offset)
     local text = l10n('SpaceOffsetRecordingDialogue1', {offset = makeLabel(offset)})
     if I.vrinputs.isKBMouseMode() then
-        text = text..'\n'..l10n('SpaceOffsetRecordingDialogue2KBM')
+        print('Using: '..lastInputTypeUsed..'!!')
+        text = text..'\n'..inputTypeToDialogueText[lastInputTypeUsed]
     else
         text = text..'\n'..l10n('SpaceOffsetRecordingDialogue2MC', {AcceptBinding = getBindingDescription('PointerActivate'), CancelBinding = getBindingDescription('MenuBack')})
     end
@@ -276,6 +283,24 @@ end
 return {
     engineHandlers = {
         onVRFrame = onVRFrame,
+        onKeyPress = function(key)
+            lastInputTypeUsed = 'Keyboard'
+            if not recording then return end
+            if key.code == input.KEY.Escape then
+                recordingCancel()
+            elseif key.code == input.KEY.Enter then
+                recordingAccept()
+            end
+        end,
+        onControllerButtonPress = function(id)
+            lastInputTypeUsed = 'Controller'
+            if not recording then return end
+            if id == input.CONTROLLER_BUTTON.B or id == input.CONTROLLER_BUTTON.Back then
+                recordingCancel()
+            elseif id == input.CONTROLLER_BUTTON.A or id == input.CONTROLLER_BUTTON.Start then
+                recordingAccept()
+            end
+        end
     },
     interfaceName = 'SpaceOffsetSettingsRenderer',
     -- Used to provide handlers for when the space offset settings renderer
