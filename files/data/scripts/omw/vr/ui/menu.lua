@@ -3,13 +3,18 @@ if not vr.isVr() then
     return {}
 end
 local async = require('openmw.async')
-local menu = require('openmw.menu')
 local util = require('openmw.util')
 local core = require('openmw.core')
-local storage = require('openmw.storage')
 local ui = require('openmw.ui')
 local I = require('openmw.interfaces')
 local common = require('scripts.omw.vr.ui.common')
+
+
+
+
+
+
+
 
 --- List of layer that need to be arranged when multiple windows are opened
 --- In order of priority (left-to-right)
@@ -19,15 +24,11 @@ local layersForArrangement = {
 
 local function getAllLayers()
     local layers = {}
-    for k, v in pairs(ui.layers) do
+    for _, v in pairs(ui.layers) do
         layers[#layers + 1] = v.name
     end
 
     return layers
-end
-
-local function getLayerSize(layer)
-    return ui.layers[ui.layers.indexOf(layer)].size
 end
 
 local function createDerivedSpaces()
@@ -175,7 +176,28 @@ local function createDefaultConfig(backgroundOpacity, autosize)
     }
 end
 
-local layerConfigOverridden = {}
+local testLayer = 'TestLayer'
+ui.layers.insertAfter('MainMenu', testLayer, {interactive = false})
+local testLayerConfig = createDefaultConfig(0.3, true)
+testLayerConfig.space = 'DefaultWindow'
+local testLayout = {
+    template = I.MWUI.templates.boxThick,
+    props = {
+        visible = true,
+    },
+    layer = testLayer,
+    content = ui.content{{
+        type = ui.TYPE.Widget,
+        props = {
+            size = util.vector2(1000, 1000)
+        }
+    }}
+}
+local testElement = ui.create(testLayout)
+vr._setLayerConfig(testLayer, testLayerConfig)
+
+
+local layerConfigOverridden = {[testLayer] = true}
 
 local spaceForMode = {
     Default = 'DefaultWindow',
@@ -280,7 +302,9 @@ local function registerSettingsGroup()
             boolSetting('ShowTutorials', true),
         },
     })
-    local spaceOffsetSettings = {}
+    local spaceOffsetSettings = {
+        spaceOffsetSetting('DefaultWindow')
+    }
     for _, v in ipairs(HUDSpaces) do
         spaceOffsetSettings[#spaceOffsetSettings+1] = spaceOffsetSetting(v, false)
     end
@@ -293,9 +317,19 @@ local function registerSettingsGroup()
         settings = spaceOffsetSettings,
     })
 
-    I.SpaceOffsetSettingsRenderer.addRecordingHandler(function(space, _)
-        -- The HUD is already our recording preview
+-- Tooltip won't be visible when we hit record, so create our own tooltip as a preview instead
+local tooltipPreview = require('scripts.omw.vr.ui.tooltipRecorderHandler')
+    I.SpaceOffsetSettingsRenderer.addRecordingHandler(function(space, isStart)
         if space == configHUD3D.space then
+            -- The HUD is already our recording preview
+            return false
+        end
+        if space == configTooltip.space then
+            tooltipPreview(isStart)
+            return false
+        end
+        if space == 'DefaultWindow' then
+            -- The position of the settings menu is already based on this space
             return false
         end
     end)
@@ -384,6 +418,12 @@ local referenceWorldPose = {
 local windowArrangementRelativePose = {}
 local function updateWindowRelativePoses()
     windowArrangementRelativePose = I.vrspaces.locateSpace(getWindowSpaceForCurrentMode(), I.vrspaces.referenceSpaces.View) or windowArrangementRelativePose
+    if windowArrangementRelativePose.position then
+        -- Rewrite the orientation to be facing the player directly
+        local position = windowArrangementRelativePose.position
+        local a2 = math.atan2(position.x, position.y)
+        windowArrangementRelativePose.orientation = util.transform.rotateZ(a2)
+    end
 end
 
 local virtualKeyboardRelativePose = {
@@ -402,12 +442,12 @@ local function updateLayerArrangement()
     local span = step * (#visibleLayersForArrangement - 1)
     local angle = -span / 2 + referenceWorldPose.orientation:getYaw()
     for _, layer in ipairs(visibleLayersForArrangement) do
-        local transform = util.transform.rotateZ(angle) * util.transform.rotateZ(windowArrangementRelativePose.orientation:getYaw())
+        local transform = util.transform.rotateZ(angle) --* util.transform.rotateZ(windowArrangementRelativePose.orientation:getYaw())
         local rotatedPosition = transform:apply(windowArrangementRelativePose.position)
 
         setLayerPoseIfNotOverridden(layer, {
             position = referenceWorldPose.position + rotatedPosition,
-            orientation = transform
+            orientation = util.transform.rotateZ(angle) * util.transform.rotateZ(windowArrangementRelativePose.orientation:getYaw())
         })
 
         angle = angle + step
@@ -436,11 +476,10 @@ local function updateVisibleLayers()
 end
 
 local function computeLayerPose()
-    local transform = util.transform.rotateZ(referenceWorldPose.orientation:getYaw() + windowArrangementRelativePose.orientation:getYaw())
-    return {
-        position = referenceWorldPose.position + transform:apply(windowArrangementRelativePose.position),
-        orientation = transform
-    }
+    local pose = I.vrspaces.poseUtils.add(referenceWorldPose, windowArrangementRelativePose)
+    -- Force layer to be vertical
+    pose.orientation = util.transform.rotateZ(pose.orientation:getYaw())
+    return pose
 end
 
 local function computeVirtualKeyboardPose()

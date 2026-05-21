@@ -19,9 +19,7 @@ local normalColor = util.color.commaString(core.getGMST("FontColor_color_normal"
 local V2 = util.vector2
 local V3 = util.vector3
 
-local recordingHandlers = {
-    require('scripts.omw.vr.ui.defaultRecorderHandler')
-}
+local recordingHandlers = {}
 local function addRecordingHandler(handler)
     recordingHandlers[#recordingHandlers+1] = handler
 end
@@ -164,6 +162,7 @@ I.Settings.registerRenderer('spaceOffset', function(value, set, arg)
             print('Warning: spaceOffset: Attempted to create a new recording while another recording was active')
             return
         end
+        I.vrspaces.recenterXY()
         recording = {
             space = space,
             accept = function(offset)
