@@ -455,10 +455,11 @@ local function updateVisibleLayers()
 end
 
 local function computeLayerPose()
-    local pose = I.vrspaces.poseUtils.add(referenceWorldPose, windowArrangementRelativePose)
-    -- Force layer to be vertical
-    pose.orientation = util.transform.rotateZ(pose.orientation:getYaw())
-    return pose
+    local transform = util.transform.rotateZ(referenceWorldPose.orientation:getYaw())
+    return {
+        position = referenceWorldPose.position + transform:apply(windowArrangementRelativePose.position),
+        orientation = transform * windowArrangementRelativePose.orientation
+}
 end
 
 local function computeVirtualKeyboardPose()
