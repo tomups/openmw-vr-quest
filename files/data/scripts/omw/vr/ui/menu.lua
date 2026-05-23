@@ -176,28 +176,7 @@ local function createDefaultConfig(backgroundOpacity, autosize)
     }
 end
 
-local testLayer = 'TestLayer'
-ui.layers.insertAfter('MainMenu', testLayer, {interactive = false})
-local testLayerConfig = createDefaultConfig(0.3, true)
-testLayerConfig.space = 'DefaultWindow'
-local testLayout = {
-    template = I.MWUI.templates.boxThick,
-    props = {
-        visible = true,
-    },
-    layer = testLayer,
-    content = ui.content{{
-        type = ui.TYPE.Widget,
-        props = {
-            size = util.vector2(1000, 1000)
-        }
-    }}
-}
-local testElement = ui.create(testLayout)
-vr._setLayerConfig(testLayer, testLayerConfig)
-
-
-local layerConfigOverridden = {[testLayer] = true}
+local layerConfigOverridden = {}
 
 local spaceForMode = {
     Default = 'DefaultWindow',
