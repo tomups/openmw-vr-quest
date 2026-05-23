@@ -19,7 +19,6 @@ namespace XR
 {
     class Space;
     class ReferenceSpace;
-    extern void getEulerAngles(const osg::Quat& quat, float& yaw, float& pitch, float& roll);
 
     /// \brief Manages VR logic, such as managing frames, predicting their poses, and handling frame synchronization
     /// with the VR runtime. Should not be confused with the openxr session object.

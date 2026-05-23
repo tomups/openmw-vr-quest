@@ -82,9 +82,11 @@ namespace MWRender
                     = dynamic_cast<PostProcessor*>(renderInfo.getCurrentCamera()->getUserData());
                 size_t frameId = renderInfo.getState()->getFrameStamp()->getFrameNumber() % 2;
 
-                if (postProcessor && postProcessor->getFbo(PostProcessor::FBO_Primary, frameId))
+                if (postProcessor
+                    && postProcessor->getFbo(PostProcessor::FBO_Primary, static_cast<unsigned int>(frameId)))
                 {
-                    osg::FrameBufferObject* fbo = postProcessor->getFbo(PostProcessor::FBO_Primary, frameId);
+                    osg::FrameBufferObject* fbo
+                        = postProcessor->getFbo(PostProcessor::FBO_Primary, static_cast<unsigned int>(frameId));
                     auto tex = fbo->getAttachment(osg::FrameBufferObject::BufferComponent::COLOR_BUFFER0).getTexture();
                     auto tex2dArray = dynamic_cast<const osg::Texture2DArray*>(tex);
                     if (tex2dArray)

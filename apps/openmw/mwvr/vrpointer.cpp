@@ -60,9 +60,9 @@ namespace MWVR
 
             MWWorld::Ptr dropped;
             if (mVRPointer->canPlaceObject())
-                dropped = world->placeObject(item.mBase, mVRPointer->getPointerRay(), count);
+                dropped = world->placeObject(item.mBase, mVRPointer->getPointerRay(), static_cast<int>(count));
             else
-                dropped = world->dropObjectOnGround(world->getPlayerPtr(), item.mBase, count);
+                dropped = world->dropObjectOnGround(world->getPlayerPtr(), item.mBase, static_cast<int>(count));
             dropped.getCellRef().setOwner(ESM::RefId());
 
             return dropped;

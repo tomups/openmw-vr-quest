@@ -485,8 +485,8 @@ namespace MyGUIPlatform
 //## VR_PATCH BEGIN
 // VR-TODO: Redundant?
         osg::ref_ptr<osg::Viewport> vp = mViewer->getCamera()->getViewport();
-        setViewSize(vp->width(), vp->height());
-//## VR_PATCH END
+        setViewSize(static_cast<int>(vp->width()), static_cast<int>(vp->height()));
+        // ## VR_PATCH END
     }
 
     RenderManager::~RenderManager()
@@ -669,7 +669,7 @@ namespace MyGUIPlatform
         if (height < 1)
             height = 1;
 
-        mViewSize.set(width * mInvScalingFactor, height * mInvScalingFactor);
+        mViewSize.set(static_cast<int>(width * mInvScalingFactor), static_cast<int>(height * mInvScalingFactor));
         onResizeView(mViewSize);
     }
 

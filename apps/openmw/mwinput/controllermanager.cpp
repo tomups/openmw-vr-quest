@@ -115,7 +115,7 @@ namespace MWInput
             if (xMove != 0 || yMove != 0 || mouseWheelMove != 0)
             {
                 Log(Debug::Verbose) << "Injecting mouseWheelMove: [" << -zAxis << ", " << mouseWheelMove << "]";
-                mMouseManager->injectMouseMove(xMove, yMove, mouseWheelMove);
+                mMouseManager->injectMouseMove(xMove, yMove, static_cast<int>(mouseWheelMove));
                 mMouseManager->warpMouse();
                 MWBase::Environment::get().getWindowManager()->setCursorActive(true);
             }

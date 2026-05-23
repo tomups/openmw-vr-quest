@@ -348,8 +348,8 @@ namespace VR
 
     osg::ref_ptr<osg::FrameBufferObject> Viewer::getXrFramebuffer(uint32_t view, osg::State* state)
     {
-        uint64_t colorImage = mColorSwapchain[view]->image()->glImage();
-        uint64_t depthImage = 0;
+        uint32_t colorImage = mColorSwapchain[view]->image()->glImage();
+        uint32_t depthImage = 0;
         uint32_t textureTarget = mColorSwapchain[view]->textureTarget();
 
         if (mSession->appShouldShareDepthInfo())
@@ -417,7 +417,7 @@ namespace VR
         int screenHeight = traits->height;
 
         // Compute the dimensions of each eye on the mirror texture.
-        int dstWidth = screenWidth / mMirrorTextureViews.size();
+        int dstWidth = screenWidth / static_cast<int>(mMirrorTextureViews.size());
 
         // Blit each eye
         // Which eye is blitted left/right is determined by which order left/right was added to mMirrorTextureViews

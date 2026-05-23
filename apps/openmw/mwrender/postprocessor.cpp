@@ -332,7 +332,8 @@ namespace MWRender
 
 // ## VR_PATCH BEGIN
         if (VR::getVR())
-            mStateUpdater->setResolution(osg::Vec2f(renderWidth(), renderHeight()));
+            mStateUpdater->setResolution(
+                osg::Vec2f(static_cast<float>(renderWidth()), static_cast<float>(renderHeight())));
         else
 // ## VR_PATCH END
             mStateUpdater->setResolution(osg::Vec2f(

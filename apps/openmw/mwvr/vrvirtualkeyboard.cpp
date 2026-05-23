@@ -210,7 +210,7 @@ namespace MWVR
                 int x = margin;
                 for (std::string& buttonId : row)
                 {
-                    int width = sideSize + 10 * (buttonId.length() - 1);
+                    int width = sideSize + 10 * (static_cast<int>(buttonId.length()) - 1);
                     MyGUI::Button* button = mButtonBox->createWidget<MyGUI::Button>(
                         "MW_Button", MyGUI::IntCoord(x, y, width, sideSize), MyGUI::Align::Default, buttonId);
                     button->eventMouseButtonClick += MyGUI::newDelegate(this, &VrVirtualKeyboard::onButtonClicked);
@@ -238,9 +238,9 @@ namespace MWVR
                 {
                     auto caption = buttonId;
                     if (mShift ^ mCaps)
-                        caption[0] = std::toupper(caption[0]);
+                        caption[0] = static_cast<char>(std::toupper(caption[0]));
                     else
-                        caption[0] = std::tolower(caption[0]);
+                        caption[0] = static_cast<char>(std::tolower(caption[0]));
                     button->setCaption(caption);
                     button->setUserData(caption);
                 }

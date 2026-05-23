@@ -319,7 +319,7 @@ namespace MWInput
         // ## VR_PATCH END
         mGuiCursorX += xMove;
         mGuiCursorY += yMove;
-        mMouseWheel += static_cast<int>(mouseWheelMove);
+        mMouseWheel += mouseWheelMove;
 
         const MyGUI::IntSize& viewSize = MyGUI::RenderManager::getInstance().getViewSize();
         mGuiCursorX = std::clamp<float>(mGuiCursorX, 0.f, viewSize.width - 1.f);

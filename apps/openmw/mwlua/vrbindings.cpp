@@ -108,7 +108,7 @@ namespace MWLua
         MWVR::LayerConfig layerConfigFromTable(const sol::table& options)
         {
             MWVR::LayerConfig layerConfig;
-            layerConfig.opacity = options.get_or("backgroundOpacity", 0);
+            layerConfig.opacity = options.get_or("backgroundOpacity", 0.f);
             layerConfig.center = get_or(options, "center", osg::Vec2());
             layerConfig.extent = get_or(options, "extent", osg::Vec2(1, 1));
             layerConfig.spatialResolution = options.get_or("pixelsPerMeter", 1024);

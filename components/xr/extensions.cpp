@@ -114,7 +114,7 @@ namespace XR
         XrInstance instance = XR_NULL_HANDLE;
         XrInstanceCreateInfo createInfo{};
         createInfo.type = XR_TYPE_INSTANCE_CREATE_INFO;
-        createInfo.enabledExtensionCount = cExtensionNames.size();
+        createInfo.enabledExtensionCount = static_cast<uint32_t>(cExtensionNames.size());
         createInfo.enabledExtensionNames = cExtensionNames.data();
         strcpy(createInfo.applicationInfo.applicationName, "openmw_vr");
         createInfo.applicationInfo.apiVersion = XR_CURRENT_API_VERSION;
@@ -150,7 +150,7 @@ namespace XR
         CHECK_XRCMD(xrEnumerateInstanceExtensionProperties(layerName, 0, &extensionCount, nullptr));
         availableExtensions.resize(extensionCount, extensionProperties);
         CHECK_XRCMD(xrEnumerateInstanceExtensionProperties(
-            layerName, availableExtensions.size(), &extensionCount, availableExtensions.data()));
+            layerName, static_cast<uint32_t>(availableExtensions.size()), &extensionCount, availableExtensions.data()));
 
         std::vector<std::string> extensionNames;
         const std::string indentStr(logIndent, ' ');

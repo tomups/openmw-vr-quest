@@ -19,43 +19,6 @@
 
 namespace XR
 {
-    // OSG doesn't provide API to extract euler angles from a quat, but i need it.
-    // Credits goes to Dennis Bunfield, i just copied his formula https://narkive.com/v0re6547.4
-    void getEulerAngles(const osg::Quat& quat, float& yaw, float& pitch, float& roll)
-    {
-        // Now do the computation
-        osg::Matrixd m2(osg::Matrixd::rotate(quat));
-        double* mat = (double*)m2.ptr();
-        double angle_x = 0.0;
-        double angle_y = 0.0;
-        double angle_z = 0.0;
-        double C, tr_x, tr_y;
-        angle_y = asin(mat[2]); /* Calculate Y-axis angle */
-        C = cos(angle_y);
-        if (fabs(C) > 0.005) /* Test for Gimball lock? */
-        {
-            tr_x = mat[10] / C; /* No, so get X-axis angle */
-            tr_y = -mat[6] / C;
-            angle_x = atan2(tr_y, tr_x);
-            tr_x = mat[0] / C; /* Get Z-axis angle */
-            tr_y = -mat[1] / C;
-            angle_z = atan2(tr_y, tr_x);
-        }
-        else /* Gimball lock has occurred */
-        {
-            angle_x = 0; /* Set X-axis angle to zero
-                          */
-            tr_x = mat[5]; /* And calculate Z-axis angle
-                            */
-            tr_y = mat[4];
-            angle_z = atan2(tr_y, tr_x);
-        }
-
-        yaw = angle_z;
-        pitch = angle_x;
-        roll = angle_y;
-    }
-
     static Session* sSession = nullptr;
 
     Session& Session::instance()
@@ -277,7 +240,7 @@ namespace XR
 
         if (layerStack.size() > 0)
         {
-            frameEndInfo.layerCount = layerStack.size();
+            frameEndInfo.layerCount = static_cast<uint32_t>(layerStack.size());
             frameEndInfo.layers = layerStack.data();
         }
         else

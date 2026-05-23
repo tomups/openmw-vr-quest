@@ -228,7 +228,7 @@ namespace MWVR
         // Attach
         XrSessionActionSetsAttachInfo attachInfo{};
         attachInfo.type = XR_TYPE_SESSION_ACTION_SETS_ATTACH_INFO;
-        attachInfo.countActionSets = actionSets.size();
+        attachInfo.countActionSets = static_cast<uint32_t>(actionSets.size());
         attachInfo.actionSets = actionSets.data();
         CHECK_XRCMD(xrAttachSessionActionSets(XR::Session::instance().xrSession(), &attachInfo));
     }

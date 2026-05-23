@@ -68,7 +68,7 @@ namespace XR
             release();
         }
 
-        mAcquiredIndex = mImages.size();
+        mAcquiredIndex = static_cast<uint32_t>(mImages.size());
     }
 
     VR::SwapchainImage* Swapchain::image()
