@@ -759,7 +759,7 @@ Ubuntu_Clang_tests_Debug:
     - New-Item -Type Directory -Force -Path $env:CCACHE_DIR
     - ccache -z -M "${CCACHE_SIZE}"
     - New-Item -Type File -Force -Path MSVC2022_64_Ninja\.cmake\api\v1\query\codemodel-v2
-    - sh CI/before_script.msvc.sh -c $config -p Win64 -v 2022 -k -V -N -b -t -C $multiview -E
+    - sh CI/before_script.msvc.sh -c $config -p Win64 -v 2022 -k -V -N -b -t -C $multiview
     - cd MSVC2022_64_Ninja
     - Get-Volume
     - .\ActivateMSVC.ps1
