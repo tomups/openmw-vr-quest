@@ -112,7 +112,7 @@ namespace VR
         std::array<std::shared_ptr<VR::Swapchain>, 2> mDepthSwapchain;
         std::array<VR::SubImage, 2> mSubImages;
 
-        std::map<std::pair<uint64_t, uint32_t>, osg::ref_ptr<osg::FrameBufferObject>> mSwapchainFramebuffers;
+        std::map<std::pair<uint32_t, uint32_t>, osg::ref_ptr<osg::FrameBufferObject>> mSwapchainFramebuffers;
 
         std::queue<VR::Frame> mReadyFrames;
         VR::Frame mDrawFrame;

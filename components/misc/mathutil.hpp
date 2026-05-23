@@ -84,16 +84,16 @@ namespace Misc
         double angleX = 0.0;
         double angleY = 0.0;
         double angleZ = 0.0;
-        double C, trX, trY;
+        double c, trX, trY;
         angleY = asin(mat[2]); /* Calculate Y-axis angle */
-        C = cos(angleY);
-        if (fabs(C) > 0.005) /* Test for Gimball lock? */
+        c = cos(angleY);
+        if (fabs(c) > 0.005) /* Test for Gimball lock? */
         {
-            trX = mat[10] / C; /* No, so get X-axis angle */
-            trY = -mat[6] / C;
+            trX = mat[10] / c; /* No, so get X-axis angle */
+            trY = -mat[6] / c;
             angleX = atan2(trY, trX);
-            trX = mat[0] / C; /* Get Z-axis angle */
-            trY = -mat[1] / C;
+            trX = mat[0] / c; /* Get Z-axis angle */
+            trY = -mat[1] / c;
             angleZ = atan2(trY, trX);
         }
         else /* Gimball lock has occurred */

@@ -181,7 +181,7 @@ namespace MWVR
 
     osg::ref_ptr<osg::Geometry> VRGUILayer::createLayerGeometry(osg::ref_ptr<osg::StateSet> stateset)
     {
-        float left = mConfig->center.x() - 0.5;
+        float left = mConfig->center.x() - 0.5f;
         float right = left + 1.f;
         float top = 0.5f + mConfig->center.y();
         float bottom = top - 1.f;
@@ -400,7 +400,7 @@ namespace MWVR
             auto view = OpenXRInput::instance().getSpace(OpenXRInput::DefaultReferenceSpaceView);
             auto diff = view->locateInWorld().pose.position - pose.position;
             diff = diff / 10000.f;
-            pose.position = pose.position + diff * priority;
+            pose.position = pose.position + diff * static_cast<float>(priority);
         }
 
         if (mVrLayer)

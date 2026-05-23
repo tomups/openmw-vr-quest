@@ -77,7 +77,7 @@ namespace MWVR
         void updateRect();
         void insertWidget(MWGui::Layout* widget);
         void removeWidget(MWGui::Layout* widget);
-        int widgetCount() { return mWidgets.size() + mLuaElements.size(); }
+        int widgetCount() { return static_cast<int>(mWidgets.size() + mLuaElements.size()); }
         //bool operator<(const VRGUILayer& rhs) const { return mConfig->priority < rhs.mConfig->priority; }
         void cull(osgUtil::CullVisitor* cv);
         void removeFromSceneGraph();

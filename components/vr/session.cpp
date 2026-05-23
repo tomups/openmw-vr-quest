@@ -112,9 +112,9 @@ namespace VR
 
     void Session::readSettings()
     {
-        mHandsOffset.x() = (Settings::vr().mHandsOffsetX - 0.5) * Constants::UnitsPerMeter;
-        mHandsOffset.y() = (Settings::vr().mHandsOffsetY - 0.5) * Constants::UnitsPerMeter;
-        mHandsOffset.z() = (Settings::vr().mHandsOffsetZ - 0.5) * Constants::UnitsPerMeter;
+        mHandsOffset.x() = (Settings::vr().mHandsOffsetX - 0.5f) * Constants::UnitsPerMeter;
+        mHandsOffset.y() = (Settings::vr().mHandsOffsetY - 0.5f) * Constants::UnitsPerMeter;
+        mHandsOffset.z() = (Settings::vr().mHandsOffsetZ - 0.5f) * Constants::UnitsPerMeter;
     }
 
     void Session::computePlayerScale()

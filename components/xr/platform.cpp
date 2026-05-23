@@ -472,14 +472,19 @@ namespace XR
                        << std::dec;
                     ss << std::endl;
                 }
-                mRuntimeFormatsGL.push_back(glFormat);
+                mRuntimeFormatsGL.push_back(static_cast<GLenum>(glFormat));
                 mRuntimeFormatsDX.push_back(dxFormat);
             }
             Log(Debug::Verbose) << ss.str();
         }
         else
 #endif
-            mRuntimeFormatsGL.insert(mRuntimeFormatsGL.end(), swapchainFormats.begin(), swapchainFormats.end());
+        {
+            // .insert() would have been simpler, but you can't cast with .insert() so we'd be stuck with compiler
+            // warnings
+            for (auto format : swapchainFormats)
+                mRuntimeFormatsGL.push_back(static_cast<GLenum>(format));
+        }
 
         auto blacklistedFormats = getBlacklistedFormatsForSystem(systemName);
 
@@ -596,7 +601,7 @@ namespace XR
 
 #ifdef _WIN32
     std::vector<std::unique_ptr<VR::SwapchainImage>> enumerateSwapchainImagesDirectX(XrSwapchain swapchain,
-        uint64_t textureTarget, uint64_t dxFormat, std::shared_ptr<VR::DirectXWGLInterop> dxInterop)
+        uint32_t textureTarget, uint64_t dxFormat, std::shared_ptr<VR::DirectXWGLInterop> dxInterop)
     {
         XrSwapchainImageD3D11KHR xrimage{};
         xrimage.type = XR_TYPE_SWAPCHAIN_IMAGE_D3D11_KHR;

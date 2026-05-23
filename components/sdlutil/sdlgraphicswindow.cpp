@@ -265,7 +265,7 @@ namespace SDLUtil
             return view.getCamera()->getGraphicsContext();
         }
 
-        for (std::size_t i = 0; i < view.getNumSlaves(); i++)
+        for (unsigned int i = 0; i < view.getNumSlaves(); i++)
         {
             if (view.getSlave(i)._camera->getGraphicsContext())
                 return view.getSlave(i)._camera->getGraphicsContext();

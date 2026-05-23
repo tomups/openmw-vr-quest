@@ -40,7 +40,8 @@ namespace VR
         uint32_t size = 0;
         ::xrPathToString(XR::Instance::instance().xrInstance(), path, 0, &size, nullptr);
         output.resize(size + 1, 0);
-        ::xrPathToString(XR::Instance::instance().xrInstance(), path, output.size(), &size, output.data());
+        ::xrPathToString(
+            XR::Instance::instance().xrInstance(), path, static_cast<uint32_t>(output.size()), &size, output.data());
 
         return std::string(output.data());
     }
