@@ -24,6 +24,79 @@
 
 namespace
 {
+#ifdef __ANDROID__
+    // gl4es/GLES rejects constructs that desktop GLSL 120 allows. Rewrite the (already
+    // include-expanded, define-substituted) source line by line into a GLES-acceptable form.
+    void adjustShaderForGLES(std::string& source)
+    {
+        std::istringstream in(source);
+        std::ostringstream out;
+        std::string line;
+        while (std::getline(in, line))
+        {
+            const size_t start = line.find_first_not_of(" \t");
+            // Strip uniform initializers: "uniform TYPE name = expr;" -> "uniform TYPE name;"
+            if (start != std::string::npos && line.compare(start, 8, "uniform ") == 0)
+            {
+                const size_t eq = line.find('=');
+                const size_t semi = line.rfind(';');
+                if (eq != std::string::npos && semi != std::string::npos && eq < semi)
+                    line = line.substr(0, eq) + ";" + line.substr(semi + 1);
+            }
+            out << line << '\n';
+        }
+        source = out.str();
+    }
+
+    // Prepare a library shader's source to be inlined into another shader. Drops things that are
+    // legal in a standalone/desktop shader but break a GLES inline: "#version"/"#extension" (valid
+    // only at the very top) and function forward-declarations (the main shader already declares them
+    // via the shared header, and GLSL ES rejects duplicated function declarations).
+    void prepareInlinedLibrarySource(std::string& source)
+    {
+        std::istringstream in(source);
+        std::ostringstream out;
+        std::string line;
+        while (std::getline(in, line))
+        {
+            const size_t start = line.find_first_not_of(" \t");
+            if (start == std::string::npos)
+            {
+                out << line << '\n';
+                continue;
+            }
+            std::string_view sv(line);
+            sv.remove_prefix(start);
+            while (!sv.empty() && (sv.back() == ' ' || sv.back() == '\t' || sv.back() == '\r'))
+                sv.remove_suffix(1);
+
+            if (sv.compare(0, 8, "#version") == 0 || sv.compare(0, 10, "#extension") == 0)
+                continue;
+
+            // Forward declaration "type name(...);": ends in ';', has params, no body/assignment,
+            // first word is a type (not a statement keyword) followed by a second word before '('.
+            if (!sv.empty() && sv.back() == ';' && sv.find('{') == std::string_view::npos
+                && sv.find('}') == std::string_view::npos && sv.find('=') == std::string_view::npos)
+            {
+                const size_t paren = sv.find('(');
+                const size_t firstWordEnd = sv.find_first_of(" \t");
+                if (paren != std::string_view::npos && firstWordEnd != std::string_view::npos
+                    && firstWordEnd < paren)
+                {
+                    const std::string_view w = sv.substr(0, firstWordEnd);
+                    const bool keyword = w == "return" || w == "if" || w == "for" || w == "while"
+                        || w == "else" || w == "do" || w == "discard" || w == "continue"
+                        || w == "break" || w == "switch" || w == "case";
+                    if (!keyword)
+                        continue; // drop the duplicate forward declaration
+                }
+            }
+            out << line << '\n';
+        }
+        source = out.str();
+    }
+#endif
+
     osg::Shader::Type getShaderType(const std::string& templateName)
     {
         std::string_view ext = Misc::getFileExtension(templateName);
@@ -553,6 +626,12 @@ namespace Shader
                 return nullptr;
             }
 
+#ifdef __ANDROID__
+            // gl4es feeds shader source to the GLES compiler, which (unlike desktop GLSL 120)
+            // rejects uniform initializers ("uniform vec2 x = ...;"). Strip the "= default" part;
+            // OpenMW sets these uniforms from C++ anyway.
+            adjustShaderForGLES(shaderSource);
+#endif
             osg::ref_ptr<osg::Shader> shader(new osg::Shader(type ? *type : getShaderType(templateName)));
             shader->setShaderSource(shaderSource);
             // Assign a unique prefix to allow the SharedStateManager to compare shaders efficiently.
@@ -635,6 +714,10 @@ namespace Shader
                 // we would when creating the shader. If we put a nullptr in the shader map, we just lose the ability to
                 // put a working one in later.
                 continue;
+#ifdef __ANDROID__
+            // Same GLES fixups as getShader(); this path recreates the source from scratch.
+            adjustShaderForGLES(shaderSource);
+#endif
             shader->setShaderSource(shaderSource);
 
             getLinkedShaders(shader, linkedShaderNames, defines);
@@ -671,12 +754,38 @@ namespace Shader
         if (linkedShaderNames.empty())
             return;
 
+        // The same @link target can reach us more than once (a header is text-included via several
+        // paths; #ifndef guards don't gate OpenMW's @link parser). Dedup so a library is attached/
+        // inlined only once, otherwise GLES sees duplicate definitions.
+        std::set<std::string> seenLinks;
         for (auto& linkedShaderName : linkedShaderNames)
         {
+            if (!seenLinks.insert(linkedShaderName).second)
+                continue;
             auto linkedShader = getShader(linkedShaderName, defines, shader->getType());
             if (linkedShader)
                 mLinkedShaders[shader].emplace_back(linkedShader);
         }
+
+#ifdef __ANDROID__
+        // gl4es can't link separate, main-less library shader objects (OpenMW's @link mechanism),
+        // so every program fails to link -> black screen. The library shaders are self-contained
+        // (self-links are filtered above), so inline their source into the main shader and attach
+        // nothing separately.
+        auto linkedIt = mLinkedShaders.find(shader);
+        if (linkedIt != mLinkedShaders.end())
+        {
+            std::string merged = shader->getShaderSource();
+            for (const auto& linkedShader : linkedIt->second)
+            {
+                std::string body = linkedShader->getShaderSource();
+                prepareInlinedLibrarySource(body);
+                merged += "\n" + body + "\n";
+            }
+            shader->setShaderSource(merged);
+            mLinkedShaders.erase(linkedIt);
+        }
+#endif
     }
 
     void ShaderManager::addLinkedShaders(osg::ref_ptr<osg::Shader> shader, osg::ref_ptr<osg::Program> program)
@@ -751,6 +860,7 @@ namespace Shader
             { "preLightEnv", "0" },
             { "radialFog", "0" },
             { "exponentialFog", "0" },
+            { "additiveFog", "1" },
             { "reverseZ", "0" },
             { "waterRefraction", "0" },
             { "classicFalloff", "1" },

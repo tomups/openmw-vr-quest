@@ -171,7 +171,10 @@ local function createDefaultConfig(backgroundOpacity, autosize)
         center = util.vector2(0,0),
         extent = util.vector2(1,1),
         pixelsPerMeter = 1024,
-        pixelResolution = util.vector2(1024, 1024),
+        -- 4:3 RTT to match the GUI canvas (viewSize 1024x768). A square 1024x1024 RTT here caused the menu
+        -- (laid out at 1024x768) to render into the bottom 768 of a square texture -> vertical squish + a
+        -- vertical pointer offset on the Quest.
+        pixelResolution = util.vector2(1024, 768),
         autosize = autosize,
     }
 end

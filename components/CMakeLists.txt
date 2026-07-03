@@ -792,6 +792,10 @@ if(BUILD_OPENMW_VR)
     # Preprocessor variables used to control code paths to vr code
     if (WIN32)
         target_compile_options(components PUBLIC -DXR_USE_GRAPHICS_API_OPENGL -DXR_USE_GRAPHICS_API_D3D11 -DXR_USE_PLATFORM_WIN32)
+    elseif(ANDROID)
+        # Quest and other standalone Android headsets run GLES via the Khronos/Meta OpenXR loader.
+        target_compile_options(components PUBLIC -DXR_USE_GRAPHICS_API_OPENGL_ES -DXR_USE_PLATFORM_ANDROID)
+        target_link_libraries(components EGL GLESv3 android)
     elseif(UNIX)
         target_compile_options(components PUBLIC -DXR_USE_GRAPHICS_API_OPENGL -DXR_USE_PLATFORM_XLIB -DXR_USE_PLATFORM_EGL)
         target_link_libraries(components EGL)

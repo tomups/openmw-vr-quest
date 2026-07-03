@@ -1,0 +1,40 @@
+// Minimal Quest APK for OpenMW-VR. ponytail: packages prebuilt native libs + assets only;
+// the engine is cross-compiled by android/buildscripts (see android/README.md).
+plugins {
+    id 'com.android.application'
+}
+
+android {
+    namespace 'org.openmw.vr'
+    compileSdk 34
+
+    defaultConfig {
+        applicationId 'org.openmw.vr'
+        minSdk 29        // Quest = Android 10+
+        // Target 29 so requestLegacyExternalStorage is honored on Android 11+ too, letting
+        // us read a shared /sdcard/Morrowind data folder (not just the app-scoped dir).
+        targetSdk 29
+        versionCode 1
+        versionName '0.51-vr'
+        ndk { abiFilters 'arm64-v8a' }
+    }
+
+    // Populated by android/buildscripts/build.sh:
+    //   jniLibs: libopenmw.so, libSDL2.so, libopenal.so, libGL.so, libc++_shared.so, libopenxr_loader.so
+    //   java/org/libsdl/app: stock SDL2 java (copied from the SDL2 source we build)
+    //   assets/libopenmw: engine resources + base config
+    sourceSets {
+        main {
+            jniLibs.srcDirs = ['src/main/jniLibs']
+            assets.srcDirs = ['src/main/assets']
+        }
+    }
+
+    buildTypes {
+        release { minifyEnabled false; signingConfig signingConfigs.debug }
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+}

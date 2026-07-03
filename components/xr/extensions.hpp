@@ -11,6 +11,10 @@
 
 namespace XR
 {
+    // On Android the OpenXR loader must be initialised with the JavaVM + activity context
+    // before any other OpenXR call (including extension enumeration). No-op on other platforms.
+    void initAndroidLoader();
+
     class Extensions
     {
         using ExtensionMap = std::map<std::string, XrExtensionProperties>;

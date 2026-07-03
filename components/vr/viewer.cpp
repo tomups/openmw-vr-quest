@@ -28,9 +28,57 @@
 #include <components/sdlutil/sdlgraphicswindow.hpp>
 
 #include <cassert>
+#include <vector>
+
+#ifdef __ANDROID__
+#include <dlfcn.h>
+#endif
 
 namespace VR
 {
+#ifdef __ANDROID__
+    // gl4es (our GL->GLES translator) shadows foreign GL texture handles: when OpenMW attaches the
+    // OpenXR swapchain texture to an FBO through gl4es, gl4es allocates its OWN texture instead of using
+    // the runtime's, so everything rendered into that FBO goes to a texture the compositor never reads
+    // (=> black headset, music only). gl4es's fake glBlitFramebuffer also needs the destination FBO's
+    // tracked size, which is 0 for a foreign texture, so it draws into a 0x0 viewport.
+    //
+    // The fix (hello_xr / RTCWQuest model): present with a GPU blit, but keep the swapchain texture
+    // entirely out of gl4es. We bind the (gl4es) eye FBO as the READ framebuffer the normal way — gl4es
+    // binds the real GLES FBO that actually holds the rendered eye — and then build the DRAW framebuffer
+    // around the real swapchain texture and run glBlitFramebuffer using the system GLES driver
+    // (resolved from libGLESv2.so), so gl4es never sees the swapchain id. No CPU roundtrip.
+    struct NativeGLES
+    {
+        void (*genFramebuffers)(int, unsigned*) = nullptr;
+        void (*bindFramebuffer)(unsigned, unsigned) = nullptr;
+        void (*framebufferTexture2D)(unsigned, unsigned, unsigned, unsigned, int) = nullptr;
+        void (*blitFramebuffer)(int, int, int, int, int, int, int, int, unsigned, unsigned) = nullptr;
+        bool ok() const { return genFramebuffers && bindFramebuffer && framebufferTexture2D && blitFramebuffer; }
+    };
+
+    static const NativeGLES& nativeGLES()
+    {
+        static NativeGLES n = [] {
+            NativeGLES r;
+            void* lib = dlopen("libGLESv2.so", RTLD_NOW | RTLD_LOCAL);
+            if (lib)
+            {
+                r.genFramebuffers = reinterpret_cast<decltype(r.genFramebuffers)>(dlsym(lib, "glGenFramebuffers"));
+                r.bindFramebuffer = reinterpret_cast<decltype(r.bindFramebuffer)>(dlsym(lib, "glBindFramebuffer"));
+                r.framebufferTexture2D
+                    = reinterpret_cast<decltype(r.framebufferTexture2D)>(dlsym(lib, "glFramebufferTexture2D"));
+                r.blitFramebuffer = reinterpret_cast<decltype(r.blitFramebuffer)>(dlsym(lib, "glBlitFramebuffer"));
+            }
+            if (!r.ok())
+                Log(Debug::Error) << "Failed to load native GLES present functions: " << (lib ? "missing symbols" : dlerror());
+            return r;
+        }();
+        return n;
+    }
+
+#endif
+
     static bool isNumber(const std::string& in)
     {
         for (auto c : in)
@@ -380,9 +428,6 @@ namespace VR
     {
         auto* gl = osg::GLExtensions::Get(state->getContextID(), false);
 
-        auto dst = getXrFramebuffer(i, state);
-        dst->apply(*state, osg::FrameBufferObject::DRAW_FRAMEBUFFER);
-
         auto width = mSubImages[i].width;
         auto height = mSubImages[i].height;
         bool flip = mColorSwapchain[i]->mustFlipVertical();
@@ -396,6 +441,9 @@ namespace VR
         uint32_t dstY0 = mSubImages[i].y;
         uint32_t dstY1 = dstY0 + height;
 
+#ifndef __ANDROID__
+        auto dst = getXrFramebuffer(i, state);
+        dst->apply(*state, osg::FrameBufferObject::DRAW_FRAMEBUFFER);
         Stereo::Manager::instance().multiviewFramebuffer()->layerFbo(i)->apply(
             *state, osg::FrameBufferObject::READ_FRAMEBUFFER);
         gl->glBlitFramebuffer(srcX0, srcY0, srcX1, srcY1, dstX0, dstY0, dstX1, dstY1, GL_COLOR_BUFFER_BIT, GL_NEAREST);
@@ -404,6 +452,38 @@ namespace VR
             gl->glBlitFramebuffer(
                 srcX0, srcY0, srcX1, srcY1, dstX0, dstY0, dstX1, dstY1, GL_DEPTH_BUFFER_BIT, GL_NEAREST);
         }
+#else
+        // Present with a GPU blit, keeping the swapchain texture entirely out of gl4es (gl4es shadows
+        // foreign handles -- see NativeGLES note). Trick: gl4es binds GL_FRAMEBUFFER/GL_DRAW_FRAMEBUFFER
+        // EAGERLY (real bind immediate) but GL_READ_FRAMEBUFFER LAZILY (it just records the fbo, doesn't
+        // bind it). So we bind the eye FBO as GL_FRAMEBUFFER (default apply target) -- that eagerly makes
+        // the real GL_READ_FRAMEBUFFER the eye FBO -- then natively bind a DRAW FBO holding the real
+        // swapchain texture and blit. The native blit reads the live eye FBO and writes the swapchain; the
+        // only thing touching the swapchain id is the native driver, so gl4es never shadows it.
+        constexpr unsigned kDrawFramebuffer = 0x8CA9; // GL_DRAW_FRAMEBUFFER
+        constexpr unsigned kColorAttachment0 = 0x8CE0; // GL_COLOR_ATTACHMENT0
+        constexpr unsigned kTexture2D = 0x0DE1; // GL_TEXTURE_2D
+        constexpr unsigned kColorBufferBit = 0x4000; // GL_COLOR_BUFFER_BIT
+        constexpr unsigned kNearest = 0x2600; // GL_NEAREST
+
+        // Default apply target is GL_FRAMEBUFFER -> gl4es eagerly binds it as the real read+draw FBO.
+        Stereo::Manager::instance().multiviewFramebuffer()->layerFbo(i)->apply(*state);
+
+        const auto& ngl = nativeGLES();
+        if (ngl.ok())
+        {
+            unsigned swapTex = mColorSwapchain[i]->image()->glImage();
+            static unsigned sDrawFbo = 0;
+            if (!sDrawFbo)
+                ngl.genFramebuffers(1, &sDrawFbo);
+            // Override only the DRAW binding with the native swapchain FBO; the eager gl4es bind above
+            // leaves the eye FBO as the real READ framebuffer.
+            ngl.bindFramebuffer(kDrawFramebuffer, sDrawFbo);
+            ngl.framebufferTexture2D(kDrawFramebuffer, kColorAttachment0, kTexture2D, swapTex, 0);
+            ngl.blitFramebuffer(srcX0, srcY0, srcX1, srcY1, dstX0, dstY0, dstX1, dstY1, kColorBufferBit, kNearest);
+            ngl.bindFramebuffer(kDrawFramebuffer, 0);
+        }
+#endif
 
         gl->glBindFramebuffer(GL_FRAMEBUFFER_EXT, 0);
     }

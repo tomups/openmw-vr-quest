@@ -211,6 +211,13 @@ namespace MWRender
         const bool exponentialFog = Settings::fog().mExponentialFog;
         globalDefines["radialFog"] = (exponentialFog || Settings::fog().mRadialFog) ? "1" : "0";
         globalDefines["exponentialFog"] = exponentialFog ? "1" : "0";
+#ifdef __ANDROID__
+        // On gl4es, alpha-blended statics (whole NIFs like the bitter-coast trees live in the
+        // transparent bin) end up rendering with additive-flagged program variants and the
+        // additive fog branch multiplies them toward black with distance. Fog everything
+        // normally; genuinely additive particles lose only their fog fade-out.
+        globalDefines["additiveFog"] = "0";
+#endif
         globalDefines["skyBlending"] = mSkyBlending ? "1" : "0";
         globalDefines["softParticles"] = "0";
 

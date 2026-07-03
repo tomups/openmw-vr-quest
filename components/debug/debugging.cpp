@@ -6,6 +6,10 @@
 #include <iostream>
 #include <memory>
 
+#ifdef __ANDROID__
+#include <android/log.h> // mirror the log to logcat (openmw.log isn't easy to reach on a headset)
+#endif
+
 #ifdef _MSC_VER
 // TODO: why is this necessary? this has /external:I
 #pragma warning(push)
@@ -154,6 +158,21 @@ namespace Debug
                         lineSize++;
                     writeImpl(prefix, prefixSize, level);
                     writeImpl(msg.data(), lineSize, level);
+#ifdef __ANDROID__
+                    // Mirror each line to logcat (tag "OpenMW") so `adb logcat -s OpenMW` works;
+                    // logcat adds its own timestamp/priority, so we send the bare line.
+                    {
+                        static const int androidPrio[] = { ANDROID_LOG_DEFAULT, ANDROID_LOG_ERROR,
+                            ANDROID_LOG_WARN, ANDROID_LOG_INFO, ANDROID_LOG_VERBOSE, ANDROID_LOG_DEBUG,
+                            ANDROID_LOG_DEFAULT };
+                        const int idx = (int(level) >= 0 && int(level) <= 6) ? int(level) : 0;
+                        std::string line(msg.data(), static_cast<size_t>(lineSize));
+                        while (!line.empty() && (line.back() == '\n' || line.back() == '\r'))
+                            line.pop_back();
+                        if (!line.empty())
+                            __android_log_write(androidPrio[idx], "OpenMW", line.c_str());
+                    }
+#endif
                     if (logListener)
                         logListener(
                             level, std::string_view(prefix, prefixSize), std::string_view(msg.data(), lineSize));
@@ -482,6 +501,11 @@ namespace Debug
         }
         catch (const std::exception& e)
         {
+#ifdef __ANDROID__
+            // The message box below is modal and blocks before the Log() reaches logcat, so emit
+            // the error to logcat first — it's the only practical way to see it on a headset.
+            __android_log_print(ANDROID_LOG_FATAL, "OpenMW", "Fatal error: %s", e.what());
+#endif
 #if (defined(__APPLE__) || defined(__linux) || defined(__unix) || defined(__posix))
             if (!isatty(fileno(stdin)))
 #endif

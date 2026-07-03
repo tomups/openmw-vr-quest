@@ -163,6 +163,12 @@ if(BUILD_OPENMW)
 
     target_link_libraries(openmw openmw-lib)
 
+    # On Android there is no separate openmw_vr executable; the VR code paths are
+    # compiled directly into libopenmw.so which the APK loads.
+    if (ANDROID AND BUILD_OPENMW_VR)
+        target_compile_definitions(openmw PRIVATE OPENMW_VR=1)
+    endif()
+
     # Workaround necessary to ensure osgAnimation::MatrixLinearSampler dynamic casts work under Clang
     # NOTE: it's unclear whether the broken behavior is spec-compliant
     if (CMAKE_CXX_COMPILER_ID STREQUAL Clang)
@@ -170,7 +176,7 @@ if(BUILD_OPENMW)
     endif()
 endif()
 
-if(BUILD_OPENMW_VR)
+if(BUILD_OPENMW_VR AND NOT ANDROID)
     openmw_add_executable(openmw_vr
         ${APPLE_BUNDLE_RESOURCES}
         ${OPENMW_RESOURCES}
@@ -316,7 +322,7 @@ if(BUILD_OPENMW)
             COMMAND cp "${OpenMW_BINARY_DIR}/resources/version" "${BUNDLE_RESOURCES_DIR}/resources")
     endif(APPLE)
 endif()
-if(BUILD_OPENMW_VR)
+if(BUILD_OPENMW_VR AND NOT ANDROID)
     target_link_libraries(openmw_vr ${OPENMW_LINK_TARGETS})
     if(OPENMW_LINK_OPTIONS)
         target_link_options(openmw_vr ${OPENMW_LINK_OPTIONS})
@@ -329,9 +335,11 @@ if(BUILD_OPENMW_VR)
             POST_BUILD
             COMMAND cp "${OpenMW_BINARY_DIR}/resources/version" "${BUNDLE_RESOURCES_DIR}/resources")
     endif(APPLE)
+endif()
+# The interaction-profile bindings are needed at runtime on every VR platform.
+if(BUILD_OPENMW_VR)
     configure_resource_file(${OpenMW_SOURCE_DIR}/files/openxrinteractionprofiles.xml
         "${OpenMW_BINARY_DIR}" "openxrinteractionprofiles.xml")
-
 endif()
 ### /VR_PATCH
 

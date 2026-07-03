@@ -1,0 +1,48 @@
+diff --git a/src/common/platform_utils.hpp b/src/common/platform_utils.hpp
+index 85d5cda..d0f5475 100644
+--- a/src/common/platform_utils.hpp
++++ b/src/common/platform_utils.hpp
+@@ -301,16 +301,19 @@ static inline bool PlatformUtilsSetEnv(const char* /* name */, const char* /* va
+ 
+ // Intended to be only used as a fallback on Android, with a more open, "native" technique used in most cases
+ static inline bool PlatformGetGlobalRuntimeFileName(uint16_t major_version, std::string& file_name) {
+-    // Prefix for the runtime JSON file name
+-    static const char* rt_dir_prefixes[] = {"/oem", "/vendor", "/system"};
+-    static const std::string rt_filename = "/active_runtime.json";
++    // Prefix for the runtime JSON file name. /odm is where Meta Quest ships its manifest, and
++    // it uses an ABI-suffixed filename (active_runtime.aarch64.json) rather than the plain name.
++    static const char* rt_dir_prefixes[] = {"/odm", "/oem", "/vendor", "/system"};
++    static const char* rt_filenames[] = {"/active_runtime.aarch64.json", "/active_runtime.json"};
+     static const std::string subdir = "/etc/openxr/";
+     for (const auto prefix : rt_dir_prefixes) {
+-        auto path = prefix + subdir + std::to_string(major_version) + rt_filename;
+-        struct stat buf;
+-        if (0 == stat(path.c_str(), &buf)) {
+-            file_name = path;
+-            return true;
++        for (const auto rt_filename : rt_filenames) {
++            auto path = prefix + subdir + std::to_string(major_version) + rt_filename;
++            struct stat buf;
++            if (0 == stat(path.c_str(), &buf)) {
++                file_name = path;
++                return true;
++            }
+         }
+     }
+     return false;
+diff --git a/src/loader/manifest_file.cpp b/src/loader/manifest_file.cpp
+index e4eab39..d370bdf 100644
+--- a/src/loader/manifest_file.cpp
++++ b/src/loader/manifest_file.cpp
+@@ -557,6 +557,11 @@ void RuntimeManifestFile::CreateIfValid(const Json::Value &root_node, const std:
+     // If the library_path variable has no directory symbol, it's just a file name and should be accessible on the
+     // global library path.
+     if (lib_path.find('\\') != std::string::npos || lib_path.find('/') != std::string::npos) {
++        // Android zip-embedded path (e.g. /path/Foo.apk!/lib/arm64-v8a/libruntime.so): dlopen
++        // handles these, but stat() can't, so skip the existence check and let dlopen try.
++        if (lib_path.find("!/") != std::string::npos) {
++            // use lib_path as-is
++        } else
+         // If the library_path is an absolute path, just use that if it exists
+         if (FileSysUtilsIsAbsolutePath(lib_path)) {
+             if (!FileSysUtilsPathExists(lib_path)) {

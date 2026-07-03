@@ -15,7 +15,7 @@ static const char* g_path_user; //< Path to user root, e.g. /sdcard/Android/data
 /**
  * \brief Called by java code to set up directory paths
  */
-extern "C" JNIEXPORT void JNICALL Java_ui_activity_GameActivity_getPathToJni(
+extern "C" JNIEXPORT void JNICALL Java_org_openmw_vr_OpenMWActivity_getPathToJni(
     JNIEnv* env, jobject obj, jstring global, jstring user)
 {
     g_path_global = env->GetStringUTFChars(global, nullptr);

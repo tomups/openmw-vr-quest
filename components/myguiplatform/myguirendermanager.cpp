@@ -6,6 +6,7 @@
 #include <MyGUI_Timer.h>
 
 #include <osg/Drawable>
+#include <osg/Geometry>
 #include <osg/TexMat>
 #include <osg/Texture2D>
 
@@ -18,6 +19,11 @@
 #include <components/shader/shadermanager.hpp>
 
 #include "myguitexture.hpp"
+
+#ifdef __ANDROID__
+#include <atomic>
+#include <vector>
+#endif
 
 #define MYGUI_PLATFORM_LOG_SECTION "Platform"
 #define MYGUI_PLATFORM_LOG(level, text) MYGUI_LOGGING(MYGUI_PLATFORM_LOG_SECTION, level, text)
@@ -105,13 +111,68 @@ namespace MyGUIPlatform
             state->apply();
 
             state->disableAllVertexArrays();
+#ifndef __ANDROID__
             state->setClientActiveTextureUnit(0);
             glEnableClientState(GL_VERTEX_ARRAY);
             glEnableClientState(GL_TEXTURE_COORD_ARRAY);
             glEnableClientState(GL_COLOR_ARRAY);
+#endif
 
+#ifdef __ANDROID__
+            // All VR GUI renders through per-layer FBO cameras into world quads. The master POST_RENDER
+            // GUI camera would draw any MyGUI layer not claimed by a quad camera directly into the eye
+            // framebuffer at 2D pixel coords -- head-locked artifacts in the corner of the view (there is
+            // no desktop mirror window on the Quest to serve). Draw nothing outside FBO cameras.
+            {
+                osg::Camera* cam = renderInfo.getCurrentCamera();
+                if (!cam || cam->getRenderTargetImplementation() != osg::Camera::FRAME_BUFFER_OBJECT)
+                {
+                    state->popStateSet();
+                    return;
+                }
+            }
+
+            // Upstream pairs cull-time batch collection with draw-time consumption via two free-running
+            // counters (mWriteTo advanced every cull, mReadFrom advanced every draw) with no
+            // synchronization. Any cull/draw count mismatch (startup frames without a draw, stereo
+            // double-draws, a skipped draw) permanently skews the pairing, making the draw consume a STALE
+            // batch set whose vertex arrays MyGUI has since re-locked and is rewriting concurrently ->
+            // torn vertex data -> giant garbage triangles smearing the whole layer (the "ghost haze" over
+            // Settings). Read the most recently COMPLETED batch set instead: correct for repeated draws,
+            // skipped draws, and any cull/draw ratio, with no skew accumulation.
+            const int readFrom = mLastFilled.load(std::memory_order_acquire);
+            if (readFrom < 0)
+            {
+                state->popStateSet();
+                return;
+            }
+            const std::vector<Batch>& vec = mBatchVector[readFrom];
+#else
             mReadFrom = (mReadFrom + 1) % sNumBuffers;
             const std::vector<Batch>& vec = mBatchVector[mReadFrom];
+#endif
+#ifdef __ANDROID__
+            // Clear the RTT ourselves: OSG's camera clear does not reliably reach the gl4es FBO, leaving
+            // uninitialised garbage wherever widgets don't cover. Only FBO cameras reach this point (the
+            // master POST_RENDER GUI camera returned above).
+            {
+                osg::Camera* cam = renderInfo.getCurrentCamera();
+                if (osg::Viewport* cvp = cam->getViewport())
+                    glViewport(static_cast<GLint>(cvp->x()), static_cast<GLint>(cvp->y()),
+                        static_cast<GLsizei>(cvp->width()), static_cast<GLsizei>(cvp->height()));
+                glDisable(GL_SCISSOR_TEST);
+                glClearColor(0.f, 0.f, 0.f, 0.f);
+                glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+            }
+
+            // Batch geometries/arrays must outlive the whole pass: gl4es can consume client vertex arrays
+            // later than the glDrawArrays call, and the per-iteration osg::Geometry destruction let the next
+            // batch's draw read freed memory still holding the PREVIOUS batch's vertices (observed: the
+            // window-border batch rasterizing the window-body rect -> border texture stretched over the
+            // whole panel = the vertical stripes).
+            std::vector<osg::ref_ptr<osg::Geometry>> passGeometries;
+            passGeometries.reserve(vec.size());
+#endif
             for (std::vector<Batch>::const_iterator it = vec.begin(); it != vec.end(); ++it)
             {
                 const Batch& batch = *it;
@@ -136,6 +197,46 @@ namespace MyGUIPlatform
                 else
                     state->applyTextureAttribute(0, mDummyTexture);
 
+#ifdef __ANDROID__
+                // gl4es does not reliably feed the bound gui shader from a manual glDrawArrays (legacy or
+                // generic arrays), so MyGUI was effectively rendered fixed-function and garbled. Draw each
+                // batch through OSG's own geometry path instead — identical to the in-scene quad that
+                // renders correctly — which binds the program's vertex attributes properly under gl4es.
+                {
+                    const auto* verts
+                        = reinterpret_cast<const MyGUI::Vertex*>(vbo->getArray(0)->getDataPointer());
+                    const size_t n = batch.mVertexCount;
+                    osg::ref_ptr<osg::Vec3Array> pos = new osg::Vec3Array(n);
+                    // gl4es mishandles a BIND_PER_VERTEX unsigned-byte colour array: the interpolated
+                    // gl_Color comes out wrong (dark + a per-triangle gouraud seam, i.e. a diagonal across
+                    // large quads like the menu background). Feed normalized FLOAT colours instead.
+                    osg::ref_ptr<osg::Vec4Array> col = new osg::Vec4Array(n);
+                    osg::ref_ptr<osg::Vec2Array> uv = new osg::Vec2Array(n);
+                    for (size_t v = 0; v < n; ++v)
+                    {
+                        (*pos)[v].set(verts[v].x, verts[v].y, verts[v].z);
+                        const unsigned char* c = reinterpret_cast<const unsigned char*>(&verts[v].colour);
+                        (*col)[v].set(c[0] / 255.f, c[1] / 255.f, c[2] / 255.f, c[3] / 255.f);
+                        (*uv)[v].set(verts[v].u, verts[v].v);
+                    }
+                    // OSG does not apply our standalone GUI FBO camera's viewport at draw time -- the GL
+                    // viewport is left at the (larger) eye-buffer size, so NDC-mapped content overflows the
+                    // smaller RTT (shifted right + cropped). Force the camera's viewport before drawing.
+                    if (osg::Camera* cam = renderInfo.getCurrentCamera())
+                        if (osg::Viewport* cvp = cam->getViewport())
+                            glViewport(static_cast<GLint>(cvp->x()), static_cast<GLint>(cvp->y()),
+                                static_cast<GLsizei>(cvp->width()), static_cast<GLsizei>(cvp->height()));
+                    osg::ref_ptr<osg::Geometry> geom = new osg::Geometry;
+                    geom->setUseVertexBufferObjects(false);
+                    geom->setUseDisplayList(false);
+                    geom->setVertexArray(pos);
+                    geom->setColorArray(col, osg::Array::BIND_PER_VERTEX);
+                    geom->setTexCoordArray(0, uv, osg::Array::BIND_PER_VERTEX);
+                    geom->addPrimitiveSet(new osg::DrawArrays(GL_TRIANGLES, 0, static_cast<GLsizei>(n)));
+                    geom->drawImplementation(renderInfo);
+                    passGeometries.push_back(geom); // keep arrays alive until the pass ends (see above)
+                }
+#else
                 osg::GLBufferObject* bufferobject = state->isVertexBufferObjectSupported()
                     ? vbo->getOrCreateGLBufferObject(state->getContextID())
                     : nullptr;
@@ -156,8 +257,8 @@ namespace MyGUIPlatform
                     glTexCoordPointer(2, GL_FLOAT, sizeof(MyGUI::Vertex),
                         reinterpret_cast<const char*>(vbo->getArray(0)->getDataPointer()) + 16);
                 }
-
                 glDrawArrays(GL_TRIANGLES, 0, static_cast<GLsizei>(batch.mVertexCount));
+#endif
 
                 if (batch.mStateSet)
                 {
@@ -166,9 +267,11 @@ namespace MyGUIPlatform
                 }
             }
 
+#ifndef __ANDROID__
             glDisableClientState(GL_VERTEX_ARRAY);
             glDisableClientState(GL_TEXTURE_COORD_ARRAY);
             glDisableClientState(GL_COLOR_ARRAY);
+#endif
 
             state->popStateSet();
 
@@ -186,6 +289,7 @@ namespace MyGUIPlatform
             , mStateSet(stateset)
             , mWriteTo(0)
             , mReadFrom(0)
+            , mFilter(filter)
         {
             setSupportsDisplayList(false);
 
@@ -248,6 +352,11 @@ namespace MyGUIPlatform
             mBatchVector[mWriteTo].clear();
         }
 
+#ifdef __ANDROID__
+        // Called at the end of cull-time batch collection: publish the completed set for the draw thread.
+        void markFilled() { mLastFilled.store(mWriteTo, std::memory_order_release); }
+#endif
+
 //## VR_PATCH BEGIN
 // State moved to the parent.
 //## VR_PATCH END
@@ -262,6 +371,10 @@ namespace MyGUIPlatform
 
         int mWriteTo;
         mutable int mReadFrom;
+#ifdef __ANDROID__
+        std::atomic<int> mLastFilled{ -1 };
+#endif
+        std::string mFilter;
 
         osg::ref_ptr<osg::Texture2D> mDummyTexture;
     };
@@ -534,16 +647,8 @@ namespace MyGUIPlatform
     void RenderManager::enableShaders(Shader::ShaderManager& shaderManager)
     {
         auto program = shaderManager.getProgram("gui");
-//## VR_PATCH BEGIN
-// VR-TODO: Is there a specific reason i am specifying GLSLVersion here, isn't that taken care of in the shaderManager.getProgram?
-        auto vertexShader
-            = shaderManager.getShader("gui_vertex.glsl", { { "GLSLVersion", "120" } }, osg::Shader::VERTEX);
-        auto fragmentShader
-            = shaderManager.getShader("gui_fragment.glsl", { { "GLSLVersion", "120" } }, osg::Shader::FRAGMENT);
-
         mGuiStateSet->setAttributeAndModes(program, osg::StateAttribute::ON);
         mGuiStateSet->addUniform(new osg::Uniform("diffuseMap", 0));
-//## VR_PATCH END
     }
 
     MyGUI::IVertexBuffer* RenderManager::createVertexBuffer()
@@ -586,7 +691,12 @@ namespace MyGUIPlatform
         mInjectState = stateSet;
     }
 
-    void GUICamera::end() {}
+    void GUICamera::end()
+    {
+#ifdef __ANDROID__
+        mDrawable->markFilled();
+#endif
+    }
 //## VR_PATCH END
 
     void RenderManager::update()

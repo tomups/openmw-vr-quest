@@ -221,6 +221,13 @@ int runApplication(int argc, char* argv[])
     setenv("OSG_GL_TEXTURE_STORAGE", "OFF", 0);
 #endif
 
+#ifdef __ANDROID__
+    // gl4es/GLES may lack the compressed-texture formats Morrowind ships, so decompress
+    // on load. (On the desktop Android port this was set by SDLActivity.nativeInit; we set
+    // it here so the VR APK doesn't depend on a customised SDL activity.)
+    setenv("OPENMW_DECOMPRESS_TEXTURES", "1", 0);
+#endif
+
 //## VR_PATCH BEGIN
 #ifdef OPENMW_VR
     VR::setVR(true);

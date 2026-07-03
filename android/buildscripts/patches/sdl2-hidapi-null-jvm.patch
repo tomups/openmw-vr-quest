@@ -1,0 +1,21 @@
+--- a/src/hidapi/android/hid.cpp
++++ b/src/hidapi/android/hid.cpp
+@@ -1052,6 +1052,18 @@ int hid_init(void)
+ 	{
+ 		// HIDAPI doesn't work well with Android < 4.3
+ 		if (SDL_GetAndroidSDKVersion() >= 18) {
++			// The Java HIDDeviceManager glue registers the JVM via
++			// HIDDeviceRegisterCallback(). In this build there is no separate
++			// libhidapi.so and the bundled HIDDeviceManager.java predates SDL 2.0.22's
++			// contract, so that registration never happens and g_JVM stays null.
++			// Bail out instead of dereferencing it (the app doesn't use HIDAPI; gamepads
++			// come through the regular Android joystick driver / OpenXR).
++			if ( !g_JVM )
++			{
++				LOGV( "hid_init() without JVM (HIDAPI disabled)" );
++				g_initialized = true;
++				return -1;
++			}
+ 			// Make sure thread is attached to JVM/env
+ 			JNIEnv *env;
+ 			g_JVM->AttachCurrentThread( &env, NULL );

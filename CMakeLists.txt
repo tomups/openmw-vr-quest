@@ -47,11 +47,9 @@ option(BUILD_OPENCS_TESTS       "Build OpenMW Construction Set tests" OFF)
 option(BUILD_OPENMW_TESTS       "Build OpenMW tests" OFF)
 option(PRECOMPILE_HEADERS_WITH_MSVC "Precompile most common used headers with MSVC (alternative to ccache)" ON)
 
-if (ANDROID)
-    option(BUILD_OPENMW_VR          "Build OpenMW-VR VR" OFF)
-else()
-    option(BUILD_OPENMW_VR          "Build OpenMW-VR VR" ON)
-endif()
+# On Android, the VR build is the only sensible target (Quest etc.); it is folded
+# into the libopenmw.so shared library rather than a separate executable.
+option(BUILD_OPENMW_VR          "Build OpenMW-VR VR" ON)
 
 set(OpenGL_GL_PREFERENCE LEGACY)  # Use LEGACY as we use GL2; GLNVD is for GL3 and up.
 
@@ -302,7 +300,6 @@ set(USED_OSG_COMPONENTS
     )
 set(USED_OSG_PLUGINS
     osgdb_bmp
-    osgdb_dae
     osgdb_dds
     osgdb_freetype
     osgdb_jpeg
@@ -310,6 +307,12 @@ set(USED_OSG_PLUGINS
     osgdb_png
     osgdb_serializers_osg
     osgdb_tga)
+
+# Collada (dae) is only used by the editor / model import, not gameplay, and pulls in
+# collada-dom which we don't cross-compile for the headset. Desktop builds keep it.
+if(NOT ANDROID)
+    list(APPEND USED_OSG_PLUGINS osgdb_dae)
+endif()
 
 if(NOT COLLADA_DOM_VERSION_MAJOR)
     set(COLLADA_DOM_VERSION_MAJOR 2)

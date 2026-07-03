@@ -441,8 +441,13 @@ OMW::Engine::Engine(Files::ConfigurationManager& configurationManager)
 #endif
     SDL_SetHint(SDL_HINT_ACCELEROMETER_AS_JOYSTICK, "0"); // We use only gamepads
 
-    Uint32 flags
-        = SDL_INIT_VIDEO | SDL_INIT_NOPARACHUTE | SDL_INIT_GAMECONTROLLER | SDL_INIT_JOYSTICK | SDL_INIT_SENSOR;
+    Uint32 flags = SDL_INIT_VIDEO | SDL_INIT_NOPARACHUTE | SDL_INIT_GAMECONTROLLER | SDL_INIT_JOYSTICK | SDL_INIT_SENSOR;
+#ifdef __ANDROID__
+    // On standalone headsets (Quest) controllers come through OpenXR, not SDL. SDL's
+    // joystick driver brings up HIDAPI, whose Android backend (SDL_hid_init ->
+    // PLATFORM_hid_init) dereferences null and crashes. Skip those subsystems.
+    flags &= ~(SDL_INIT_GAMECONTROLLER | SDL_INIT_JOYSTICK | SDL_INIT_SENSOR);
+#endif
     if (SDL_WasInit(flags) == 0)
     {
         SDL_SetMainReady();

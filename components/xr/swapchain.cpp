@@ -18,13 +18,16 @@
 #include <d3d11_1.h>
 #endif
 
-#elif __linux__
+#elif defined(__ANDROID__)
+// Android must be checked before __linux__ (it defines both); use GLES, not GLX.
+#include <EGL/egl.h>
+#include <jni.h> // required before openxr_platform.h (Android structs use jobject)
+#include <osg/GL>
+#else
 #include <EGL/egl.h>
 #include <GL/glx.h>
 #undef None
 
-#else
-#error Unsupported platform
 #endif
 #include <openxr/openxr_platform.h>
 #include <openxr/openxr_platform_defines.h>

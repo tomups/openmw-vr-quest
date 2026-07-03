@@ -54,7 +54,18 @@ namespace SceneUtil
 
     void GetGLExtensionsOperation::operator()(osg::GraphicsContext* graphicsContext)
     {
-        auto [itr, _] = sGLExtensions.emplace(graphicsContext->getState()->get<osg::GLExtensions>());
+        osg::GLExtensions* exts = graphicsContext->getState()->get<osg::GLExtensions>();
+#ifdef __ANDROID__
+        // gl4es advertises desktop-GL extensions (GL_EXT_gpu_shader4, GL_ARB_uniform_buffer_object)
+        // that the underlying GLES2 shader compiler cannot honor ("#extension ... : require" fails,
+        // producing a black screen). Force them off so OpenMW uses its GLES-compatible shader paths.
+        exts->isGpuShader4Supported = false;
+        exts->isUniformBufferObjectSupported = false;
+        // gl4es reports S3TC/DXT support but its block decode garbles textures (striped/sheared).
+        // Forcing it off makes OpenMW software-decompress DDS via OPENMW_DECOMPRESS_TEXTURES instead.
+        exts->isTextureCompressionS3TCSupported = false;
+#endif
+        auto [itr, _] = sGLExtensions.emplace(exts);
         (*itr)->addObserver(&GLExtensionsObserver::sInstance);
     }
 }

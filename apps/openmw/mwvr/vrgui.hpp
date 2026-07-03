@@ -37,6 +37,11 @@ namespace Resource
     class ResourceSystem;
 }
 
+namespace MWRender
+{
+    struct RayResult;
+}
+
 struct XrCompositionLayerQuad;
 namespace MWVR
 {
@@ -95,6 +100,11 @@ namespace MWVR
 
         bool visible() const { return mVisible; }
 
+#ifdef __ANDROID__
+        /// Map a world-space point on the quad to normalized canvas coords (u right, v up).
+        bool worldToCanvasUv(const osg::Vec3f& worldPoint, float& u, float& v) const;
+#endif
+
         void setConfig(const LayerConfig& config);
 
         void clear();
@@ -110,6 +120,10 @@ namespace MWVR
         std::optional<LayerConfig> mConfig;
 
         std::string mLayerName;
+        // Android: real MyGUI layer names sharing this VRGUILayer's FBO/texture/quad (see sSharedMenuLayers).
+        // Always {mLayerName} unless merged; used to build the combined RTT filter and to pick every member's
+        // real MyGUI layer on focus.
+        std::vector<std::string> mMemberLayerNames;
         std::vector<MWGui::Layout*> mWidgets;
         osg::ref_ptr<osg::Group> mGeometryRoot;
         std::array<osg::ref_ptr<osg::Geometry>, 2> mGeometries;
@@ -117,8 +131,15 @@ namespace MWVR
         osg::ref_ptr<osg::StateSet> mStateset;
         MyGUI::IntRect mRect{};
         MyGUI::FloatRect mRealRect{};
+#ifdef __ANDROID__
+        // Where the widgets actually are on the canvas (normalized, MyGUI y-down convention). The quad
+        // itself is always full-canvas on Android (see updateRect); picking uses this rect to let the
+        // pointer pass through the quad's transparent parts (VRGUIManager::castContentRay).
+        MyGUI::FloatRect mContentRealRect{};
+#endif
         osg::ref_ptr<osg::Group> mCameraRoot;
         osg::ref_ptr<osg::Node> mGUIRTT;
+        osg::ref_ptr<osg::Texture2D> mGUIColorTexture; // Android: standalone-RTT-camera color target
         osg::ref_ptr<osg::Camera> mMyGUICamera{ nullptr };
         bool mVisible = false;
         bool mDirty = false;
@@ -159,6 +180,15 @@ namespace MWVR
 
         /// Check current pointer target and update focus layer
         void updateFocus(osg::Node* focusNode, osg::Vec3f hitPoint);
+
+#ifdef __ANDROID__
+        /// Cast a ray against the GUI quads only and return the nearest hit that lands on actual
+        /// widget content (see VRGUILayer::mContentRealRect). Quads are full-canvas sized on Android,
+        /// so without the content test the transparent margin of a nearer quad (e.g. the wrist HUD)
+        /// swallows the pointer before it reaches the panel behind it. Returns the hit distance,
+        /// or 0 with result.mHit == false when nothing content-bearing is hit.
+        float castContentRay(const Stereo::Pose& pose, MWRender::RayResult& result);
+#endif
 
         /// True if user is currently pointing at something
         bool hasFocus() const;

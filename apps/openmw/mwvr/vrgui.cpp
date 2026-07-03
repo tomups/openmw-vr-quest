@@ -19,6 +19,10 @@
 #include <osgViewer/Renderer>
 #include <osgViewer/Viewer>
 
+#ifdef __ANDROID__
+#include <osgUtil/LineSegmentIntersector>
+#endif
+
 #include <components/misc/constants.hpp>
 #include <components/myguiplatform/additivelayer.hpp>
 #include <components/myguiplatform/myguirendermanager.hpp>
@@ -67,6 +71,26 @@ namespace MWVR
             "SpellWindow", "MapWindow", "StatsWindow", "DialogueWindow", "ServiceWindow", "JournalBooks", "Debug",
             "MainMenuBackground", "MainMenu", "Settings", "Console", "RadialMenu", "LoadingScreenBackground", "LoadingScreen", "Modal",
                   "ListBox", "Popup", "Video", "InputBlocker", "VideoPlayer", "VirtualKeyboard", "Windows" };
+
+#ifdef __ANDROID__
+        // Quest: draw the co-visible "full screen" MyGUI layers into ONE shared FBO/texture/quad instead of
+        // one RTT camera per panel -- the model used by other gl4es-based Quest ports (RTCWQuest draws its
+        // whole 2D UI into a single shared framebuffer). Fewer FBO passes per frame through the fragile
+        // gl4es FBO seam, correct back-to-front compositing for free (MyGUI layer order), and panels opened
+        // over each other (Settings over MainMenu) share one surface. These layers already use
+        // byte-identical LayerConfig (opacity 0.75, autoSize false, no space -- see readConfig()), so
+        // merging is safe and general -- new full-screen layers can join this set without other changes.
+        // "Popup" is the MyGUI layer ComboBox drop-lists open on (layer="Popup" in MW_ComboBox); it is
+        // never backed by a tracked MWGui::Layout, so as a standalone quad it would never turn visible --
+        // sharing the menu canvas makes drop-lists composite over Settings exactly like flat-screen.
+        // "Modal" (savegame/message dialogs) and "ListBox" (VrListBox) must also share the canvas: the
+        // canvas layer is named after its first-created member ("InputBlocker", map order) and inherits
+        // that near-top layer priority, so a standalone Modal/ListBox quad always depth-sorts BEHIND the
+        // canvas -- the load-game dialog opened invisibly behind the main menu. Inside the canvas, MyGUI
+        // layer order (openmw_layers_vr.xml) composites them correctly above the menu layers.
+        const std::set<std::string> sSharedMenuLayers
+            = { "MainMenu", "Settings", "InputBlocker", "Video", "LoadingScreen", "Popup", "Modal", "ListBox" };
+#endif
 
         // Since the MODE stack cannot always inform us what should be in front, and MyGUI doesn't expose this
         // information, i have to manually re-compute what the actual priorities are
@@ -137,6 +161,8 @@ namespace MWVR
             : RTTNode(width, height, 1, true, 0, StereoAwareness::Unaware, false)
             , mScene(scene)
             , mClearColor(clearColor)
+            , mTexWidth(width)
+            , mTexHeight(height)
         {
         }
 
@@ -177,6 +203,8 @@ namespace MWVR
 
         osg::ref_ptr<osg::Node> mScene;
         osg::Vec4 mClearColor;
+        int mTexWidth;
+        int mTexHeight;
     };
 
     osg::ref_ptr<osg::Geometry> VRGUILayer::createLayerGeometry(osg::ref_ptr<osg::StateSet> stateset)
@@ -211,6 +239,14 @@ namespace MWVR
         osg::ref_ptr<osg::Vec3Array> normals{ new osg::Vec3Array(1) };
         (*normals)[0].set(0.0f, -1.0f, 0.0f);
         geometry->setNormalArray(normals, osg::Array::BIND_OVERALL);
+
+#ifdef __ANDROID__
+        // gl4es needs an explicit colour array: without one it reads stale/aliased vertex data as the
+        // colour, tinting the quad's two triangles differently (a green/red diagonal seam). Force white.
+        osg::ref_ptr<osg::Vec4Array> colors{ new osg::Vec4Array(4) };
+        (*colors)[0] = (*colors)[1] = (*colors)[2] = (*colors)[3] = osg::Vec4(1.f, 1.f, 1.f, 1.f);
+        geometry->setColorArray(colors, osg::Array::BIND_PER_VERTEX);
+#endif
 
         // TODO: Just use GL_TRIANGLES
         geometry->addPrimitiveSet(new osg::DrawArrays(GL_TRIANGLE_STRIP, 0, 4));
@@ -255,6 +291,7 @@ namespace MWVR
     VRGUILayer::VRGUILayer(osg::ref_ptr<osg::Group> geometryRoot, osg::ref_ptr<osg::Group> cameraRoot,
         std::string layerName, VRGUIManager* parent)
         : mLayerName(layerName)
+        , mMemberLayerNames{ layerName }
         , mGeometryRoot(geometryRoot)
         , mCameraRoot(cameraRoot)
         , mPickable()
@@ -265,7 +302,19 @@ namespace MWVR
 
     void VRGUILayer::setConfig(const LayerConfig& config)
     {
-        mDirty = true;
+        // Only rebuild the layer (RTT camera + texture + geometry) when the config actually changes.
+        // setConfig is called repeatedly with an unchanged config; rebuilding every frame recreated the
+        // RTT texture each frame, so the display quad sampled a freshly-created, not-yet-rendered
+        // (uninitialized) texture -> garbled vertical stripes on Quest/gl4es.
+        // Only rebuild when something that actually requires recreating the RTT/geometry changes
+        // (pixelResolution or space). Other per-call config churn (and identical re-sets) must NOT
+        // trigger a rebuild: each rebuild makes a fresh RTT camera+texture, and rebuilding repeatedly
+        // leaves multiple RTT/GUICamera pairs so the display samples a different texture than the menu
+        // renders into -> blank/garbled menu on Quest/gl4es.
+        const bool changed = !mConfig || mConfig->pixelResolution != config.pixelResolution
+            || mConfig->space != config.space;
+        if (changed)
+            mDirty = true;
         mConfig = config;
     }
 
@@ -311,9 +360,13 @@ namespace MWVR
 
     osg::Texture2D* VRGUILayer::colorTexture() const
     {
+#ifdef __ANDROID__
+        return mGUIColorTexture.get();
+#else
         if (!mGUIRTT)
             return nullptr;
         return static_cast<osg::Texture2D*>(static_cast<GUIRTT*>(mGUIRTT.get())->getColorTexture(nullptr));
+#endif
     }
 
     bool VRGUILayer::updateLayer()
@@ -414,6 +467,32 @@ namespace MWVR
         }
     }
 
+#ifdef __ANDROID__
+    bool VRGUILayer::worldToCanvasUv(const osg::Vec3f& worldPoint, float& u, float& v) const
+    {
+        // Project the world point onto the quad's world corners. Robust to the quad's orientation --
+        // the OSG local intersect point loses the quad's vertical component for our GUI quads.
+        osg::Geometry* geom = mGeometries[0].get();
+        osg::Vec3Array* verts = geom ? dynamic_cast<osg::Vec3Array*>(geom->getVertexArray()) : nullptr;
+        auto mats = mTransform ? mTransform->getWorldMatrices() : osg::MatrixList();
+        if (!verts || verts->size() < 4 || mats.empty())
+            return false;
+        const osg::Matrix& m = mats[0];
+        // createLayerGeometry vertex order: [0]=bottomLeft [1]=topLeft [2]=bottomRight [3]=topRight
+        osg::Vec3 bl = (*verts)[0] * m;
+        osg::Vec3 tl = (*verts)[1] * m;
+        osg::Vec3 br = (*verts)[2] * m;
+        osg::Vec3 edgeU = br - bl; // left -> right
+        osg::Vec3 edgeV = tl - bl; // bottom -> top
+        osg::Vec3 d = worldPoint - bl;
+        float lu = edgeU.length2();
+        float lv = edgeV.length2();
+        u = lu > 0.f ? (d * edgeU) / lu : 0.f;
+        v = lv > 0.f ? (d * edgeV) / lv : 0.f;
+        return true;
+    }
+#endif
+
     void VRGUILayer::updateRect()
     {
         auto viewSize = MyGUI::RenderManager::getInstance().getViewSize();
@@ -472,6 +551,29 @@ namespace MWVR
             mRect.bottom = viewSize.height;
         }
 
+#ifdef __ANDROID__
+        // Before stretching the quad to the full canvas (below), remember where the widgets actually
+        // are: picking uses this to let the pointer pass through the transparent parts of the quad
+        // (VRGUIManager::castContentRay), e.g. so the meter-wide wrist-HUD quad can't block panels
+        // behind it. Normalized canvas coords, MyGUI convention (y down); inverted/empty when the
+        // layer has no widgets.
+        mContentRealRect.left = std::clamp(static_cast<float>(mRect.left) / viewSize.width, 0.f, 1.f);
+        mContentRealRect.top = std::clamp(static_cast<float>(mRect.top) / viewSize.height, 0.f, 1.f);
+        mContentRealRect.right = std::clamp(static_cast<float>(mRect.right) / viewSize.width, 0.f, 1.f);
+        mContentRealRect.bottom = std::clamp(static_cast<float>(mRect.bottom) / viewSize.height, 0.f, 1.f);
+
+        // General fix for the Quest port: render every layer at the FULL canvas instead of cropping each
+        // layer's quad to its widget bounding box. Upstream gives each MyGUI layer its own quad sized to its
+        // bbox; that makes the background layer and the button layer separate, differently-sized, misaligned
+        // quads (cropped background, buttons in the wrong place, cursor offset) -- and it breaks the same way
+        // for every panel. With a full-canvas rect, all layers overlap aligned at full screen and the cursor
+        // maps 1:1 to the MyGUI canvas, like the flat 2D path composites all layers.
+        mRect.left = 0;
+        mRect.top = 0;
+        mRect.right = viewSize.width;
+        mRect.bottom = viewSize.height;
+#endif
+
         mRealRect.left = static_cast<float>(mRect.left) / static_cast<float>(viewSize.width);
         mRealRect.top = static_cast<float>(mRect.top) / static_cast<float>(viewSize.height);
         mRealRect.right = static_cast<float>(mRect.right) / static_cast<float>(viewSize.width);
@@ -494,17 +596,50 @@ namespace MWVR
 
             auto extent_units = mConfig->extent * Constants::UnitsPerMeter;
 
-            // Create the camera that will render the menu texture
-            std::string filter = mLayerName;
-            // Some layers have their own background layer
-            filter = filter + ";" + mLayerName + "Background";
+            // Create the camera that will render the menu texture. mMemberLayerNames is normally just
+            // {mLayerName}; on Android it may hold several MyGUI layer names sharing one FBO (sSharedMenuLayers).
+            std::string filter;
+            for (const auto& member : mMemberLayerNames)
+                // Some layers have their own background layer
+                filter += (filter.empty() ? std::string() : std::string(";")) + member + ";" + member + "Background";
             MyGUIPlatform::RenderManager& renderManager
                 = static_cast<MyGUIPlatform::RenderManager&>(MyGUI::RenderManager::getInstance());
+#ifdef __ANDROID__
+            // Quest/gl4es: render MyGUI into a SINGLE standalone PRE_RENDER FBO camera. Upstream wraps a
+            // NESTED_RENDER GUI camera inside an RTTNode camera; gl4es mishandles that camera-in-camera FBO
+            // (the clear never executes and the menu is drawn into nothing -> uninitialised garbage). A plain
+            // FBO camera is the proven pattern (RTCW/TBXR). PCVR keeps the original nested RTTNode path.
+            mMyGUICamera = renderManager.createGUICamera(osg::Camera::PRE_RENDER, filter);
+            {
+                const int rw = mConfig->pixelResolution.x();
+                const int rh = mConfig->pixelResolution.y();
+                osg::ref_ptr<osg::Texture2D> guiTex = new osg::Texture2D;
+                guiTex->setTextureSize(rw, rh);
+                guiTex->setInternalFormat(GL_RGBA);
+                guiTex->setFilter(osg::Texture::MIN_FILTER, osg::Texture::LINEAR);
+                guiTex->setFilter(osg::Texture::MAG_FILTER, osg::Texture::LINEAR);
+                guiTex->setWrap(osg::Texture::WRAP_S, osg::Texture::CLAMP_TO_EDGE);
+                guiTex->setWrap(osg::Texture::WRAP_T, osg::Texture::CLAMP_TO_EDGE);
+                mGUIColorTexture = guiTex;
+
+                osg::Camera* cam = mMyGUICamera.get();
+                cam->setRenderTargetImplementation(osg::Camera::FRAME_BUFFER_OBJECT);
+                cam->setRenderOrder(osg::Camera::PRE_RENDER);
+                cam->setClearMask(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+                // Clear to fully transparent so full-canvas layer quads composite (the 3dgui shader discards
+                // alpha==0). Non-content areas then show the layer/scene behind instead of a black box.
+                cam->setClearColor(osg::Vec4(0.f, 0.f, 0.f, 0.f));
+                cam->setReferenceFrame(osg::Camera::ABSOLUTE_RF);
+                cam->attach(osg::Camera::COLOR_BUFFER, guiTex);
+            }
+            mGUIRTT = mMyGUICamera;
+#else
             mMyGUICamera = renderManager.createGUICamera(osg::Camera::NESTED_RENDER, filter);
 
             auto* rttNode = new GUIRTT(mConfig->pixelResolution.x(), mConfig->pixelResolution.y(),
                 osg::Vec4(0, 0, 0, mConfig->opacity), mMyGUICamera);
             mGUIRTT = rttNode;
+#endif
 
             if (!mConfig->space.empty())
                 mSpace = OpenXRInput::instance().getSpace(mConfig->space);
@@ -535,7 +670,11 @@ namespace MWVR
                     mStateset->setAttributeAndModes(shaderManager.getProgram(vertexShader, fragmentShader));
                 }
 
+#ifdef __ANDROID__
+                osg::Texture2D* texture = mGUIColorTexture.get();
+#else
                 auto texture = rttNode->getColorTexture(nullptr);
+#endif
                 texture->setName("diffuseMap");
                 mStateset->setTextureAttributeAndModes(0, texture, osg::StateAttribute::ON);
 
@@ -544,6 +683,14 @@ namespace MWVR
                 mStateset->setAttribute(mat);
 
                 mStateset->setMode(GL_ALPHA_TEST, osg::StateAttribute::OFF);
+
+#ifdef __ANDROID__
+                // gl4es does not reliably apply the 3dgui program, so the quad falls back to fixed-function
+                // and gets FLAT-shaded lighting from the (dim) scene lights -> a dark, diagonal two-triangle
+                // seam. Force the quad unlit so it shows the menu texture at full brightness.
+                mStateset->setMode(GL_LIGHTING, osg::StateAttribute::OFF | osg::StateAttribute::PROTECTED);
+                mStateset->setMode(GL_FOG, osg::StateAttribute::OFF | osg::StateAttribute::PROTECTED);
+#endif
 
                 mGeometries[0] = createLayerGeometry(mStateset);
                 mGeometries[0]->setUserData(new VRGUILayerUserData(this));
@@ -641,6 +788,8 @@ namespace MWVR
             auto* geometry = mGeometries[index].get();
 
             osg::Vec2Array* texCoords = static_cast<osg::Vec2Array*>(geometry->getTexCoordArray(0));
+            // The standalone GUI RTT camera produces a normal bottom-up OSG texture (on Android too, now
+            // that we no longer use the nested gl4es RTTNode), so sample with the standard V flip.
             (*texCoords)[0].set(mRealRect.left, 1.f - mRealRect.bottom);
             (*texCoords)[1].set(mRealRect.left, 1.f - mRealRect.top);
             (*texCoords)[2].set(mRealRect.right, 1.f - mRealRect.bottom);
@@ -676,7 +825,7 @@ namespace MWVR
             osg::Vec2(0.f, 0.f), // center (model space)
             osg::Vec2(1.f, 1.f), // extent (meters)
             1024, // Spatial resolution (pixels per meter)
-            osg::Vec2i(1024, 1024), // Texture resolution
+            osg::Vec2i(1024, 768), // Texture resolution (4:3 to match the GUI canvas aspect)
             osg::Vec2(1, 1), autoSize, "" };
     }
 
@@ -737,6 +886,14 @@ namespace MWVR
         stateset->setMode(GL_BLEND, osg::StateAttribute::ON);
         stateset->setAttributeAndModes(new osg::BlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA));
         stateset->setRenderingHint(osg::StateSet::TRANSPARENT_BIN);
+#ifdef __ANDROID__
+        // UI panels must never be occluded by or intersect world geometry: draw them after the
+        // world in a late depth-sorted bin (so panels still order correctly among themselves)
+        // with the depth test forced to pass. Depth writes stay off so they don't clip anything.
+        stateset->setRenderBinDetails(20, "DepthSortedBin");
+        stateset->setAttributeAndModes(new osg::Depth(osg::Depth::ALWAYS, 0.0, 1.0, false),
+            osg::StateAttribute::ON | osg::StateAttribute::OVERRIDE);
+#endif
         // assign large value to effectively turn off fog
         // shaders don't respect glDisable(GL_FOG)
         osg::ref_ptr<osg::Fog> fog(new osg::Fog);
@@ -758,8 +915,10 @@ namespace MWVR
 
         LayerConfig defaultConfig = createDefaultConfig();
         LayerConfig loadingScreenConfig = createDefaultConfig(true, false);
-        LayerConfig mainMenuConfig = createDefaultConfig(true, true);
-        LayerConfig settingsConfig = createDefaultConfig(true, true);
+        // autoSize=false (like the loading screen, which renders with the correct aspect) -- a fixed-extent
+        // quad. autoSize=true produced a vertically-squished menu and a vertical click offset on the Quest.
+        LayerConfig mainMenuConfig = createDefaultConfig(true, false);
+        LayerConfig settingsConfig = createDefaultConfig(true, false);
         LayerConfig defaultWindowsConfig = createDefaultConfig(true);
         LayerConfig videoPlayerConfig = createDefaultConfig(true, false);
         LayerConfig messageBoxConfig = createDefaultConfig(false, true);
@@ -772,10 +931,18 @@ namespace MWVR
             { "Settings", settingsConfig },
             { "InputBlocker", videoPlayerConfig }, { "Video", videoPlayerConfig }, { "Console", consoleConfig },
             { "LoadingScreen", loadingScreenConfig },
+#ifdef __ANDROID__
+            // Registers "Popup" (ComboBox drop-lists) up front so it joins the shared menu canvas
+            // deterministically during this loop, before the shared FBO camera is first built.
+            { "Popup", videoPlayerConfig },
+#endif
         };
 
         Stereo::Pose defaultUiPose = {};
-        defaultUiPose.position = Stereo::Position::fromMeters(0.f, 0.66f, -.25f);
+        // Place the menu straight ahead at eye level and a comfortable distance. The old offset (0.66m up,
+        // 0.25m forward) put it close and above eye level, so it was viewed at a steep angle -> the quad
+        // foreshortened (rendered ~16:9 instead of 4:3) and the vertical click mapping was thrown off.
+        defaultUiPose.position = Stereo::Position::fromMeters(0.f, 1.5f, 0.f);
        
         for (auto& config : mDefaultLayerConfigs)
         {
@@ -906,11 +1073,15 @@ namespace MWVR
         if (layer == mFocusLayer)
             return;
 
+        // Pick every real MyGUI layer sharing mFocusLayer's FBO (mMemberLayerNames is just {mLayerName}
+        // outside a merged group), so clicks reach whichever member is actually on top.
         if (mFocusLayer)
-            setPick(mFocusLayer->mLayerName, false);
+            for (const auto& member : mFocusLayer->mMemberLayerNames)
+                setPick(member, false);
         mFocusLayer = layer;
         if (mFocusLayer)
-            setPick(mFocusLayer->mLayerName, true);
+            for (const auto& member : mFocusLayer->mMemberLayerNames)
+                setPick(member, true);
     }
 
     void VRGUIManager::setFocusWidget(MyGUI::Widget* widget)
@@ -934,6 +1105,27 @@ namespace MWVR
             return it->second;
 
         setPick(name, false);
+
+#ifdef __ANDROID__
+        // Alias this name onto an already-existing shared-group VRGUILayer if one of its group-mates has
+        // already been created (see sSharedMenuLayers above).
+        if (sSharedMenuLayers.count(name))
+        {
+            for (const auto& groupMate : sSharedMenuLayers)
+            {
+                auto groupIt = mLayers.find(groupMate);
+                if (groupIt == mLayers.end())
+                    continue;
+                groupIt->second->mMemberLayerNames.push_back(name);
+                mLayers[name] = groupIt->second;
+                auto defaultConfig = mDefaultLayerConfigs.find(name);
+                if (defaultConfig != mDefaultLayerConfigs.end())
+                    groupIt->second->setConfig(defaultConfig->second);
+                return groupIt->second;
+            }
+        }
+#endif
+
         auto layer = osg::ref_ptr<VRGUILayer>(new VRGUILayer(mGeometries, mGUICameras, name, this));
         mLayers[name] = layer;
         auto defaultConfig = mDefaultLayerConfigs.find(name);
@@ -1105,17 +1297,25 @@ namespace MWVR
         float y = 0;
         if (mFocusLayer && mFocusLayer->mConfig)
         {
+            auto viewSize = MyGUI::RenderManager::getInstance().getViewSize();
+#ifdef __ANDROID__
+            // hitPoint is the WORLD hit; worldToCanvasUv projects it onto the quad's world corners.
+            float u = 0.f, v = 0.f;
+            mFocusLayer->worldToCanvasUv(hitPoint, u, v);
+            x = u * static_cast<float>(viewSize.width);
+            y = (1.f - v) * static_cast<float>(viewSize.height); // quad top (v=1) -> MyGUI y=0
+#else
             osg::Vec2 bottomLeft = mFocusLayer->mConfig->center - osg::Vec2(0.5f, 0.5f);
             x = hitPoint.x() - bottomLeft.x();
             y = hitPoint.z() - bottomLeft.y();
             auto rect = mFocusLayer->mRealRect;
-            auto viewSize = MyGUI::RenderManager::getInstance().getViewSize();
             float width = static_cast<float>(viewSize.width) * rect.width();
             float height = static_cast<float>(viewSize.height) * rect.height();
             float left = static_cast<float>(viewSize.width) * rect.left;
             float bottom = static_cast<float>(viewSize.height) * rect.bottom;
             x = width * x + left;
             y = bottom - height * y;
+#endif
         }
 
         mGuiCursor.x() = (int)x;
@@ -1133,4 +1333,62 @@ namespace MWVR
         else
             setFocusWidget(nullptr);
     }
+
+#ifdef __ANDROID__
+    float VRGUIManager::castContentRay(const Stereo::Pose& pose, MWRender::RayResult& result)
+    {
+        result = MWRender::RayResult{};
+
+        auto world = MWBase::Environment::get().getWorld();
+        auto wm = MWBase::Environment::get().getWindowManager();
+        float maxDistance = world->getMaxActivationDistance();
+        if (wm->isGuiMode() && wm->isConsoleMode())
+            maxDistance *= 50.f;
+
+        osg::Vec3f origin = pose.position.asMWUnits();
+        osg::Vec3f direction = pose.orientation * osg::Vec3f(0, 1, 0);
+        direction.normalize();
+
+        osg::ref_ptr<osgUtil::LineSegmentIntersector> intersector = new osgUtil::LineSegmentIntersector(
+            osgUtil::LineSegmentIntersector::MODEL, origin, origin + direction * maxDistance);
+        intersector->setIntersectionLimit(osgUtil::LineSegmentIntersector::NO_LIMIT);
+        osgUtil::IntersectionVisitor visitor(intersector);
+        // Non-pickable layers carry Mask_3DGUI_NonIntersectable instead (VRGUILayer::setPickable).
+        visitor.setTraversalMask(MWRender::Mask_3DGUI);
+        mGeometries->accept(visitor);
+
+        // Intersections come sorted nearest-first; take the first quad whose canvas point has content.
+        for (const auto& intersection : intersector->getIntersections())
+        {
+            if (intersection.nodePath.empty())
+                continue;
+            osg::Node* node = intersection.nodePath.back();
+            if (node->getName() != "VRGUILayer")
+                continue;
+            auto* userData = static_cast<VRGUILayerUserData*>(node->getUserData());
+            if (!userData || !userData->mLayer)
+                continue;
+            VRGUILayer* layer = userData->mLayer;
+
+            osg::Vec3f worldPoint = intersection.getWorldIntersectPoint();
+            float u = 0.f, v = 0.f;
+            if (!layer->worldToCanvasUv(worldPoint, u, v))
+                continue;
+            const auto& content = layer->mContentRealRect;
+            const float cx = u;
+            const float cy = 1.f - v; // MyGUI canvas y grows downward
+            if (cx < content.left || cx > content.right || cy < content.top || cy > content.bottom)
+                continue;
+
+            result.mHit = true;
+            result.mHitNode = node;
+            result.mHitPointWorld = worldPoint;
+            result.mHitPointLocal = intersection.getLocalIntersectPoint();
+            result.mHitNormalWorld = intersection.getWorldIntersectNormal();
+            result.mRatio = static_cast<float>(intersection.ratio);
+            return (worldPoint - origin).length();
+        }
+        return 0.f;
+    }
+#endif
 }

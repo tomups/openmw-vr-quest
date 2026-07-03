@@ -4,6 +4,7 @@
 #include <stdexcept>
 
 #include <components/debug/debuglog.hpp>
+#include <components/fallback/fallback.hpp>
 #include <components/lua/l10n.hpp>
 #include <components/lua/luastate.hpp>
 #include <components/lua/serialization.hpp>
@@ -120,12 +121,25 @@ namespace MWLua
             api["dialogue"] = context.cachePackage(
                 "openmw_core_dialogue", [context]() { return initCoreDialogueBindings(context); });
 
-            const MWWorld::Store<ESM::GameSetting>* gmstStore
-                = &MWBase::Environment::get().getESMStore()->get<ESM::GameSetting>();
-            api["getGMST"] = [lua, gmstStore](const std::string& setting) -> sol::object {
-                const ESM::GameSetting* gmst = gmstStore->search(setting);
+            api["getGMST"] = [lua](const std::string& setting) -> sol::object {
+                // Look the store up fresh each call rather than capturing a pointer at binding
+                // time: the menu context binds before content finishes loading, so a captured
+                // pointer can reference an empty/stale GMST store (black UI on first run).
+                const MWWorld::Store<ESM::GameSetting>& gmstStore
+                    = MWBase::Environment::get().getESMStore()->get<ESM::GameSetting>();
+                const ESM::GameSetting* gmst = gmstStore.search(setting);
                 if (gmst == nullptr)
+                {
+                    // Some settings the UI reads via getGMST (e.g. FontColor_color_*) are not ESM
+                    // GMSTs but Morrowind.ini-derived fallback settings; bridge to the fallback map.
+                    // GMST lookups are case-insensitive (some scripts use lowercase fontcolor_*), so
+                    // match the fallback keys case-insensitively too.
+                    const auto& fb = Fallback::Map::getNonNumericFallbackMap();
+                    for (const auto& [key, val] : fb)
+                        if (Misc::StringUtils::ciEqual(key, setting))
+                            return sol::make_object<std::string>(lua, val);
                     return sol::nil;
+                }
                 const ESM::Variant& value = gmst->mValue;
                 switch (value.getType())
                 {

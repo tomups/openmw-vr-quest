@@ -112,7 +112,10 @@ namespace MWLua
             layerConfig.center = get_or(options, "center", osg::Vec2());
             layerConfig.extent = get_or(options, "extent", osg::Vec2(1, 1));
             layerConfig.spatialResolution = options.get_or("pixelsPerMeter", 1024);
-            auto rttResolution = get_or(options, "rttResolution", osg::Vec2(1024, 1024));
+            // The Lua config table uses the key "pixelResolution" (not "rttResolution"), so this read always
+            // fell back to the 1024x1024 default -> a square RTT regardless of the script. Read the real key,
+            // and default to 4:3 to match the GUI canvas (viewSize 1024x768).
+            auto rttResolution = get_or(options, "pixelResolution", osg::Vec2(1024, 768));
             layerConfig.pixelResolution.x() = static_cast<int>(rttResolution.x());
             layerConfig.pixelResolution.y() = static_cast<int>(rttResolution.y());
             layerConfig.myGUIViewSize = osg::Vec2(1, 1);

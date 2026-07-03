@@ -3,6 +3,7 @@
 #include "vrutil.hpp"
 
 #include <osg/BlendFunc>
+#include <osg/Depth>
 #include <osg/Drawable>
 #include <osg/Fog>
 #include <osg/LightModel>
@@ -206,7 +207,19 @@ namespace MWVR
     void UserPointer::update()
     {
         auto pose = Util::getNodePose(mSpaceTransform);
+#ifdef __ANDROID__
+        // The GUI draws on top of world geometry (see VRGUIManager::initScene), so picking must
+        // match: a pickable GUI panel wins even when world geometry is nearer. Cast a GUI-only
+        // content-aware ray first (transparent parts of the full-canvas quads let the ray pass, so
+        // e.g. the wrist-HUD quad can't shadow a panel behind it) and fall back to the normal world
+        // ray when no panel content is hit.
+        mDistanceToPointerTarget = MWVR::VRGUIManager::instance().castContentRay(pose, mPointerRay);
+        if (!mPointerRay.mHit)
+            mDistanceToPointerTarget
+                = Util::getPoseTarget(mPointerRay, pose, true, MWRender::Mask_3DGUI_NonIntersectable);
+#else
         mDistanceToPointerTarget = Util::getPoseTarget(mPointerRay, pose, true, MWRender::Mask_3DGUI_NonIntersectable);
+#endif
         // Make a ref-counted copy of the target node to ensure the object's lifetime this frame.
         mPointerTarget = mPointerRay.mHitNode;
 
@@ -223,7 +236,14 @@ namespace MWVR
             mCrosshair->setOffset(2.f * mDistanceToPointerTarget / 3.f);
             mCrosshair->show();
 
+#ifdef __ANDROID__
+            // The OSG local intersect point comes back with its vertical component collapsed for our GUI
+            // quads (cursor can't track vertically), but the WORLD hit is correct (the crosshair tracks it).
+            // Pass the world hit and project it onto the quad's world corners in computeGuiCursor.
+            MWVR::VRGUIManager::instance().updateFocus(mPointerRay.mHitNode, mPointerRay.mHitPointWorld);
+#else
             MWVR::VRGUIManager::instance().updateFocus(mPointerRay.mHitNode, mPointerRay.mHitPointLocal);
+#endif
         }
         else
         {
@@ -334,6 +354,13 @@ namespace MWVR
         stateset->setMode(GL_BLEND, osg::StateAttribute::ON);
         stateset->setAttributeAndModes(new osg::BlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA));
         stateset->setRenderingHint(osg::StateSet::TRANSPARENT_BIN);
+#ifdef __ANDROID__
+        // Keep the beam/crosshair visible over world geometry and over the UI panels it points
+        // at (bin 21 = after the GUI panels' bin 20 in VRGUIManager::initScene).
+        stateset->setRenderBinDetails(21, "DepthSortedBin");
+        stateset->setAttributeAndModes(new osg::Depth(osg::Depth::ALWAYS, 0.0, 1.0, false),
+            osg::StateAttribute::ON | osg::StateAttribute::OVERRIDE);
+#endif
         osg::ref_ptr<osg::Fog> fog(new osg::Fog);
         fog->setStart(10000000);
         fog->setEnd(10000000);

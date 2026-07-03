@@ -228,9 +228,10 @@ namespace MWGui
         mGuiPlatform = std::make_unique<MyGUIPlatform::Platform>(viewer, guiRoot, resourceSystem->getImageManager(),
             resourceSystem->getVFS(), mScalingFactor, resourcePath, logpath / "MyGUI.log");
 //## VR_PATCH BEGIN
-// Force GUI window to be 1024x1024
+// Force the VR GUI canvas to a 4:3 aspect (matching OpenMW's menu layouts, which letterbox backgrounds to
+// 4:3). A square canvas made backgrounds letterbox/crop and pushed bottom-anchored buttons off the image.
         if(VR::getVR())
-            mGuiPlatform->getRenderManagerPtr()->setViewSize(1024, 1024);
+            mGuiPlatform->getRenderManagerPtr()->setViewSize(1024, 768);
 //## VR_PATCH END
 
         mGui = std::make_unique<MyGUI::Gui>();

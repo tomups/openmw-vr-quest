@@ -90,3 +90,20 @@ venv/
 ## operating system files
 .DS_Store
 Thumbs.db
+
+# Quest/Android port — downloaded toolchain + generated/packaged build artifacts.
+# The upstream "build*/" rule above also matches the buildscripts/ DIRECTORY name, which
+# silently untracked the whole cross-compile system; re-include it and ignore only outputs.
+!/android/buildscripts/
+/android/buildscripts/build/
+/android/buildscripts/prefix/
+/android/buildscripts/toolchain/
+/android/buildscripts/downloads/
+/android/buildscripts/symbols/
+/android/app/src/main/jniLibs/
+/android/app/src/main/assets/
+/android/app/src/main/java/org/libsdl/
+/android/.gradle/
+/android/buildscripts/_full_build.log
+# Machine-specific Android SDK location (gradle convention): sdk.dir=<path-to-Android-Sdk>
+/android/local.properties

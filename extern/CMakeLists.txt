@@ -307,10 +307,15 @@ if(BUILD_OPENMW_VR)
     set(BUILD_WITH_SYSTEM_JSONCPP off) 
     set(DYNAMIC_LOADER off)
     include(FetchContent)
-    FetchContent_Declare( 
-        OpenXR 
+    # Quest (and other standalone headsets) disable the Khronos runtime broker, so the loader
+    # must discover the runtime via the system active_runtime manifest (in /odm, abi-suffixed)
+    # and be able to dlopen an apk-embedded runtime. This patch teaches the Android loader both.
+    # -N makes it a no-op if already applied (safe on reconfigure).
+    FetchContent_Declare(
+        OpenXR
         GIT_REPOSITORY https://github.com/KhronosGroup/OpenXR-SDK.git
         GIT_TAG release-1.0.24
+        PATCH_COMMAND patch -p1 -N -r - < ${CMAKE_CURRENT_SOURCE_DIR}/openxr-quest-runtime-discovery.patch || true
     )
     FetchContent_MakeAvailable(OpenXR)
     

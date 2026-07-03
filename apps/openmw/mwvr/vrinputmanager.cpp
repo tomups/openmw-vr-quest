@@ -309,6 +309,47 @@ namespace MWVR
                 wm->skipVideo();
         }
 
+#ifdef __ANDROID__
+        // Quest menu-click fallback. KB/mouse mode (active when no controller is marked active) gates the
+        // action-set update above, and the Lua trigger->_pointerActivate chain is unreliable in the menu, so
+        // poll the trigger ourselves and inject a GUI click on the rising edge. Bypasses both the gate and Lua.
+        {
+            auto& actions = mXRInput->getActionSet(MWActionSet::Actions);
+            if (VR::getKBMouseModeActive())
+                actions.update(); // ensure synced even when the gate above skipped it
+            float trig = 0.f;
+            for (const char* path :
+                { "/user/hand/right/input/trigger/value", "/user/hand/left/input/trigger/value" })
+            {
+                try
+                {
+                    auto v = actions.getValue(path);
+                    if (v)
+                    {
+                        if (auto* f = std::get_if<float>(&*v))
+                        {
+                            if (*f > trig)
+                                trig = *f;
+                        }
+                        else if (auto* b = std::get_if<bool>(&*v))
+                        {
+                            if (*b)
+                                trig = 1.f;
+                        }
+                    }
+                }
+                catch (...)
+                {
+                }
+            }
+            bool pressed = trig > 0.6f;
+            static bool sPrev = false;
+            if (pressed && !sPrev && MWVR::VRGUIManager::instance().hasFocus())
+                pointerActivate(true);
+            sPrev = pressed;
+        }
+#endif
+
         if (mGameMenuLongPressTimer)
         {
             auto elapsed = std::chrono::steady_clock::now() - mGameMenuLongPressTimer.value();

@@ -46,6 +46,9 @@ namespace XR
         mConfigViews[0].type = XR_TYPE_VIEW_CONFIGURATION_VIEW;
         mConfigViews[1].type = XR_TYPE_VIEW_CONFIGURATION_VIEW;
 
+        // Must run before any other OpenXR call on Android (no-op elsewhere).
+        initAndroidLoader();
+
         mExtensions = std::make_unique<Extensions>();
         for (auto& extension : getAllKnownInteractionProfileExtensions())
             mExtensions->requestExtension(extension);

@@ -7,5 +7,5 @@ varying vec4 passColor;
 
 void main()
 {
-    gl_FragData[0] = texture2D(diffuseMap, diffuseMapUV) * passColor;
+    gl_FragColor = texture2D(diffuseMap, diffuseMapUV) * passColor;
 }
