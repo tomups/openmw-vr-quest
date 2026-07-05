@@ -165,6 +165,10 @@ public class OpenMWActivity extends SDLActivity {
             }
         }
         global.append("resources=\"").append(resourcesDir().getAbsolutePath()).append("\"\n");
+        // Upstream's global cfg mounts the Morrowind-specific builtin scripts (resources/vfs-mw)
+        // as a data dir: combat damage, skill progression, music etc. all live there. Without
+        // this line hits land but apply no damage (vfs is auto-mounted by the engine, vfs-mw is not).
+        global.append("data=\"").append(new File(resourcesDir(), "vfs-mw").getAbsolutePath()).append("\"\n");
         writeFile(new File(globalConfigDir(), "openmw.cfg"), global.toString());
 
         // User config: every existing data dir + the game files found across them.
