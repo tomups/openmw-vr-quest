@@ -1,5 +1,7 @@
 # OpenMW-VR for Meta Quest (native APK)
 
+https://github.com/user-attachments/assets/b8b5b967-709e-4d4c-b8da-65542aeea3a7
+
 Self-contained build of OpenMW-VR as a standalone Quest APK (OpenXR + GLES via gl4es).
 Everything needed lives in this repo:
 
