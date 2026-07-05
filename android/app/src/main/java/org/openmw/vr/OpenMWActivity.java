@@ -169,6 +169,9 @@ public class OpenMWActivity extends SDLActivity {
         // as a data dir: combat damage, skill progression, music etc. all live there. Without
         // this line hits land but apply no damage (vfs is auto-mounted by the engine, vfs-mw is not).
         global.append("data=\"").append(new File(resourcesDir(), "vfs-mw").getAbsolutePath()).append("\"\n");
+        // Desktop sets user-data explicitly; without it the engine logs an error and falls back
+        // to the same external files dir — pin it so saves/screenshots stay put by contract.
+        global.append("user-data=\"").append(userStorage).append("\"\n");
         writeFile(new File(globalConfigDir(), "openmw.cfg"), global.toString());
 
         // User config: every existing data dir + the game files found across them.
