@@ -54,7 +54,11 @@ namespace VR
         void (*bindFramebuffer)(unsigned, unsigned) = nullptr;
         void (*framebufferTexture2D)(unsigned, unsigned, unsigned, unsigned, int) = nullptr;
         void (*blitFramebuffer)(int, int, int, int, int, int, int, int, unsigned, unsigned) = nullptr;
-        bool ok() const { return genFramebuffers && bindFramebuffer && framebufferTexture2D && blitFramebuffer; }
+        void (*disable)(unsigned) = nullptr;
+        bool ok() const
+        {
+            return genFramebuffers && bindFramebuffer && framebufferTexture2D && blitFramebuffer && disable;
+        }
     };
 
     static const NativeGLES& nativeGLES()
@@ -69,6 +73,7 @@ namespace VR
                 r.framebufferTexture2D
                     = reinterpret_cast<decltype(r.framebufferTexture2D)>(dlsym(lib, "glFramebufferTexture2D"));
                 r.blitFramebuffer = reinterpret_cast<decltype(r.blitFramebuffer)>(dlsym(lib, "glBlitFramebuffer"));
+                r.disable = reinterpret_cast<decltype(r.disable)>(dlsym(lib, "glDisable"));
             }
             if (!r.ok())
                 Log(Debug::Error) << "Failed to load native GLES present functions: " << (lib ? "missing symbols" : dlerror());
@@ -465,6 +470,7 @@ namespace VR
         constexpr unsigned kTexture2D = 0x0DE1; // GL_TEXTURE_2D
         constexpr unsigned kColorBufferBit = 0x4000; // GL_COLOR_BUFFER_BIT
         constexpr unsigned kNearest = 0x2600; // GL_NEAREST
+        constexpr unsigned kFramebufferSrgbExt = 0x8DB9; // GL_FRAMEBUFFER_SRGB_EXT (EXT_sRGB_write_control)
 
         // Default apply target is GL_FRAMEBUFFER -> gl4es eagerly binds it as the real read+draw FBO.
         Stereo::Manager::instance().multiviewFramebuffer()->layerFbo(i)->apply(*state);
@@ -480,6 +486,12 @@ namespace VR
             // leaves the eye FBO as the real READ framebuffer.
             ngl.bindFramebuffer(kDrawFramebuffer, sDrawFbo);
             ngl.framebufferTexture2D(kDrawFramebuffer, kColorAttachment0, kTexture2D, swapTex, 0);
+            // The swapchain is sRGB (GL_SRGB8_ALPHA8 -- the compositor decodes it on sampling), but the
+            // eye FBO is a linear-format buffer already holding gamma-space colors: a GLES blit into an
+            // sRGB target always applies a second linear->sRGB encode (no core off-switch in ES), washing
+            // the whole image out. Adreno's EXT_sRGB_write_control adds the desktop-GL switch; turn the
+            // conversion off so our gamma values are copied raw and the compositor's decode is the only one.
+            ngl.disable(kFramebufferSrgbExt);
             ngl.blitFramebuffer(srcX0, srcY0, srcX1, srcY1, dstX0, dstY0, dstX1, dstY1, kColorBufferBit, kNearest);
             ngl.bindFramebuffer(kDrawFramebuffer, 0);
         }
