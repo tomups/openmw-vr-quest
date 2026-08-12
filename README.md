@@ -1,3 +1,9 @@
+> NOT UNDER ACTIVE DEVELOPMENT
+>
+> The legendary Team Beef is working on a Quest native port that is going to be so much better than anything I could do :)
+>
+> My version is just an "aperitif" until theirs launches, so stay tuned!
+
 # OpenMW-VR for Meta Quest (native APK)
 
 https://github.com/user-attachments/assets/b8b5b967-709e-4d4c-b8da-65542aeea3a7
